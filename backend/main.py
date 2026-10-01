@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-
+from app.presentation.api.routes.protected import router as protected_router
 from app.core.config import get_settings
 from app.presentation.api.routes.health import router as health_router
 
@@ -11,7 +11,7 @@ app = FastAPI(
 )
 
 app.include_router(health_router)
-
+app.include_router(protected_router)
 
 @app.get("/")
 def root():
