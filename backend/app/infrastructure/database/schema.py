@@ -27,9 +27,28 @@ def initialize_schema() -> None:
         CREATE INDEX IF NOT EXISTS ix_password_reset_tokens_hash
         ON password_reset_tokens(token_hash);
         """,
+
         """
         CREATE INDEX IF NOT EXISTS ix_password_reset_tokens_user
         ON password_reset_tokens(user_id);
+        """,
+                """
+        CREATE TABLE IF NOT EXISTS organization_verifications (
+            organization_id TEXT PRIMARY KEY,
+            organization_name TEXT NOT NULL,
+            organization_type TEXT NOT NULL,
+            status TEXT NOT NULL CHECK (
+                status IN (
+                    'pending',
+                    'approved',
+                    'rejected',
+                    'expired'
+                )
+            ),
+            submitted_at TIMESTAMPTZ NOT NULL,
+            updated_at TIMESTAMPTZ NOT NULL,
+            message TEXT NULL
+        );
         """,
     ]
 

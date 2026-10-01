@@ -1,15 +1,62 @@
+import { useEffect, useState } from 'react'
 import './App.css'
+import {
+  getOrganizationVerification,
+} from './api/organizationVerification'
+
+const organizationId = 'daycare-1'
+
+function formatDate(value) {
+  if (!value) {
+    return '—'
+  }
+
+  return new Date(value).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+}
+
+function getStatusLabel(status) {
+  const labels = {
+    pending: 'Pending Verification',
+    approved: 'Approved',
+    rejected: 'Rejected',
+    expired: 'Expired',
+  }
+
+  return labels[status] || status
+}
 
 function App() {
-  const organization = {
-    name: 'Sunshine Daycare Center',
-    type: 'Daycare Organization',
-    status: 'Pending Verification',
-    submittedDate: 'September 28, 2026',
-    lastUpdated: 'October 1, 2026',
-    message:
-      'Your organization registration has been received and is currently being reviewed by the CareLife administration team.',
+  const [organization, setOrganization] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  async function loadVerificationStatus() {
+    try {
+      setLoading(true)
+      setError('')
+
+      const data = await getOrganizationVerification(
+        organizationId
+      )
+
+      setOrganization(data)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
   }
+
+  useEffect(() => {
+    loadVerificationStatus()
+  }, [])
+
+  const status = organization?.status || 'pending'
+  const statusLabel = getStatusLabel(status)
 
   return (
     <div className="app-layout">
@@ -48,7 +95,10 @@ function App() {
         <div className="sidebar-bottom">
           <div className="help-box">
             <strong>Need help?</strong>
-            <p>Contact CareLife support if you have questions about your verification.</p>
+            <p>
+              Contact CareLife support if you have questions
+              about your verification.
+            </p>
             <button type="button">Contact Support</button>
           </div>
         </div>
@@ -57,7 +107,9 @@ function App() {
       <main className="main-content">
         <header className="topbar">
           <div>
-            <p className="breadcrumb">Organization / Verification</p>
+            <p className="breadcrumb">
+              Organization / Verification
+            </p>
             <h2>Verification Status</h2>
           </div>
 
@@ -72,121 +124,219 @@ function App() {
         </header>
 
         <section className="page-content">
-          <div className="intro">
-            <div>
-              <span className="section-label">ORGANIZATION VERIFICATION</span>
-              <h3>{organization.name}</h3>
-              <p>{organization.type}</p>
+          {loading && (
+            <div className="notice">
+              <div className="notice-icon">i</div>
+
+              <div>
+                <strong>Loading verification status</strong>
+                <p>
+                  CareLife is retrieving the latest saved
+                  verification information.
+                </p>
+              </div>
             </div>
+          )}
 
-            <button
-              type="button"
-              className="refresh-button"
-              onClick={() => window.location.reload()}
-            >
-              ↻ Refresh Status
-            </button>
-          </div>
+          {!loading && error && (
+            <div className="notice">
+              <div className="notice-icon">!</div>
 
-          <div className="status-hero">
-            <div className="status-icon">!</div>
-
-            <div className="status-content">
-              <span className="status-label">CURRENT STATUS</span>
-              <h4>{organization.status}</h4>
-              <p>{organization.message}</p>
+              <div>
+                <strong>Unable to load verification status</strong>
+                <p>{error}</p>
+              </div>
             </div>
+          )}
 
-            <span className="status-pill">Pending</span>
-          </div>
-
-          <div className="content-grid">
-            <section className="card">
-              <div className="card-header">
+          {!loading && !error && organization && (
+            <>
+              <div className="intro">
                 <div>
-                  <span className="section-label">VERIFICATION DETAILS</span>
-                  <h4>Application Information</h4>
+                  <span className="section-label">
+                    ORGANIZATION VERIFICATION
+                  </span>
+                  <h3>{organization.organization_name}</h3>
+                  <p>{organization.organization_type}</p>
                 </div>
+
+                <button
+                  type="button"
+                  className="refresh-button"
+                  onClick={loadVerificationStatus}
+                >
+                  ↻ Refresh Status
+                </button>
               </div>
 
-              <div className="details-grid">
-                <div className="detail-item">
-                  <span>Submitted Date</span>
-                  <strong>{organization.submittedDate}</strong>
+              <div className="status-hero">
+                <div className="status-icon">
+                  {status === 'approved'
+                    ? '✓'
+                    : status === 'rejected'
+                      ? '!'
+                      : status === 'expired'
+                        ? '!'
+                        : '•'}
                 </div>
 
-                <div className="detail-item">
-                  <span>Last Updated</span>
-                  <strong>{organization.lastUpdated}</strong>
+                <div className="status-content">
+                  <span className="status-label">
+                    CURRENT STATUS
+                  </span>
+
+                  <h4>{statusLabel}</h4>
+
+                  <p>
+                    {organization.message ||
+                      'No additional verification message is available.'}
+                  </p>
                 </div>
 
-                <div className="detail-item">
-                  <span>Organization Type</span>
-                  <strong>{organization.type}</strong>
-                </div>
-
-                <div className="detail-item">
-                  <span>Verification Status</span>
-                  <strong>{organization.status}</strong>
-                </div>
+                <span className="status-pill">
+                  {status}
+                </span>
               </div>
-            </section>
 
-            <section className="card">
-              <div className="card-header">
+              <div className="content-grid">
+                <section className="card">
+                  <div className="card-header">
+                    <div>
+                      <span className="section-label">
+                        VERIFICATION DETAILS
+                      </span>
+                      <h4>Application Information</h4>
+                    </div>
+                  </div>
+
+                  <div className="details-grid">
+                    <div className="detail-item">
+                      <span>Submitted Date</span>
+                      <strong>
+                        {formatDate(
+                          organization.submitted_at
+                        )}
+                      </strong>
+                    </div>
+
+                    <div className="detail-item">
+                      <span>Last Updated</span>
+                      <strong>
+                        {formatDate(
+                          organization.updated_at
+                        )}
+                      </strong>
+                    </div>
+
+                    <div className="detail-item">
+                      <span>Organization Type</span>
+                      <strong>
+                        {organization.organization_type}
+                      </strong>
+                    </div>
+
+                    <div className="detail-item">
+                      <span>Verification Status</span>
+                      <strong>{statusLabel}</strong>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="card">
+                  <div className="card-header">
+                    <div>
+                      <span className="section-label">
+                        VERIFICATION PROGRESS
+                      </span>
+                      <h4>Application Timeline</h4>
+                    </div>
+                  </div>
+
+                  <div className="timeline">
+                    <div className="timeline-item completed">
+                      <div className="timeline-dot">✓</div>
+
+                      <div>
+                        <strong>Application Submitted</strong>
+                        <span>
+                          {formatDate(
+                            organization.submitted_at
+                          )}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="timeline-line"></div>
+
+                    <div
+                      className={
+                        status === 'pending'
+                          ? 'timeline-item current'
+                          : 'timeline-item completed'
+                      }
+                    >
+                      <div className="timeline-dot">
+                        {status === 'pending' ? '•' : '✓'}
+                      </div>
+
+                      <div>
+                        <strong>Under Review</strong>
+                        <span>
+                          {status === 'pending'
+                            ? 'Currently being reviewed'
+                            : 'Review stage completed'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="timeline-line"></div>
+
+                    <div
+                      className={
+                        status === 'pending'
+                          ? 'timeline-item upcoming'
+                          : 'timeline-item completed'
+                      }
+                    >
+                      <div className="timeline-dot">
+                        {status === 'pending'
+                          ? '3'
+                          : '✓'}
+                      </div>
+
+                      <div>
+                        <strong>
+                          Verification Decision
+                        </strong>
+                        <span>
+                          {status === 'pending'
+                            ? 'Waiting for administration review'
+                            : `Current result: ${statusLabel}`}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              <div className="notice">
+                <div className="notice-icon">i</div>
+
                 <div>
-                  <span className="section-label">VERIFICATION PROGRESS</span>
-                  <h4>Application Timeline</h4>
+                  <strong>
+                    Keep your organization information up to
+                    date
+                  </strong>
+                  <p>
+                    Verification decisions are based on the
+                    information submitted by your
+                    organization. Make sure your profile
+                    information stays accurate.
+                  </p>
                 </div>
               </div>
-
-              <div className="timeline">
-                <div className="timeline-item completed">
-                  <div className="timeline-dot">✓</div>
-
-                  <div>
-                    <strong>Application Submitted</strong>
-                    <span>September 28, 2026</span>
-                  </div>
-                </div>
-
-                <div className="timeline-line"></div>
-
-                <div className="timeline-item current">
-                  <div className="timeline-dot">•</div>
-
-                  <div>
-                    <strong>Under Review</strong>
-                    <span>Currently being reviewed</span>
-                  </div>
-                </div>
-
-                <div className="timeline-line"></div>
-
-                <div className="timeline-item upcoming">
-                  <div className="timeline-dot">3</div>
-
-                  <div>
-                    <strong>Verification Decision</strong>
-                    <span>Waiting for administration review</span>
-                  </div>
-                </div>
-              </div>
-            </section>
-          </div>
-
-          <div className="notice">
-            <div className="notice-icon">i</div>
-
-            <div>
-              <strong>Keep your organization information up to date</strong>
-              <p>
-                Verification decisions are based on the information submitted
-                by your organization. Make sure your profile information stays
-                accurate.
-              </p>
-            </div>
-          </div>
+            </>
+          )}
         </section>
       </main>
     </div>
