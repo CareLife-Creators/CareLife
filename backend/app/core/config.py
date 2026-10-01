@@ -23,11 +23,22 @@ class Settings(BaseSettings):
 
     debug: bool = False
 
-    # Sensitive configuration must come from the environment.
     database_url: SecretStr = Field(min_length=1)
     secret_key: SecretStr = Field(min_length=32)
 
     access_token_expire_minutes: int = Field(default=30, gt=0)
+
+    reset_token_expire_minutes: int = Field(default=30, gt=0)
+
+    reset_link_base_url: str = "http://localhost:3000/reset-password"
+
+    email_mode: Literal["console", "smtp"] = "console"
+
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: SecretStr | None = None
+    email_from: str = "no-reply@carelife.local"
 
     model_config = SettingsConfigDict(
         env_file=BACKEND_DIR / ".env",
@@ -44,9 +55,14 @@ class Settings(BaseSettings):
     def secret_key_value(self) -> str:
         return self.secret_key.get_secret_value()
 
+    @property
+    def smtp_password_value(self) -> str | None:
+        if self.smtp_password is None:
+            return None
+
+        return self.smtp_password.get_secret_value()
+
 
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
-
-
