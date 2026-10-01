@@ -45,6 +45,36 @@ class ProtectedRouteTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 403)
 
+    def test_same_organization_is_allowed(self):
+        staff_user = UserContext(
+            user_id="staff-1",
+            role=Role.DAYCARE_STAFF,
+            organization_id="daycare-1",
+        )
+
+        app.dependency_overrides[get_current_user] = lambda: staff_user
+
+        response = self.client.get("/protected/organizations/daycare-1")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json()["organization_id"],
+            "daycare-1",
+        )
+
+    def test_different_organization_is_rejected(self):
+        staff_user = UserContext(
+            user_id="staff-1",
+            role=Role.DAYCARE_STAFF,
+            organization_id="daycare-1",
+        )
+
+        app.dependency_overrides[get_current_user] = lambda: staff_user
+
+        response = self.client.get("/protected/organizations/daycare-2")
+
+        self.assertEqual(response.status_code, 403)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -2,7 +2,10 @@ from fastapi import APIRouter, Depends
 
 from app.domain.entities.user_context import Role, UserContext
 from app.presentation.api.dependencies.authorization import require_role
-
+from app.presentation.api.dependencies.authorization import (
+    require_organization_access,
+    require_role,
+)
 
 router = APIRouter(
     prefix="/protected",
@@ -20,4 +23,15 @@ def admin_only(
         "message": "Authorized access",
         "user_id": current_user.user_id,
         "role": current_user.role,
+    }
+
+@router.get("/organizations/{organization_id}")
+def organization_only(
+    organization_id: str,
+    current_user: UserContext = Depends(require_organization_access),
+):
+    return {
+        "message": "Organization access granted",
+        "user_id": current_user.user_id,
+        "organization_id": current_user.organization_id,
     }
