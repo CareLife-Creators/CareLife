@@ -15,3 +15,7 @@ class OrganizationVerificationResponse(BaseModel):
     submitted_at: datetime
     updated_at: datetime
     message: str | None = None
+
+
+class OrganizationVerificationDecisionRequest(BaseModel):
+    message: str | None = None

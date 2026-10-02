@@ -11,3 +11,19 @@ class OrganizationVerificationRepository(Protocol):
         organization_id: str,
     ) -> OrganizationVerification | None:
         ...
+
+    def get_pending(self) -> list[OrganizationVerification]:
+        ...
+
+    def approve(
+        self,
+        organization_id: str,
+    ) -> OrganizationVerification | None:
+        ...
+
+    def reject(
+        self,
+        organization_id: str,
+        message: str | None = None,
+    ) -> OrganizationVerification | None:
+        ...
