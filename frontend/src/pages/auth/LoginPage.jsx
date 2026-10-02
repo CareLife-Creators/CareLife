@@ -6,14 +6,9 @@ function LoginPage({ onSignup }) {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
 
-  function handleSubmit(event) {
-    event.preventDefault()
-
-    console.log('Login submitted', {
-      email,
-      password,
-    })
-  }
+ function handleSubmit(event) {
+  event.preventDefault()
+}
 
   return (
     <main className="auth-page">
