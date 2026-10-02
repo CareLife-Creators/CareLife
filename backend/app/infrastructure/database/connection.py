@@ -1,5 +1,5 @@
-from contextlib import contextmanager
 from collections.abc import Iterator
+from contextlib import contextmanager
 
 import psycopg
 
@@ -23,3 +23,13 @@ def get_connection() -> Iterator[psycopg.Connection]:
         yield connection
     finally:
         connection.close()
+
+
+def check_database_connection() -> bool:
+    try:
+        with get_connection() as connection:
+            connection.execute("SELECT 1").fetchone()
+
+        return True
+    except psycopg.Error:
+        return False
