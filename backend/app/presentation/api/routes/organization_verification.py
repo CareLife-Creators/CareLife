@@ -1,24 +1,89 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.application.schemas.organization_verification import (
+    OrganizationVerificationDecisionRequest,
     OrganizationVerificationResponse,
 )
 from app.application.use_cases.organization_verification import (
     OrganizationVerificationService,
 )
+from app.domain.entities.user_context import Role, UserContext
 from app.presentation.api.dependencies.authorization import (
     require_organization_access,
+    require_role,
 )
 from app.presentation.api.dependencies.organization_verification import (
     get_organization_verification_service,
 )
-from app.domain.entities.user_context import UserContext
 
 
 router = APIRouter(
     prefix="/organizations",
     tags=["Organization Verification"],
 )
+
+
+@router.get(
+    "/verification/pending",
+    response_model=list[OrganizationVerificationResponse],
+)
+def get_pending_organizations(
+    _current_user: UserContext = Depends(
+        require_role(Role.CARELIFE_ADMIN)
+    ),
+    service: OrganizationVerificationService = Depends(
+        get_organization_verification_service
+    ),
+):
+    return service.get_pending()
+
+
+@router.post(
+    "/{organization_id}/verification/approve",
+    response_model=OrganizationVerificationResponse,
+)
+def approve_organization(
+    organization_id: str,
+    _current_user: UserContext = Depends(
+        require_role(Role.CARELIFE_ADMIN)
+    ),
+    service: OrganizationVerificationService = Depends(
+        get_organization_verification_service
+    ),
+):
+    try:
+        return service.approve(organization_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+
+@router.post(
+    "/{organization_id}/verification/reject",
+    response_model=OrganizationVerificationResponse,
+)
+def reject_organization(
+    organization_id: str,
+    request: OrganizationVerificationDecisionRequest,
+    _current_user: UserContext = Depends(
+        require_role(Role.CARELIFE_ADMIN)
+    ),
+    service: OrganizationVerificationService = Depends(
+        get_organization_verification_service
+    ),
+):
+    try:
+        return service.reject(
+            organization_id,
+            request.message,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
 
 
 @router.get(
