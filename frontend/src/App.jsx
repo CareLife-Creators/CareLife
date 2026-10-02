@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
+import LoginPage from './pages/auth/LoginPage'
+import SignupPage from './pages/auth/SignupPage'
 import {
   getOrganizationVerification,
 } from './api/organizationVerification'
@@ -56,9 +58,31 @@ function App() {
   }, [])
 
   const status = organization?.status || 'pending'
-  const statusLabel = getStatusLabel(status)
+const statusLabel = getStatusLabel(status)
+const isLoginPage = window.location.hash === '#login'
+const isSignupPage = window.location.hash === '#signup'
 
+if (isLoginPage) {
   return (
+    <LoginPage
+      onSignup={() => {
+        window.location.href = '#signup'
+        window.location.reload()
+      }}
+    />
+  )
+}
+
+if (isSignupPage) {
+  return (
+    <SignupPage
+      onLogin={() => {
+        window.location.href = '#login'
+        window.location.reload()
+      }}
+    />
+  )
+}return (
     <div className="app-layout">
       <aside className="sidebar">
         <div className="brand">
