@@ -21,7 +21,7 @@ function LoginPage({ onSignup }) {
         password,
       })
 
-      window.location.hash = '#dashboard'
+      window.location.hash = ''
     } catch (err) {
       setError(
         err instanceof Error

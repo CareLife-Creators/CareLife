@@ -33,6 +33,7 @@ function getStatusLabel(status) {
 }
 
 function App() {
+  const [route, setRoute] = useState(() => window.location.hash)
   const [organization, setOrganization] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -60,6 +61,17 @@ function App() {
       setLoading(false)
     }
   }
+  useEffect(() => {
+  function handleHashChange() {
+    setRoute(window.location.hash)
+  }
+
+  window.addEventListener('hashchange', handleHashChange)
+
+  return () => {
+    window.removeEventListener('hashchange', handleHashChange)
+  }
+}, []) 
 
   useEffect(() => {
     if (isApprovalDashboard) {
@@ -105,8 +117,8 @@ function App() {
 
   const status = organization?.status || 'pending'
 const statusLabel = getStatusLabel(status)
-const isLoginPage = window.location.hash === '#login'
-const isSignupPage = window.location.hash === '#signup'
+const isLoginPage = route === '#login'
+const isSignupPage = route === '#signup'
 
 if (isLoginPage) {
   return (
