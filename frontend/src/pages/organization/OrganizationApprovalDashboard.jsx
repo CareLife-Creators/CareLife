@@ -180,7 +180,7 @@ function OrganizationApprovalDashboard() {
           <div className="approval-empty-state">
             Loading pending organizations...
           </div>
-        ) : organizations.length === 0 ? (
+        ) : error ? null : organizations.length === 0 ? (
           <div className="approval-empty-state">
             <h2>No pending organizations</h2>
 
