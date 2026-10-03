@@ -1,0 +1,139 @@
+import { useState } from 'react'
+import { signup } from '../../api/auth'
+import './Auth.css'
+
+function SignupPage({ onLogin }) {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+
+    setError('')
+    setSuccess('')
+    setIsSubmitting(true)
+
+    try {
+      const data = await signup({
+        email,
+        password,
+      })
+
+      setSuccess(data.message)
+      setEmail('')
+      setPassword('')
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Unable to create account'
+      )
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <main className="auth-page">
+      <section className="auth-card">
+        <div className="auth-brand">
+          <div className="auth-brand-icon">C</div>
+          <span>CareLife</span>
+        </div>
+
+        <div className="auth-content">
+          <p className="auth-eyebrow">GET STARTED</p>
+
+          <h1>Create your CareLife account</h1>
+
+          <p className="auth-description">
+            Create an account to get started with CareLife.
+          </p>
+
+          {error && (
+            <div className="auth-message auth-message-error">
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="auth-message auth-message-success">
+              {success}
+            </div>
+          )}
+
+          <form
+            className="auth-form"
+            onSubmit={handleSubmit}
+          >
+            <div className="form-field">
+              <label htmlFor="signup-email">
+                Email address
+              </label>
+
+              <input
+                id="signup-email"
+                name="email"
+                type="email"
+                value={email}
+                onChange={(event) =>
+                  setEmail(event.target.value)
+                }
+                placeholder="you@example.com"
+                required
+              />
+            </div>
+
+            <div className="form-field">
+              <label htmlFor="signup-password">
+                Password
+              </label>
+
+              <input
+                id="signup-password"
+                name="password"
+                type="password"
+                value={password}
+                onChange={(event) =>
+                  setPassword(event.target.value)
+                }
+                placeholder="At least 8 characters"
+                minLength={8}
+                required
+              />
+
+              <small>
+                Password must contain at least 8 characters.
+              </small>
+            </div>
+
+            <button
+              type="submit"
+              className="auth-submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting
+                ? 'Creating account...'
+                : 'Create account'}
+            </button>
+          </form>
+
+          <p className="auth-switch">
+            Already have an account?{' '}
+            <button
+              type="button"
+              onClick={onLogin}
+            >
+              Sign in
+            </button>
+          </p>
+        </div>
+      </section>
+    </main>
+  )
+}
+
+export default SignupPage

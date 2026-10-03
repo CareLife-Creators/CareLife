@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
+import LoginPage from './pages/auth/LoginPage'
+import SignupPage from './pages/auth/SignupPage'
 import {
   getOrganizationVerification,
 } from './api/organizationVerification'
@@ -31,6 +33,7 @@ function getStatusLabel(status) {
 }
 
 function App() {
+  const [route, setRoute] = useState(() => window.location.hash)
   const [organization, setOrganization] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -58,6 +61,17 @@ function App() {
       setLoading(false)
     }
   }
+  useEffect(() => {
+  function handleHashChange() {
+    setRoute(window.location.hash)
+  }
+
+  window.addEventListener('hashchange', handleHashChange)
+
+  return () => {
+    window.removeEventListener('hashchange', handleHashChange)
+  }
+}, []) 
 
   useEffect(() => {
     if (isApprovalDashboard) {
@@ -102,9 +116,31 @@ function App() {
   }
 
   const status = organization?.status || 'pending'
-  const statusLabel = getStatusLabel(status)
+const statusLabel = getStatusLabel(status)
+const isLoginPage = route === '#login'
+const isSignupPage = route === '#signup'
 
+if (isLoginPage) {
   return (
+    <LoginPage
+      onSignup={() => {
+        window.location.href = '#signup'
+        window.location.reload()
+      }}
+    />
+  )
+}
+
+if (isSignupPage) {
+  return (
+    <SignupPage
+      onLogin={() => {
+        window.location.href = '#login'
+        window.location.reload()
+      }}
+    />
+  )
+}return (
     <div className="app-layout">
       <aside className="sidebar">
         <div className="brand">
