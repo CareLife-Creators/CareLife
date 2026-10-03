@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from app.presentation.api.routes.signup import router as signup_router
+from app.presentation.api.routes.login import router as login_router
 from app.core.config import get_settings
 from app.presentation.api.routes.health import router as health_router
 from app.presentation.api.routes.password_reset import (
@@ -35,6 +37,8 @@ app.include_router(protected_router)
 app.include_router(password_reset_router)
 app.include_router(organization_verification_router)
 app.include_router(signup_router)
+app.include_router(login_router)
+
 
 @app.get("/")
 def root():

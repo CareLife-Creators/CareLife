@@ -1,3 +1,5 @@
+from datetime import date
+
 from sqlalchemy import Index, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -12,7 +14,21 @@ class UserModel(Base):
         primary_key=True,
     )
 
+    username: Mapped[str] = mapped_column(
+        String,
+        nullable=False,
+    )
+
     email: Mapped[str] = mapped_column(
+        String,
+        nullable=False,
+    )
+
+    date_of_birth: Mapped[date] = mapped_column(
+        nullable=False,
+    )
+
+    gender: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )

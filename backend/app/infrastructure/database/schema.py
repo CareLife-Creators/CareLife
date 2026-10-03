@@ -6,7 +6,10 @@ def initialize_schema() -> None:
         """
         CREATE TABLE IF NOT EXISTS users (
             id TEXT PRIMARY KEY,
+            username TEXT NOT NULL,
             email TEXT NOT NULL,
+            date_of_birth DATE NOT NULL,
+            gender TEXT NOT NULL,
             password_hash TEXT NOT NULL
         );
         """,
@@ -27,12 +30,11 @@ def initialize_schema() -> None:
         CREATE INDEX IF NOT EXISTS ix_password_reset_tokens_hash
         ON password_reset_tokens(token_hash);
         """,
-
         """
         CREATE INDEX IF NOT EXISTS ix_password_reset_tokens_user
         ON password_reset_tokens(user_id);
         """,
-                """
+        """
         CREATE TABLE IF NOT EXISTS organization_verifications (
             organization_id TEXT PRIMARY KEY,
             organization_name TEXT NOT NULL,

@@ -22,7 +22,10 @@ def signup(
 ):
     try:
         user = service.signup(
+            username=request.username,
             email=request.email,
+            date_of_birth=request.date_of_birth,
+            gender=request.gender,
             password=request.password,
         )
     except ValueError as exc:
