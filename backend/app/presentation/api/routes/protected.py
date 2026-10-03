@@ -6,6 +6,7 @@ from app.presentation.api.dependencies.authorization import (
     require_organization_access,
     require_role,
 )
+from app.presentation.api.dependencies.authorization import get_current_user
 
 router = APIRouter(
     prefix="/protected",
@@ -34,4 +35,13 @@ def organization_only(
         "message": "Organization access granted",
         "user_id": current_user.user_id,
         "organization_id": current_user.organization_id,
+    }
+
+@router.get("/me")
+def current_user(
+    current_user: UserContext = Depends(get_current_user),
+):
+    return {
+        "message": "Authenticated",
+        "user_id": current_user.user_id,
     }

@@ -50,6 +50,22 @@ def initialize_schema() -> None:
             message TEXT NULL
         );
         """,
+                """
+        CREATE TABLE IF NOT EXISTS revoked_tokens (
+            token_id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            revoked_at TIMESTAMPTZ NOT NULL,
+            expires_at TIMESTAMPTZ NOT NULL
+        );
+        """,
+        """
+        CREATE INDEX IF NOT EXISTS ix_revoked_tokens_user
+        ON revoked_tokens(user_id);
+        """,
+        """
+        CREATE INDEX IF NOT EXISTS ix_revoked_tokens_expires
+        ON revoked_tokens(expires_at);
+        """,
     ]
 
     with get_connection() as connection:

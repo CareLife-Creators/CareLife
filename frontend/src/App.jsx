@@ -6,7 +6,7 @@ import {
   getOrganizationVerification,
 } from './api/organizationVerification'
 import OrganizationApprovalDashboard from './pages/organization/OrganizationApprovalDashboard'
-
+import { logout } from './api/auth'
 const organizationId = 'daycare-1'
 
 function formatDate(value) {
@@ -200,6 +200,12 @@ if (isSignupPage) {
 
           <div className="profile">
             <div className="profile-avatar">OS</div>
+            <button
+  type="button"
+  onClick={logout}
+>
+  Logout
+</button>
 
             <div>
               <strong>Organization Staff</strong>

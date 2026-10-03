@@ -4,17 +4,15 @@ from fastapi import Depends, HTTPException, Request, status
 
 from app.domain.entities.user_context import Role, UserContext
 
+from app.presentation.api.dependencies.authentication import (
+    get_authenticated_user,
+)
 
-def get_current_user(request: Request) -> UserContext:
-    user = getattr(request.state, "user", None)
 
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required",
-        )
-
-    return user
+def get_current_user(
+    current_user: UserContext = Depends(get_authenticated_user),
+) -> UserContext:
+    return current_user
 
 
 def require_role(*allowed_roles: Role) -> Callable:

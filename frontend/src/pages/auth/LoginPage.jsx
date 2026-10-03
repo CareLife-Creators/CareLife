@@ -20,8 +20,11 @@ function LoginPage({ onSignup }) {
         email,
         password,
       })
+      localStorage.setItem('carelife_user', email)
 
-      window.location.hash = ''
+      window.location.hash = '#dashboard'
+      localStorage.setItem('carelife_access_token', data.access_token)
+localStorage.setItem('carelife_user', email)
     } catch (err) {
       setError(
         err instanceof Error
