@@ -2,7 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
-from app.presentation.api.routes.health import router as health_router
+from app.presentation.api.routes.health import (
+    router as health_router,
+)
 from app.presentation.api.routes.protected import (
     router as protected_router,
 )
@@ -11,6 +13,9 @@ from app.presentation.api.routes.password_reset import (
 )
 from app.presentation.api.routes.organization_verification import (
     router as organization_verification_router,
+)
+from app.presentation.api.routes.organization_registration import (
+    router as organization_registration_router,
 )
 from app.presentation.api.routes.signup import (
     router as signup_router,
@@ -41,6 +46,7 @@ app.include_router(health_router)
 app.include_router(protected_router)
 app.include_router(password_reset_router)
 app.include_router(organization_verification_router)
+app.include_router(organization_registration_router)
 app.include_router(signup_router)
 app.include_router(login_router)
 

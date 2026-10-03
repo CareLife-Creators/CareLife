@@ -27,12 +27,11 @@ def initialize_schema() -> None:
         CREATE INDEX IF NOT EXISTS ix_password_reset_tokens_hash
         ON password_reset_tokens(token_hash);
         """,
-
         """
         CREATE INDEX IF NOT EXISTS ix_password_reset_tokens_user
         ON password_reset_tokens(user_id);
         """,
-                """
+        """
         CREATE TABLE IF NOT EXISTS organization_verifications (
             organization_id TEXT PRIMARY KEY,
             organization_name TEXT NOT NULL,
@@ -50,7 +49,7 @@ def initialize_schema() -> None:
             message TEXT NULL
         );
         """,
-                """
+        """
         CREATE TABLE IF NOT EXISTS revoked_tokens (
             token_id TEXT PRIMARY KEY,
             user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -65,6 +64,23 @@ def initialize_schema() -> None:
         """
         CREATE INDEX IF NOT EXISTS ix_revoked_tokens_expires
         ON revoked_tokens(expires_at);
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS organization_registrations (
+            organization_id TEXT PRIMARY KEY,
+            organization_name TEXT NOT NULL,
+            organization_type TEXT NOT NULL,
+            license_number TEXT NOT NULL,
+            license_expiry_date DATE NOT NULL,
+            submitted_by TEXT NOT NULL REFERENCES users(id),
+            status TEXT NOT NULL DEFAULT 'pending' CHECK (
+                status IN ('pending', 'approved', 'rejected', 'expired')
+            ),
+            submitted_at TIMESTAMPTZ NOT NULL,
+            CHECK (CHAR_LENGTH(TRIM(organization_name)) >= 2),
+            CHECK (CHAR_LENGTH(TRIM(organization_type)) >= 2),
+            CHECK (CHAR_LENGTH(TRIM(license_number)) >= 1)
+        );
         """,
     ]
 
