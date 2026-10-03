@@ -11,13 +11,7 @@ class PostgresUserRepository:
         with get_connection() as connection:
             row = connection.execute(
                 """
-                SELECT
-                    id,
-                    username,
-                    email,
-                    date_of_birth,
-                    gender,
-                    password_hash
+                SELECT id, email, password_hash
                 FROM users
                 WHERE LOWER(email) = LOWER(%s)
                 LIMIT 1
@@ -30,11 +24,8 @@ class PostgresUserRepository:
 
         return User(
             id=row[0],
-            username=row[1],
-            email=row[2],
-            date_of_birth=row[3],
-            gender=row[4],
-            password_hash=row[5],
+            email=row[1],
+            password_hash=row[2],
         )
 
     def create(self, user: User) -> User:
@@ -44,20 +35,14 @@ class PostgresUserRepository:
                     """
                     INSERT INTO users (
                         id,
-                        username,
                         email,
-                        date_of_birth,
-                        gender,
                         password_hash
                     )
-                    VALUES (%s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s)
                     """,
                     (
                         user.id,
-                        user.username,
                         user.email,
-                        user.date_of_birth,
-                        user.gender,
                         user.password_hash,
                     ),
                 )

@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
 import './App.css'
+import LoginPage from './pages/auth/LoginPage'
+import SignupPage from './pages/auth/SignupPage'
 import {
   getOrganizationVerification,
 } from './api/organizationVerification'
-import OrganizationApprovalDashboard from './pages/organization/OrganizationApprovalDashboard'
-import LoginPage from './pages/auth/LoginPage'
-import SignupPage from './pages/auth/SignupPage'
 
 const organizationId = 'daycare-1'
 
@@ -33,32 +32,9 @@ function getStatusLabel(status) {
 }
 
 function App() {
-  const [route, setRoute] = useState(() => window.location.hash)
   const [organization, setOrganization] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-
-  const isApprovalDashboard =
-    route === '#organization-approval'
-
-  const isLoginPage = route === '#login'
-  const isSignupPage = route === '#signup'
-
-  useEffect(() => {
-    function handleHashChange() {
-      setRoute(window.location.hash)
-    }
-
-    window.addEventListener('hashchange', handleHashChange)
-
-    return () => {
-      window.removeEventListener('hashchange', handleHashChange)
-    }
-  }, [])
-
-  function navigateTo(nextRoute) {
-    window.location.hash = nextRoute
-  }
 
   async function loadVerificationStatus() {
     try {
@@ -66,91 +42,47 @@ function App() {
       setError('')
 
       const data = await getOrganizationVerification(
-        organizationId,
+        organizationId
       )
 
       setOrganization(data)
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Unable to load verification status',
-      )
+      setError(err.message)
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    if (
-      isApprovalDashboard ||
-      isLoginPage ||
-      isSignupPage
-    ) {
-      return undefined
-    }
-
-    let cancelled = false
-
-    getOrganizationVerification(organizationId)
-      .then((data) => {
-        if (cancelled) {
-          return
-        }
-
-        setOrganization(data)
-        setError('')
-      })
-      .catch((err) => {
-        if (cancelled) {
-          return
-        }
-
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'Unable to load verification status',
-        )
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setLoading(false)
-        }
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [
-    isApprovalDashboard,
-    isLoginPage,
-    isSignupPage,
-  ])
-
-  if (isLoginPage) {
-    return (
-      <LoginPage
-        onSignup={() => navigateTo('#signup')}
-      />
-    )
-  }
-
-  if (isSignupPage) {
-    return (
-      <SignupPage
-        onLogin={() => navigateTo('#login')}
-      />
-    )
-  }
-
-  if (isApprovalDashboard) {
-    return <OrganizationApprovalDashboard />
-  }
+    loadVerificationStatus()
+  }, [])
 
   const status = organization?.status || 'pending'
-  const statusLabel = getStatusLabel(status)
+const statusLabel = getStatusLabel(status)
+const isLoginPage = window.location.hash === '#login'
+const isSignupPage = window.location.hash === '#signup'
 
+if (isLoginPage) {
   return (
+    <LoginPage
+      onSignup={() => {
+        window.location.href = '#signup'
+        window.location.reload()
+      }}
+    />
+  )
+}
+
+if (isSignupPage) {
+  return (
+    <SignupPage
+      onLogin={() => {
+        window.location.href = '#login'
+        window.location.reload()
+      }}
+    />
+  )
+}return (
     <div className="app-layout">
       <aside className="sidebar">
         <div className="brand">
@@ -187,15 +119,11 @@ function App() {
         <div className="sidebar-bottom">
           <div className="help-box">
             <strong>Need help?</strong>
-
             <p>
               Contact CareLife support if you have questions
               about your verification.
             </p>
-
-            <button type="button">
-              Contact Support
-            </button>
+            <button type="button">Contact Support</button>
           </div>
         </div>
       </aside>
@@ -206,7 +134,6 @@ function App() {
             <p className="breadcrumb">
               Organization / Verification
             </p>
-
             <h2>Verification Status</h2>
           </div>
 
@@ -226,10 +153,7 @@ function App() {
               <div className="notice-icon">i</div>
 
               <div>
-                <strong>
-                  Loading verification status
-                </strong>
-
+                <strong>Loading verification status</strong>
                 <p>
                   CareLife is retrieving the latest saved
                   verification information.
@@ -243,10 +167,7 @@ function App() {
               <div className="notice-icon">!</div>
 
               <div>
-                <strong>
-                  Unable to load verification status
-                </strong>
-
+                <strong>Unable to load verification status</strong>
                 <p>{error}</p>
               </div>
             </div>
@@ -259,14 +180,8 @@ function App() {
                   <span className="section-label">
                     ORGANIZATION VERIFICATION
                   </span>
-
-                  <h3>
-                    {organization.organization_name}
-                  </h3>
-
-                  <p>
-                    {organization.organization_type}
-                  </p>
+                  <h3>{organization.organization_name}</h3>
+                  <p>{organization.organization_type}</p>
                 </div>
 
                 <button
@@ -314,7 +229,6 @@ function App() {
                       <span className="section-label">
                         VERIFICATION DETAILS
                       </span>
-
                       <h4>Application Information</h4>
                     </div>
                   </div>
@@ -322,27 +236,24 @@ function App() {
                   <div className="details-grid">
                     <div className="detail-item">
                       <span>Submitted Date</span>
-
                       <strong>
                         {formatDate(
-                          organization.submitted_at,
+                          organization.submitted_at
                         )}
                       </strong>
                     </div>
 
                     <div className="detail-item">
                       <span>Last Updated</span>
-
                       <strong>
                         {formatDate(
-                          organization.updated_at,
+                          organization.updated_at
                         )}
                       </strong>
                     </div>
 
                     <div className="detail-item">
                       <span>Organization Type</span>
-
                       <strong>
                         {organization.organization_type}
                       </strong>
@@ -350,7 +261,6 @@ function App() {
 
                     <div className="detail-item">
                       <span>Verification Status</span>
-
                       <strong>{statusLabel}</strong>
                     </div>
                   </div>
@@ -362,25 +272,19 @@ function App() {
                       <span className="section-label">
                         VERIFICATION PROGRESS
                       </span>
-
                       <h4>Application Timeline</h4>
                     </div>
                   </div>
 
                   <div className="timeline">
                     <div className="timeline-item completed">
-                      <div className="timeline-dot">
-                        ✓
-                      </div>
+                      <div className="timeline-dot">✓</div>
 
                       <div>
-                        <strong>
-                          Application Submitted
-                        </strong>
-
+                        <strong>Application Submitted</strong>
                         <span>
                           {formatDate(
-                            organization.submitted_at,
+                            organization.submitted_at
                           )}
                         </span>
                       </div>
@@ -401,7 +305,6 @@ function App() {
 
                       <div>
                         <strong>Under Review</strong>
-
                         <span>
                           {status === 'pending'
                             ? 'Currently being reviewed'
@@ -429,7 +332,6 @@ function App() {
                         <strong>
                           Verification Decision
                         </strong>
-
                         <span>
                           {status === 'pending'
                             ? 'Waiting for administration review'
@@ -449,7 +351,6 @@ function App() {
                     Keep your organization information up to
                     date
                   </strong>
-
                   <p>
                     Verification decisions are based on the
                     information submitted by your

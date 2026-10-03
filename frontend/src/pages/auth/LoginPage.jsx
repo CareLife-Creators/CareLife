@@ -1,37 +1,14 @@
 import { useState } from 'react'
-import { login } from '../../api/auth'
 import './Auth.css'
 
 function LoginPage({ onSignup }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  async function handleSubmit(event) {
-    event.preventDefault()
-
-    setError('')
-    setIsSubmitting(true)
-
-    try {
-      const data = await login({
-        email,
-        password,
-      })
-
-      console.log('Login successful', data)
-
-      alert('Login successful')
-
-      window.location.hash = '#dashboard'
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
+ function handleSubmit(event) {
+  event.preventDefault()
+}
 
   return (
     <main className="auth-page">
@@ -51,26 +28,16 @@ function LoginPage({ onSignup }) {
             organization.
           </p>
 
-          {error && (
-            <div className="auth-message auth-message-error">
-              {error}
-            </div>
-          )}
-
           <form className="auth-form" onSubmit={handleSubmit}>
             <div className="form-field">
-              <label htmlFor="login-email">
-                Email address
-              </label>
+              <label htmlFor="email">Email address</label>
 
               <input
-                id="login-email"
+                id="email"
                 name="email"
                 type="email"
                 value={email}
-                onChange={(event) =>
-                  setEmail(event.target.value)
-                }
+                onChange={(event) => setEmail(event.target.value)}
                 placeholder="you@example.com"
                 required
               />
@@ -78,16 +45,12 @@ function LoginPage({ onSignup }) {
 
             <div className="form-field">
               <div className="password-label-row">
-                <label htmlFor="login-password">
-                  Password
-                </label>
+                <label htmlFor="password">Password</label>
 
                 <button
                   type="button"
                   className="forgot-password"
-                  onClick={() =>
-                    console.log('Forgot password')
-                  }
+                  onClick={() => console.log('Forgot password')}
                 >
                   Forgot password?
                 </button>
@@ -95,19 +58,12 @@ function LoginPage({ onSignup }) {
 
               <div className="password-input">
                 <input
-                  id="login-password"
+                  id="password"
                   name="password"
-                  type={
-                    showPassword
-                      ? 'text'
-                      : 'password'
-                  }
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
-                  onChange={(event) =>
-                    setPassword(event.target.value)
-                  }
+                  onChange={(event) => setPassword(event.target.value)}
                   placeholder="Enter your password"
-                  minLength={8}
                   required
                 />
 
@@ -115,14 +71,10 @@ function LoginPage({ onSignup }) {
                   type="button"
                   className="password-toggle"
                   onClick={() =>
-                    setShowPassword(
-                      (current) => !current
-                    )
+                    setShowPassword((current) => !current)
                   }
                   aria-label={
-                    showPassword
-                      ? 'Hide password'
-                      : 'Show password'
+                    showPassword ? 'Hide password' : 'Show password'
                   }
                 >
                   {showPassword ? 'Hide' : 'Show'}
@@ -130,23 +82,14 @@ function LoginPage({ onSignup }) {
               </div>
             </div>
 
-            <button
-              type="submit"
-              className="auth-submit"
-              disabled={isSubmitting}
-            >
-              {isSubmitting
-                ? 'Signing in...'
-                : 'Sign in'}
+            <button type="submit" className="auth-submit">
+              Sign in
             </button>
           </form>
 
           <p className="auth-switch">
             Don't have an account?{' '}
-            <button
-              type="button"
-              onClick={onSignup}
-            >
+            <button type="button" onClick={onSignup}>
               Create an account
             </button>
           </p>

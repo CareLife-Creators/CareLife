@@ -1,4 +1,3 @@
-from datetime import date
 from uuid import uuid4
 
 from app.application.interfaces.user import UserRepository
@@ -15,14 +14,10 @@ class SignupService:
 
     def signup(
         self,
-        username: str,
         email: str,
-        date_of_birth: date,
-        gender: str,
         password: str,
     ) -> User:
         normalized_email = email.strip().lower()
-        normalized_username = username.strip()
 
         existing_user = self.repository.get_by_email(
             normalized_email
@@ -35,10 +30,7 @@ class SignupService:
 
         user = User(
             id=str(uuid4()),
-            username=normalized_username,
             email=normalized_email,
-            date_of_birth=date_of_birth,
-            gender=gender,
             password_hash=hash_password(password),
         )
 
