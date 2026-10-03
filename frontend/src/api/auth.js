@@ -65,3 +65,25 @@ export async function login({ email, password }) {
 
   return data
 }
+
+export async function logout() {
+  const token = localStorage.getItem('carelife_access_token')
+
+  if (token) {
+    const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error('Logout failed')
+    }
+  }
+
+  localStorage.removeItem('carelife_access_token')
+  localStorage.removeItem('carelife_user')
+
+  window.location.hash = '#login'
+}
