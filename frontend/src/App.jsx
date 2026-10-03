@@ -5,6 +5,7 @@ import SignupPage from './pages/auth/SignupPage'
 import {
   getOrganizationVerification,
 } from './api/organizationVerification'
+import OrganizationApprovalDashboard from './pages/organization/OrganizationApprovalDashboard'
 
 const organizationId = 'daycare-1'
 
@@ -36,6 +37,9 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+  const isApprovalDashboard =
+    window.location.hash === '#organization-approval'
+
   async function loadVerificationStatus() {
     try {
       setLoading(true)
@@ -47,15 +51,57 @@ function App() {
 
       setOrganization(data)
     } catch (err) {
-      setError(err.message)
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Unable to load verification status'
+      )
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    loadVerificationStatus()
-  }, [])
+    if (isApprovalDashboard) {
+      return undefined
+    }
+
+    let cancelled = false
+
+    getOrganizationVerification(organizationId)
+      .then((data) => {
+        if (cancelled) {
+          return
+        }
+
+        setOrganization(data)
+        setError('')
+      })
+      .catch((err) => {
+        if (cancelled) {
+          return
+        }
+
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Unable to load verification status'
+        )
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [isApprovalDashboard])
+
+  if (isApprovalDashboard) {
+    return <OrganizationApprovalDashboard />
+  }
 
   const status = organization?.status || 'pending'
 const statusLabel = getStatusLabel(status)
@@ -119,10 +165,12 @@ if (isSignupPage) {
         <div className="sidebar-bottom">
           <div className="help-box">
             <strong>Need help?</strong>
+
             <p>
               Contact CareLife support if you have questions
               about your verification.
             </p>
+
             <button type="button">Contact Support</button>
           </div>
         </div>
@@ -134,6 +182,7 @@ if (isSignupPage) {
             <p className="breadcrumb">
               Organization / Verification
             </p>
+
             <h2>Verification Status</h2>
           </div>
 
@@ -153,7 +202,10 @@ if (isSignupPage) {
               <div className="notice-icon">i</div>
 
               <div>
-                <strong>Loading verification status</strong>
+                <strong>
+                  Loading verification status
+                </strong>
+
                 <p>
                   CareLife is retrieving the latest saved
                   verification information.
@@ -167,7 +219,10 @@ if (isSignupPage) {
               <div className="notice-icon">!</div>
 
               <div>
-                <strong>Unable to load verification status</strong>
+                <strong>
+                  Unable to load verification status
+                </strong>
+
                 <p>{error}</p>
               </div>
             </div>
@@ -180,7 +235,9 @@ if (isSignupPage) {
                   <span className="section-label">
                     ORGANIZATION VERIFICATION
                   </span>
+
                   <h3>{organization.organization_name}</h3>
+
                   <p>{organization.organization_type}</p>
                 </div>
 
@@ -229,6 +286,7 @@ if (isSignupPage) {
                       <span className="section-label">
                         VERIFICATION DETAILS
                       </span>
+
                       <h4>Application Information</h4>
                     </div>
                   </div>
@@ -236,6 +294,7 @@ if (isSignupPage) {
                   <div className="details-grid">
                     <div className="detail-item">
                       <span>Submitted Date</span>
+
                       <strong>
                         {formatDate(
                           organization.submitted_at
@@ -245,6 +304,7 @@ if (isSignupPage) {
 
                     <div className="detail-item">
                       <span>Last Updated</span>
+
                       <strong>
                         {formatDate(
                           organization.updated_at
@@ -254,6 +314,7 @@ if (isSignupPage) {
 
                     <div className="detail-item">
                       <span>Organization Type</span>
+
                       <strong>
                         {organization.organization_type}
                       </strong>
@@ -261,6 +322,7 @@ if (isSignupPage) {
 
                     <div className="detail-item">
                       <span>Verification Status</span>
+
                       <strong>{statusLabel}</strong>
                     </div>
                   </div>
@@ -272,16 +334,22 @@ if (isSignupPage) {
                       <span className="section-label">
                         VERIFICATION PROGRESS
                       </span>
+
                       <h4>Application Timeline</h4>
                     </div>
                   </div>
 
                   <div className="timeline">
                     <div className="timeline-item completed">
-                      <div className="timeline-dot">✓</div>
+                      <div className="timeline-dot">
+                        ✓
+                      </div>
 
                       <div>
-                        <strong>Application Submitted</strong>
+                        <strong>
+                          Application Submitted
+                        </strong>
+
                         <span>
                           {formatDate(
                             organization.submitted_at
@@ -305,6 +373,7 @@ if (isSignupPage) {
 
                       <div>
                         <strong>Under Review</strong>
+
                         <span>
                           {status === 'pending'
                             ? 'Currently being reviewed'
@@ -332,6 +401,7 @@ if (isSignupPage) {
                         <strong>
                           Verification Decision
                         </strong>
+
                         <span>
                           {status === 'pending'
                             ? 'Waiting for administration review'
@@ -351,6 +421,7 @@ if (isSignupPage) {
                     Keep your organization information up to
                     date
                   </strong>
+
                   <p>
                     Verification decisions are based on the
                     information submitted by your
