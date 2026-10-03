@@ -17,13 +17,20 @@ function SignupPage({ onLogin }) {
     setIsSubmitting(true)
 
     try {
-      const data = await signup(email, password)
+      const data = await signup({
+        email,
+        password,
+      })
 
       setSuccess(data.message)
       setEmail('')
       setPassword('')
     } catch (err) {
-      setError(err.message)
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Unable to create account'
+      )
     } finally {
       setIsSubmitting(false)
     }
@@ -58,30 +65,41 @@ function SignupPage({ onLogin }) {
             </div>
           )}
 
-          <form className="auth-form" onSubmit={handleSubmit}>
+          <form
+            className="auth-form"
+            onSubmit={handleSubmit}
+          >
             <div className="form-field">
-              <label htmlFor="signup-email">Email address</label>
+              <label htmlFor="signup-email">
+                Email address
+              </label>
 
               <input
                 id="signup-email"
                 name="email"
                 type="email"
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                onChange={(event) =>
+                  setEmail(event.target.value)
+                }
                 placeholder="you@example.com"
                 required
               />
             </div>
 
             <div className="form-field">
-              <label htmlFor="signup-password">Password</label>
+              <label htmlFor="signup-password">
+                Password
+              </label>
 
               <input
                 id="signup-password"
                 name="password"
                 type="password"
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                onChange={(event) =>
+                  setPassword(event.target.value)
+                }
                 placeholder="At least 8 characters"
                 minLength={8}
                 required
@@ -97,13 +115,18 @@ function SignupPage({ onLogin }) {
               className="auth-submit"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Creating account...' : 'Create account'}
+              {isSubmitting
+                ? 'Creating account...'
+                : 'Create account'}
             </button>
           </form>
 
           <p className="auth-switch">
             Already have an account?{' '}
-            <button type="button" onClick={onLogin}>
+            <button
+              type="button"
+              onClick={onLogin}
+            >
               Sign in
             </button>
           </p>
