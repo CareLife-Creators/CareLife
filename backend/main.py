@@ -39,3 +39,5 @@ app.include_router(organization_verification_router)
 @app.get("/")
 def root():
     return {"message": "CareLife API is running"}
+from app.presentation.api.routes.login import router as login_router
+app.include_router(login_router)
