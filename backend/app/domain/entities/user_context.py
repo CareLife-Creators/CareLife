@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Role(str, Enum):
@@ -18,3 +18,4 @@ class UserContext(BaseModel):
     user_id: str
     role: Role
     organization_id: str | None = None
+    organization_ids: list[str] = Field(default_factory=list)

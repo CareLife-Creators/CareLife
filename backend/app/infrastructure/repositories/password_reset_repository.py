@@ -1,19 +1,25 @@
 from datetime import datetime
 
-from app.domain.entities.password_reset_token import PasswordResetToken
+from app.domain.entities.password_reset_token import (
+    PasswordResetToken,
+)
 from app.infrastructure.database.connection import get_connection
-from app.infrastructure.database.schema import initialize_schema
 
 
 class PostgresPasswordResetRepository:
-    def __init__(self):
-        initialize_schema()
 
-    def get_user_by_email(self, email: str) -> dict | None:
+    def get_user_by_email(
+        self,
+        email: str,
+    ) -> dict | None:
+
         with get_connection() as connection:
             row = connection.execute(
                 """
-                SELECT id, email, password_hash
+                SELECT
+                    id,
+                    email,
+                    password_hash
                 FROM users
                 WHERE LOWER(email) = LOWER(%s)
                 LIMIT 1
@@ -30,14 +36,19 @@ class PostgresPasswordResetRepository:
             "password_hash": row[2],
         }
 
-    def create_token(self, token: PasswordResetToken) -> None:
+    def create_token(
+        self,
+        token: PasswordResetToken,
+    ) -> None:
+
         with get_connection() as connection:
             with connection.transaction():
+
                 connection.execute(
                     """
                     DELETE FROM password_reset_tokens
                     WHERE user_id = %s
-                    AND used_at IS NULL
+                      AND used_at IS NULL
                     """,
                     (token.user_id,),
                 )
@@ -50,7 +61,12 @@ class PostgresPasswordResetRepository:
                         expires_at,
                         used_at
                     )
-                    VALUES (%s, %s, %s, %s)
+                    VALUES (
+                        %s,
+                        %s,
+                        %s,
+                        %s
+                    )
                     """,
                     (
                         token.user_id,
@@ -66,18 +82,25 @@ class PostgresPasswordResetRepository:
         password_hash: str,
         now: datetime,
     ) -> bool:
+
         with get_connection() as connection:
             with connection.transaction():
+
                 row = connection.execute(
                     """
-                    SELECT id, user_id
+                    SELECT
+                        id,
+                        user_id
                     FROM password_reset_tokens
                     WHERE token_hash = %s
                       AND used_at IS NULL
                       AND expires_at > %s
                     FOR UPDATE
                     """,
-                    (token_hash, now),
+                    (
+                        token_hash,
+                        now,
+                    ),
                 ).fetchone()
 
                 if row is None:
@@ -89,10 +112,17 @@ class PostgresPasswordResetRepository:
                 user_result = connection.execute(
                     """
                     UPDATE users
-                    SET password_hash = %s
+                    SET
+                        password_hash = %s,
+                        updated_at = CURRENT_TIMESTAMP,
+                        updated_by = %s
                     WHERE id = %s
                     """,
-                    (password_hash, user_id),
+                    (
+                        password_hash,
+                        user_id,
+                        user_id,
+                    ),
                 )
 
                 if user_result.rowcount != 1:
@@ -105,7 +135,10 @@ class PostgresPasswordResetRepository:
                     WHERE id = %s
                       AND used_at IS NULL
                     """,
-                    (now, token_id),
+                    (
+                        now,
+                        token_id,
+                    ),
                 )
 
                 if token_result.rowcount != 1:

@@ -1,16 +1,19 @@
 ﻿from fastapi import APIRouter, Depends, status
 
-from app.application.schemas.organization_registration import (
+from app.application.schemas.organization import (
     OrganizationRegistrationRequest,
 )
 from app.application.use_cases.organization_registration import (
     OrganizationRegistrationService,
 )
 from app.domain.entities.user_context import Role, UserContext
-from app.presentation.api.dependencies.authorization import require_role
-from app.presentation.api.dependencies.organization_registration import (
+from app.presentation.api.dependencies.authorization import (
+    require_role,
+)
+from app.presentation.api.dependencies.organization import (
     get_organization_registration_service,
 )
+
 
 router = APIRouter(
     prefix="/organizations",

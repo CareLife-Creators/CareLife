@@ -6,9 +6,7 @@ from sqlalchemy import engine_from_config, pool
 from app.core.config import get_settings
 from app.infrastructure.models import Base
 
-import app.infrastructure.models.organization_verification
-import app.infrastructure.models.password_reset_token
-import app.infrastructure.models.user
+import app.infrastructure.models
 
 
 config = context.config
