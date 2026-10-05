@@ -32,6 +32,7 @@ class SignupService:
             id=str(uuid4()),
             email=normalized_email,
             password_hash=hash_password(password),
+            role_name="parent_guardian",
         )
 
         return self.repository.create(user)

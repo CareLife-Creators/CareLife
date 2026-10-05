@@ -6,9 +6,12 @@ from pydantic import BaseModel
 
 class RegistrationStatus(str, Enum):
     PENDING = "pending"
-    APPROVED = "approved"
+    UNDER_REVIEW = "under_review"
+    VERIFIED = "verified"
     REJECTED = "rejected"
+    NEEDS_CORRECTION = "needs_correction"
     EXPIRED = "expired"
+    SUSPENDED = "suspended"
 
 
 class OrganizationRegistration(BaseModel):

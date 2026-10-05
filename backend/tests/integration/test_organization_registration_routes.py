@@ -1,4 +1,3 @@
-
 import unittest
 from datetime import date, timedelta
 from unittest.mock import Mock
@@ -12,22 +11,26 @@ from app.domain.entities.user_context import Role, UserContext
 from app.presentation.api.dependencies.authorization import (
     get_current_user,
 )
-from app.presentation.api.dependencies.organization_registration import (
+from app.presentation.api.dependencies.organization import (
     get_organization_registration_service,
 )
 from main import app
 
 
 class OrganizationRegistrationRouteTests(unittest.TestCase):
+
     def setUp(self):
         self.service = Mock(spec=OrganizationRegistrationService)
+
         self.service.register.side_effect = (
             lambda request, submitted_by: {
                 "organization_id": "registration-1",
                 "organization_name": request.organization_name,
                 "organization_type": request.organization_type,
                 "license_number": request.license_number,
-                "license_expiry_date": request.license_expiry_date.isoformat(),
+                "license_expiry_date": (
+                    request.license_expiry_date.isoformat()
+                ),
                 "submitted_by": submitted_by,
                 "status": "pending",
                 "submitted_at": "2026-10-03T00:00:00+00:00",
@@ -42,7 +45,7 @@ class OrganizationRegistrationRouteTests(unittest.TestCase):
 
         self.valid_payload = {
             "organization_name": "Sunshine Daycare Center",
-            "organization_type": "Daycare Organization",
+            "organization_type": "daycare",
             "license_number": "LIC-2026-001",
             "license_expiry_date": (
                 date.today() + timedelta(days=30)
@@ -57,6 +60,7 @@ class OrganizationRegistrationRouteTests(unittest.TestCase):
             "/organizations/register",
             json=self.valid_payload,
         )
+
         self.assertEqual(response.status_code, 401)
         self.service.register.assert_not_called()
 
@@ -66,6 +70,7 @@ class OrganizationRegistrationRouteTests(unittest.TestCase):
             role=Role.DAYCARE_STAFF,
             organization_id=None,
         )
+
         app.dependency_overrides[get_current_user] = (
             lambda: staff_user
         )
@@ -76,8 +81,19 @@ class OrganizationRegistrationRouteTests(unittest.TestCase):
         )
 
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.json()["status"], "pending")
-        self.assertEqual(response.json()["submitted_by"], "staff-1")
+        self.assertEqual(
+            response.json()["status"],
+            "pending",
+        )
+        self.assertEqual(
+            response.json()["submitted_by"],
+            "staff-1",
+        )
+        self.assertEqual(
+            response.json()["organization_type"],
+            "daycare",
+        )
+
         self.service.register.assert_called_once()
 
     def test_invalid_payload_is_rejected(self):
@@ -86,6 +102,7 @@ class OrganizationRegistrationRouteTests(unittest.TestCase):
             role=Role.DAYCARE_STAFF,
             organization_id=None,
         )
+
         app.dependency_overrides[get_current_user] = (
             lambda: staff_user
         )
@@ -109,6 +126,7 @@ class OrganizationRegistrationRouteTests(unittest.TestCase):
             role=Role.PARENT_GUARDIAN,
             organization_id=None,
         )
+
         app.dependency_overrides[get_current_user] = (
             lambda: parent_user
         )
