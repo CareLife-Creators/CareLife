@@ -1,10 +1,10 @@
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 
 from pydantic import BaseModel
 
 
-class VerificationStatus(str, Enum):
+class OrganizationStatus(str, Enum):
     PENDING = "pending"
     UNDER_REVIEW = "under_review"
     VERIFIED = "verified"
@@ -14,11 +14,19 @@ class VerificationStatus(str, Enum):
     SUSPENDED = "suspended"
 
 
-class OrganizationVerification(BaseModel):
+class Organization(BaseModel):
     organization_id: str
     organization_name: str
     organization_type: str
-    status: VerificationStatus
+
+    license_number: str
+    license_expiry_date: date
+
+    submitted_by: str
+
+    status: OrganizationStatus
+
     submitted_at: datetime
     updated_at: datetime
+
     message: str | None = None

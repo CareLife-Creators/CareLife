@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.application.schemas.organization_verification import (
+from app.application.schemas.organization import (
     OrganizationVerificationDecisionRequest,
     OrganizationVerificationResponse,
 )
@@ -12,7 +12,7 @@ from app.presentation.api.dependencies.authorization import (
     require_organization_access,
     require_role,
 )
-from app.presentation.api.dependencies.organization_verification import (
+from app.presentation.api.dependencies.organization import (
     get_organization_verification_service,
 )
 
@@ -44,7 +44,7 @@ def get_pending_organizations(
 )
 def approve_organization(
     organization_id: str,
-    _current_user: UserContext = Depends(
+    current_user: UserContext = Depends(
         require_role(Role.CARELIFE_ADMIN)
     ),
     service: OrganizationVerificationService = Depends(
@@ -52,7 +52,10 @@ def approve_organization(
     ),
 ):
     try:
-        return service.approve(organization_id)
+        return service.approve(
+            organization_id,
+            current_user.user_id,
+        )
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -67,7 +70,7 @@ def approve_organization(
 def reject_organization(
     organization_id: str,
     request: OrganizationVerificationDecisionRequest,
-    _current_user: UserContext = Depends(
+    current_user: UserContext = Depends(
         require_role(Role.CARELIFE_ADMIN)
     ),
     service: OrganizationVerificationService = Depends(
@@ -77,6 +80,7 @@ def reject_organization(
     try:
         return service.reject(
             organization_id,
+            current_user.user_id,
             request.message,
         )
     except ValueError as exc:
@@ -100,7 +104,9 @@ def get_verification_status(
     ),
 ):
     try:
-        return service.get_status(organization_id)
+        return service.get_status(
+            organization_id
+        )
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

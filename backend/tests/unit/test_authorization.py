@@ -11,6 +11,7 @@ from app.presentation.api.dependencies.authorization import (
 
 
 class AuthorizationTests(unittest.TestCase):
+
     def test_user_with_wrong_role_is_rejected(self):
         user = UserContext(
             user_id="user-1",
@@ -66,19 +67,12 @@ class AuthorizationTests(unittest.TestCase):
         self.assertEqual(result, user)
 
     def test_missing_authenticated_user_is_rejected(self):
-        from starlette.requests import Request
-
-        scope = {
-            "type": "http",
-            "method": "GET",
-            "path": "/",
-            "headers": [],
-        }
-
-        request = Request(scope)
+        from app.presentation.api.dependencies.authentication import (
+            get_bearer_token,
+        )
 
         with self.assertRaises(HTTPException) as context:
-            get_current_user(request)
+            get_bearer_token(None)
 
         self.assertEqual(context.exception.status_code, 401)
 
