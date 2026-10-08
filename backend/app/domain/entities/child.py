@@ -16,6 +16,11 @@ class OutcomeStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
+class ContactType(str, Enum):
+    EMERGENCY = "emergency"
+    PICKUP = "pickup"
+
+
 class Child(BaseModel):
     id: str
     parent_id: str | None
@@ -29,3 +34,29 @@ class Child(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+
+class ChildContact(BaseModel):
+    id: str
+    child_id: str
+    contact_type: ContactType
+    full_name: str
+    relationship_to_child: str
+    phone: str
+    email: str | None
+    address: str | None
+    created_by: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class OrphanageOutcome(BaseModel):
+    id: str
+    child_id: str
+    organization_id: str
+    outcome_type: OutcomeType
+    outcome_status: OutcomeStatus
+    outcome_date: date
+    notes: str | None
+    created_by: str
+    created_at: datetime
+    updated_at: datetime

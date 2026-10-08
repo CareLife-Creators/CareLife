@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.application.schemas.child import (
+    ChildContactRequest,
+    ChildContactResponse,
     ChildCreateRequest,
     ChildResponse,
     ChildUpdateRequest,
@@ -28,7 +30,24 @@ def child_response(child) -> ChildResponse:
         gender=child.gender,
         allergies=child.allergies,
         medical_notes=child.medical_notes,
+        parent_id=child.parent_id,
         orphanage_organization_id=child.orphanage_organization_id,
+        daycare_organization_id=child.daycare_organization_id,
+    )
+
+
+def contact_response(contact) -> ChildContactResponse:
+    return ChildContactResponse(
+        id=contact.id,
+        child_id=contact.child_id,
+        contact_type=contact.contact_type,
+        full_name=contact.full_name,
+        relationship_to_child=contact.relationship_to_child,
+        phone=contact.phone,
+        email=contact.email,
+        address=contact.address,
+        created_at=contact.created_at.isoformat(),
+        updated_at=contact.updated_at.isoformat(),
     )
 
 
@@ -47,6 +66,256 @@ def outcome_response(outcome) -> OutcomeResponse:
     )
 
 
+# ============================================================
+# CAR-113 DAYCARE CHILD PROFILE ROUTES
+# Keep these BEFORE /{child_id} routes.
+# ============================================================
+
+@router.post(
+    "/daycare",
+    response_model=ChildResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_daycare_child(
+    request: ChildCreateRequest,
+    current_user: UserContext = Depends(
+        require_role(Role.PARENT_GUARDIAN)
+    ),
+    service: ChildService = Depends(get_child_service),
+):
+    try:
+        child = service.create_daycare_child(
+            current_user,
+            request,
+        )
+        return child_response(child)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    except PermissionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
+
+
+@router.get(
+    "/daycare",
+    response_model=list[ChildResponse],
+)
+def list_daycare_children(
+    current_user: UserContext = Depends(
+        require_role(Role.PARENT_GUARDIAN)
+    ),
+    service: ChildService = Depends(get_child_service),
+):
+    try:
+        children = service.list_daycare_children(current_user)
+        return [child_response(child) for child in children]
+    except PermissionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
+
+
+@router.get(
+    "/daycare/{child_id}",
+    response_model=ChildResponse,
+)
+def get_daycare_child(
+    child_id: str,
+    current_user: UserContext = Depends(
+        require_role(Role.PARENT_GUARDIAN)
+    ),
+    service: ChildService = Depends(get_child_service),
+):
+    try:
+        child = service.get_daycare_child(
+            current_user,
+            child_id,
+        )
+        return child_response(child)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except PermissionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
+
+
+@router.put(
+    "/daycare/{child_id}",
+    response_model=ChildResponse,
+)
+def update_daycare_child(
+    child_id: str,
+    request: ChildUpdateRequest,
+    current_user: UserContext = Depends(
+        require_role(Role.PARENT_GUARDIAN)
+    ),
+    service: ChildService = Depends(get_child_service),
+):
+    try:
+        child = service.update_daycare_child(
+            current_user,
+            child_id,
+            request,
+        )
+        return child_response(child)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except PermissionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
+
+
+@router.post(
+    "/daycare/{child_id}/emergency-contacts",
+    response_model=ChildContactResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def add_emergency_contact(
+    child_id: str,
+    request: ChildContactRequest,
+    current_user: UserContext = Depends(
+        require_role(Role.PARENT_GUARDIAN)
+    ),
+    service: ChildService = Depends(get_child_service),
+):
+    try:
+        contact = service.add_emergency_contact(
+            current_user,
+            child_id,
+            request,
+        )
+        return contact_response(contact)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except PermissionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
+
+
+@router.get(
+    "/daycare/{child_id}/emergency-contacts",
+    response_model=list[ChildContactResponse],
+)
+def list_emergency_contacts(
+    child_id: str,
+    current_user: UserContext = Depends(
+        require_role(Role.PARENT_GUARDIAN)
+    ),
+    service: ChildService = Depends(get_child_service),
+):
+    try:
+        contacts = service.list_emergency_contacts(
+            current_user,
+            child_id,
+        )
+        return [
+            contact_response(contact)
+            for contact in contacts
+        ]
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except PermissionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
+
+
+@router.post(
+    "/daycare/{child_id}/pickup-persons",
+    response_model=ChildContactResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def add_pickup_person(
+    child_id: str,
+    request: ChildContactRequest,
+    current_user: UserContext = Depends(
+        require_role(Role.PARENT_GUARDIAN)
+    ),
+    service: ChildService = Depends(get_child_service),
+):
+    try:
+        contact = service.add_pickup_person(
+            current_user,
+            child_id,
+            request,
+        )
+        return contact_response(contact)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except PermissionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
+
+
+@router.get(
+    "/daycare/{child_id}/pickup-persons",
+    response_model=list[ChildContactResponse],
+)
+def list_pickup_persons(
+    child_id: str,
+    current_user: UserContext = Depends(
+        require_role(
+            Role.PARENT_GUARDIAN,
+            Role.DAYCARE_STAFF,
+        )
+    ),
+    service: ChildService = Depends(get_child_service),
+):
+    try:
+        contacts = service.list_pickup_persons(
+            current_user,
+            child_id,
+        )
+        return [
+            contact_response(contact)
+            for contact in contacts
+        ]
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except PermissionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        ) from exc
+
+
+# ============================================================
+# Existing CAR-55 / CAR-57 ORPHANAGE ROUTES
+# ============================================================
+
 @router.post(
     "/orphanages/{organization_id}/children",
     response_model=ChildResponse,
@@ -62,7 +331,11 @@ def create_child(
 ):
     try:
         return child_response(
-            service.create(current_user, organization_id, request)
+            service.create(
+                current_user,
+                organization_id,
+                request,
+            )
         )
     except ValueError as exc:
         raise HTTPException(
@@ -88,8 +361,14 @@ def list_children(
     service: ChildService = Depends(get_child_service),
 ):
     try:
-        children = service.list_children(current_user, organization_id)
-        return [child_response(child) for child in children]
+        children = service.list_children(
+            current_user,
+            organization_id,
+        )
+        return [
+            child_response(child)
+            for child in children
+        ]
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -109,12 +388,20 @@ def list_children(
 def get_child(
     child_id: str,
     current_user: UserContext = Depends(
-        require_role(Role.ORPHANAGE_STAFF, Role.CARELIFE_ADMIN)
+        require_role(
+            Role.ORPHANAGE_STAFF,
+            Role.CARELIFE_ADMIN,
+        )
     ),
     service: ChildService = Depends(get_child_service),
 ):
     try:
-        return child_response(service.get(current_user, child_id))
+        return child_response(
+            service.get(
+                current_user,
+                child_id,
+            )
+        )
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -135,13 +422,20 @@ def update_child(
     child_id: str,
     request: ChildUpdateRequest,
     current_user: UserContext = Depends(
-        require_role(Role.ORPHANAGE_STAFF, Role.CARELIFE_ADMIN)
+        require_role(
+            Role.ORPHANAGE_STAFF,
+            Role.CARELIFE_ADMIN,
+        )
     ),
     service: ChildService = Depends(get_child_service),
 ):
     try:
         return child_response(
-            service.update(current_user, child_id, request)
+            service.update(
+                current_user,
+                child_id,
+                request,
+            )
         )
     except ValueError as exc:
         raise HTTPException(
@@ -162,12 +456,18 @@ def update_child(
 def delete_child(
     child_id: str,
     current_user: UserContext = Depends(
-        require_role(Role.ORPHANAGE_STAFF, Role.CARELIFE_ADMIN)
+        require_role(
+            Role.ORPHANAGE_STAFF,
+            Role.CARELIFE_ADMIN,
+        )
     ),
     service: ChildService = Depends(get_child_service),
 ):
     try:
-        service.delete(current_user, child_id)
+        service.delete(
+            current_user,
+            child_id,
+        )
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -195,7 +495,11 @@ def create_outcome(
 ):
     try:
         return outcome_response(
-            service.create_outcome(current_user, child_id, request)
+            service.create_outcome(
+                current_user,
+                child_id,
+                request,
+            )
         )
     except ValueError as exc:
         raise HTTPException(
@@ -216,13 +520,22 @@ def create_outcome(
 def list_outcomes(
     child_id: str,
     current_user: UserContext = Depends(
-        require_role(Role.ORPHANAGE_STAFF, Role.CARELIFE_ADMIN)
+        require_role(
+            Role.ORPHANAGE_STAFF,
+            Role.CARELIFE_ADMIN,
+        )
     ),
     service: ChildService = Depends(get_child_service),
 ):
     try:
-        outcomes = service.list_outcomes(current_user, child_id)
-        return [outcome_response(outcome) for outcome in outcomes]
+        outcomes = service.list_outcomes(
+            current_user,
+            child_id,
+        )
+        return [
+            outcome_response(outcome)
+            for outcome in outcomes
+        ]
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -242,13 +555,19 @@ def list_outcomes(
 def get_outcome(
     outcome_id: str,
     current_user: UserContext = Depends(
-        require_role(Role.ORPHANAGE_STAFF, Role.CARELIFE_ADMIN)
+        require_role(
+            Role.ORPHANAGE_STAFF,
+            Role.CARELIFE_ADMIN,
+        )
     ),
     service: ChildService = Depends(get_child_service),
 ):
     try:
         return outcome_response(
-            service.get_outcome(current_user, outcome_id)
+            service.get_outcome(
+                current_user,
+                outcome_id,
+            )
         )
     except ValueError as exc:
         raise HTTPException(
@@ -276,7 +595,11 @@ def update_outcome(
 ):
     try:
         return outcome_response(
-            service.update_outcome(current_user, outcome_id, request)
+            service.update_outcome(
+                current_user,
+                outcome_id,
+                request,
+            )
         )
     except ValueError as exc:
         raise HTTPException(
@@ -302,7 +625,10 @@ def delete_outcome(
     service: ChildService = Depends(get_child_service),
 ):
     try:
-        service.delete_outcome(current_user, outcome_id)
+        service.delete_outcome(
+            current_user,
+            outcome_id,
+        )
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

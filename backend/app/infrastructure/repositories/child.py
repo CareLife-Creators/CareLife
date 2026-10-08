@@ -1,10 +1,20 @@
 from app.application.interfaces.child import ChildRepository
-from app.domain.entities.child import Child, OrphanageOutcome, OutcomeStatus, OutcomeType
+from app.domain.entities.child import (
+    Child,
+    ChildContact,
+    ContactType,
+    OrphanageOutcome,
+    OutcomeStatus,
+    OutcomeType,
+)
 from app.infrastructure.database.connection import get_connection
 
 
 class PostgresChildRepository(ChildRepository):
-    def organization_is_orphanage(self, organization_id: str) -> bool:
+    def organization_is_orphanage(
+        self,
+        organization_id: str,
+    ) -> bool:
         with get_connection() as connection:
             row = connection.execute(
                 """
@@ -36,7 +46,10 @@ class PostgresChildRepository(ChildRepository):
                         created_at,
                         updated_at
                     )
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (
+                        %s, %s, %s, %s, %s,
+                        %s, %s, %s, %s, %s, %s
+                    )
                     """,
                     (
                         child.id,
@@ -55,7 +68,10 @@ class PostgresChildRepository(ChildRepository):
 
         return self.get(child.id)  # type: ignore[return-value]
 
-    def list_by_orphanage(self, organization_id: str) -> list[Child]:
+    def list_by_orphanage(
+        self,
+        organization_id: str,
+    ) -> list[Child]:
         with get_connection() as connection:
             rows = connection.execute(
                 """
@@ -80,7 +96,38 @@ class PostgresChildRepository(ChildRepository):
 
         return [self._child_from_row(row) for row in rows]
 
-    def get(self, child_id: str) -> Child | None:
+    def list_by_parent(
+        self,
+        parent_id: str,
+    ) -> list[Child]:
+        with get_connection() as connection:
+            rows = connection.execute(
+                """
+                SELECT
+                    id,
+                    parent_id,
+                    full_name,
+                    date_of_birth,
+                    gender,
+                    allergies,
+                    medical_notes,
+                    orphanage_organization_id,
+                    daycare_organization_id,
+                    created_at,
+                    updated_at
+                FROM children
+                WHERE parent_id = %s
+                ORDER BY full_name
+                """,
+                (parent_id,),
+            ).fetchall()
+
+        return [self._child_from_row(row) for row in rows]
+
+    def get(
+        self,
+        child_id: str,
+    ) -> Child | None:
         with get_connection() as connection:
             row = connection.execute(
                 """
@@ -107,7 +154,10 @@ class PostgresChildRepository(ChildRepository):
 
         return self._child_from_row(row)
 
-    def update(self, child: Child) -> Child | None:
+    def update(
+        self,
+        child: Child,
+    ) -> Child | None:
         with get_connection() as connection:
             with connection.transaction():
                 connection.execute(
@@ -115,6 +165,7 @@ class PostgresChildRepository(ChildRepository):
                     UPDATE children
                     SET
                         full_name = %s,
+                        date_of_birth = %s,
                         gender = %s,
                         allergies = %s,
                         medical_notes = %s,
@@ -123,6 +174,7 @@ class PostgresChildRepository(ChildRepository):
                     """,
                     (
                         child.full_name,
+                        child.date_of_birth,
                         child.gender,
                         child.allergies,
                         child.medical_notes,
@@ -133,17 +185,31 @@ class PostgresChildRepository(ChildRepository):
 
         return self.get(child.id)
 
-    def delete(self, child_id: str) -> bool:
+    def delete(
+        self,
+        child_id: str,
+    ) -> bool:
         with get_connection() as connection:
             with connection.transaction():
                 result = connection.execute(
-                    "DELETE FROM children WHERE id = %s RETURNING id",
+                    """
+                    DELETE FROM children
+                    WHERE id = %s
+                    RETURNING id
+                    """,
                     (child_id,),
                 ).fetchone()
 
         return result is not None
 
-    def create_outcome(self, outcome: OrphanageOutcome) -> OrphanageOutcome:
+    # ---------------------------------------------------------
+    # Orphanage outcomes
+    # ---------------------------------------------------------
+
+    def create_outcome(
+        self,
+        outcome: OrphanageOutcome,
+    ) -> OrphanageOutcome:
         with get_connection() as connection:
             with connection.transaction():
                 connection.execute(
@@ -160,7 +226,10 @@ class PostgresChildRepository(ChildRepository):
                         created_at,
                         updated_at
                     )
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (
+                        %s, %s, %s, %s, %s,
+                        %s, %s, %s, %s, %s
+                    )
                     """,
                     (
                         outcome.id,
@@ -178,7 +247,10 @@ class PostgresChildRepository(ChildRepository):
 
         return self.get_outcome(outcome.id)  # type: ignore[return-value]
 
-    def list_outcomes(self, child_id: str) -> list[OrphanageOutcome]:
+    def list_outcomes(
+        self,
+        child_id: str,
+    ) -> list[OrphanageOutcome]:
         with get_connection() as connection:
             rows = connection.execute(
                 """
@@ -202,7 +274,10 @@ class PostgresChildRepository(ChildRepository):
 
         return [self._outcome_from_row(row) for row in rows]
 
-    def get_outcome(self, outcome_id: str) -> OrphanageOutcome | None:
+    def get_outcome(
+        self,
+        outcome_id: str,
+    ) -> OrphanageOutcome | None:
         with get_connection() as connection:
             row = connection.execute(
                 """
@@ -228,7 +303,10 @@ class PostgresChildRepository(ChildRepository):
 
         return self._outcome_from_row(row)
 
-    def update_outcome(self, outcome: OrphanageOutcome) -> OrphanageOutcome | None:
+    def update_outcome(
+        self,
+        outcome: OrphanageOutcome,
+    ) -> OrphanageOutcome | None:
         with get_connection() as connection:
             with connection.transaction():
                 connection.execute(
@@ -252,15 +330,136 @@ class PostgresChildRepository(ChildRepository):
 
         return self.get_outcome(outcome.id)
 
-    def delete_outcome(self, outcome_id: str) -> bool:
+    def delete_outcome(
+        self,
+        outcome_id: str,
+    ) -> bool:
         with get_connection() as connection:
             with connection.transaction():
                 result = connection.execute(
-                    "DELETE FROM orphanage_outcomes WHERE id = %s RETURNING id",
+                    """
+                    DELETE FROM orphanage_outcomes
+                    WHERE id = %s
+                    RETURNING id
+                    """,
                     (outcome_id,),
                 ).fetchone()
 
         return result is not None
+
+    # ---------------------------------------------------------
+    # CAR-113 child contacts
+    # ---------------------------------------------------------
+
+    def create_contact(
+        self,
+        contact: ChildContact,
+    ) -> ChildContact:
+        with get_connection() as connection:
+            with connection.transaction():
+                connection.execute(
+                    """
+                    INSERT INTO child_contacts (
+                        id,
+                        child_id,
+                        contact_type,
+                        full_name,
+                        relationship_to_child,
+                        phone,
+                        email,
+                        address,
+                        created_by,
+                        created_at,
+                        updated_at
+                    )
+                    VALUES (
+                        %s, %s, %s, %s, %s,
+                        %s, %s, %s, %s, %s
+                    )
+                    """,
+                    (
+                        contact.id,
+                        contact.child_id,
+                        contact.contact_type.value,
+                        contact.full_name,
+                        contact.relationship_to_child,
+                        contact.phone,
+                        contact.email,
+                        contact.address,
+                        contact.created_by,
+                        contact.created_at,
+                        contact.updated_at,
+                    ),
+                )
+
+        return self.get_contact(contact.id)  # type: ignore[return-value]
+
+    def get_contact(
+        self,
+        contact_id: str,
+    ) -> ChildContact | None:
+        with get_connection() as connection:
+            row = connection.execute(
+                """
+                SELECT
+                    id,
+                    child_id,
+                    contact_type,
+                    full_name,
+                    relationship_to_child,
+                    phone,
+                    email,
+                    address,
+                    created_by,
+                    created_at,
+                    updated_at
+                FROM child_contacts
+                WHERE id = %s
+                """,
+                (contact_id,),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return self._contact_from_row(row)
+
+    def list_contacts(
+        self,
+        child_id: str,
+        contact_type: str,
+    ) -> list[ChildContact]:
+        with get_connection() as connection:
+            rows = connection.execute(
+                """
+                SELECT
+                    id,
+                    child_id,
+                    contact_type,
+                    full_name,
+                    relationship_to_child,
+                    phone,
+                    email,
+                    address,
+                    created_by,
+                    created_at,
+                    updated_at
+                FROM child_contacts
+                WHERE child_id = %s
+                  AND contact_type = %s
+                ORDER BY full_name
+                """,
+                (
+                    child_id,
+                    contact_type,
+                ),
+            ).fetchall()
+
+        return [self._contact_from_row(row) for row in rows]
+
+    # ---------------------------------------------------------
+    # Mapping helpers
+    # ---------------------------------------------------------
 
     @staticmethod
     def _child_from_row(row) -> Child:
@@ -291,4 +490,20 @@ class PostgresChildRepository(ChildRepository):
             created_by=row[7],
             created_at=row[8],
             updated_at=row[9],
+        )
+
+    @staticmethod
+    def _contact_from_row(row) -> ChildContact:
+        return ChildContact(
+            id=row[0],
+            child_id=row[1],
+            contact_type=ContactType(row[2]),
+            full_name=row[3],
+            relationship_to_child=row[4],
+            phone=row[5],
+            email=row[6],
+            address=row[7],
+            created_by=row[8],
+            created_at=row[9],
+            updated_at=row[10],
         )
