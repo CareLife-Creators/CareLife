@@ -369,27 +369,7 @@ class PostgresOrganizationRepository:
             organization_id
         )
 
-    @staticmethod
-    def _to_entity(
-        row,
-    ) -> Organization | None:
-
-        if row is None:
-            return None
-
-        return Organization(
-            organization_id=row[0],
-            organization_name=row[1],
-            organization_type=row[2],
-            license_number=row[3] or "",
-            license_expiry_date=row[4],
-            submitted_by=row[5],
-            status=OrganizationStatus(row[6]),
-            submitted_at=row[7],
-            updated_at=row[8],
-            message=row[9],
-        )
-            def get_daycare_directory(
+    def get_daycare_directory(
         self,
         search: str | None = None,
         location: str | None = None,
@@ -533,4 +513,25 @@ class PostgresOrganizationRepository:
             description=row[3],
             location=row[4],
             contact=row[5],
+        )
+
+    @staticmethod
+    def _to_entity(
+        row,
+    ) -> Organization | None:
+
+        if row is None:
+            return None
+
+        return Organization(
+            organization_id=row[0],
+            organization_name=row[1],
+            organization_type=row[2],
+            license_number=row[3] or "",
+            license_expiry_date=row[4],
+            submitted_by=row[5],
+            status=OrganizationStatus(row[6]),
+            submitted_at=row[7],
+            updated_at=row[8],
+            message=row[9],
         )
