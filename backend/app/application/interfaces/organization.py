@@ -1,6 +1,9 @@
 from typing import Protocol
 
-from app.domain.entities.organization import Organization
+from app.domain.entities.organization import (
+    DaycareDirectoryEntry,
+    Organization,
+)
 
 
 class OrganizationRepository(Protocol):
@@ -35,4 +38,17 @@ class OrganizationRepository(Protocol):
         reviewer_id: str,
         message: str | None = None,
     ) -> Organization | None:
+        ...
+
+    def get_daycare_directory(
+        self,
+        search: str | None = None,
+        location: str | None = None,
+    ) -> list[DaycareDirectoryEntry]:
+        ...
+
+    def get_public_daycare(
+        self,
+        organization_id: str,
+    ) -> DaycareDirectoryEntry | None:
         ...

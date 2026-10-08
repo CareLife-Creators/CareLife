@@ -1,4 +1,5 @@
 from app.domain.entities.organization import (
+    DaycareDirectoryEntry,
     Organization,
     OrganizationStatus,
 )
@@ -387,4 +388,149 @@ class PostgresOrganizationRepository:
             submitted_at=row[7],
             updated_at=row[8],
             message=row[9],
+        )
+            def get_daycare_directory(
+        self,
+        search: str | None = None,
+        location: str | None = None,
+    ) -> list[DaycareDirectoryEntry]:
+
+        search_pattern = (
+            f"%{search}%"
+            if search is not None
+            else None
+        )
+
+        location_pattern = (
+            f"%{location}%"
+            if location is not None
+            else None
+        )
+
+        with get_connection() as connection:
+
+            rows = connection.execute(
+                """
+                SELECT
+                    o.id,
+                    o.name,
+                    o.organization_type,
+                    o.description,
+                    o.location,
+                    o.contact
+
+                FROM organizations o
+
+                JOIN verification_statuses status
+                    ON status.id = o.status_id
+
+                JOIN LATERAL (
+                    SELECT
+                        od.expires_at
+                    FROM organization_documents od
+                    WHERE od.organization_id = o.id
+                      AND od.document_type = 'license'
+                    ORDER BY od.created_at DESC
+                    LIMIT 1
+                ) license
+                    ON TRUE
+
+                WHERE o.organization_type = 'daycare'
+
+                  AND status.name = %s
+
+                  AND license.expires_at >= CURRENT_DATE
+
+                  AND (
+                      %s IS NULL
+                      OR o.name ILIKE %s
+                      OR COALESCE(o.location, '') ILIKE %s
+                      OR COALESCE(o.description, '') ILIKE %s
+                  )
+
+                  AND (
+                      %s IS NULL
+                      OR COALESCE(o.location, '') ILIKE %s
+                  )
+
+                ORDER BY o.name ASC
+                """,
+                (
+                    OrganizationStatus.VERIFIED.value,
+                    search_pattern,
+                    search_pattern,
+                    search_pattern,
+                    search_pattern,
+                    location_pattern,
+                    location_pattern,
+                ),
+            ).fetchall()
+
+        return [
+            self._to_daycare_directory_entry(row)
+            for row in rows
+            if row is not None
+        ]
+
+    def get_public_daycare(
+        self,
+        organization_id: str,
+    ) -> DaycareDirectoryEntry | None:
+
+        with get_connection() as connection:
+
+            row = connection.execute(
+                """
+                SELECT
+                    o.id,
+                    o.name,
+                    o.organization_type,
+                    o.description,
+                    o.location,
+                    o.contact
+
+                FROM organizations o
+
+                JOIN verification_statuses status
+                    ON status.id = o.status_id
+
+                JOIN LATERAL (
+                    SELECT
+                        od.expires_at
+                    FROM organization_documents od
+                    WHERE od.organization_id = o.id
+                      AND od.document_type = 'license'
+                    ORDER BY od.created_at DESC
+                    LIMIT 1
+                ) license
+                    ON TRUE
+
+                WHERE o.id = %s
+                  AND o.organization_type = 'daycare'
+                  AND status.name = %s
+                  AND license.expires_at >= CURRENT_DATE
+                """,
+                (
+                    organization_id,
+                    OrganizationStatus.VERIFIED.value,
+                ),
+            ).fetchone()
+
+        return self._to_daycare_directory_entry(row)
+
+    @staticmethod
+    def _to_daycare_directory_entry(
+        row,
+    ) -> DaycareDirectoryEntry | None:
+
+        if row is None:
+            return None
+
+        return DaycareDirectoryEntry(
+            organization_id=row[0],
+            organization_name=row[1],
+            organization_type=row[2],
+            description=row[3],
+            location=row[4],
+            contact=row[5],
         )
