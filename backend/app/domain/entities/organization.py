@@ -30,3 +30,12 @@ class Organization(BaseModel):
     updated_at: datetime
 
     message: str | None = None
+
+
+class DaycareDirectoryEntry(BaseModel):
+    organization_id: str
+    organization_name: str
+    organization_type: str
+    description: str | None = None
+    location: str | None = None
+    contact: str | None = None

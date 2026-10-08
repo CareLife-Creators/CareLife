@@ -1,6 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    status,
+)
 
 from app.application.schemas.organization import (
+    DaycareDirectoryResponse,
     OrganizationVerificationDecisionRequest,
     OrganizationVerificationResponse,
 )
@@ -21,6 +28,62 @@ router = APIRouter(
     prefix="/organizations",
     tags=["Organization Verification"],
 )
+
+
+@router.get(
+    "/daycare",
+    response_model=list[DaycareDirectoryResponse],
+)
+def get_daycare_directory(
+    search: str | None = Query(
+        default=None,
+        max_length=100,
+    ),
+    location: str | None = Query(
+        default=None,
+        max_length=100,
+    ),
+    service: OrganizationVerificationService = Depends(
+        get_organization_verification_service
+    ),
+):
+    organizations = service.get_daycare_directory(
+        search=search,
+        location=location,
+    )
+
+    return [
+        DaycareDirectoryResponse.from_entity(
+            organization
+        )
+        for organization in organizations
+    ]
+
+
+@router.get(
+    "/daycare/{organization_id}",
+    response_model=DaycareDirectoryResponse,
+)
+def get_public_daycare(
+    organization_id: str,
+    service: OrganizationVerificationService = Depends(
+        get_organization_verification_service
+    ),
+):
+    try:
+        organization = service.get_public_daycare(
+            organization_id
+        )
+
+        return DaycareDirectoryResponse.from_entity(
+            organization
+        )
+
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
 
 
 @router.get(

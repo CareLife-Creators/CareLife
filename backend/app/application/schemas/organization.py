@@ -77,3 +77,27 @@ class OrganizationVerificationResponse(BaseModel):
 
 class OrganizationVerificationDecisionRequest(BaseModel):
     message: str | None = None
+
+
+class DaycareDirectoryResponse(BaseModel):
+    organization_id: str
+    organization_name: str
+    organization_type: str
+    description: str | None = None
+    location: str | None = None
+    contact: str | None = None
+
+    @classmethod
+    def from_entity(
+        cls,
+        organization,
+    ) -> "DaycareDirectoryResponse":
+
+        return cls(
+            organization_id=organization.organization_id,
+            organization_name=organization.organization_name,
+            organization_type=organization.organization_type,
+            description=organization.description,
+            location=organization.location,
+            contact=organization.contact,
+        )
