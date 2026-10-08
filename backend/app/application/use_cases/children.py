@@ -16,6 +16,16 @@ class ChildService:
     def __init__(self, repository: ChildRepository):
         self.repository = repository
 
+    @staticmethod
+    def _organization_access(
+        user: UserContext,
+        organization_id: str,
+    ) -> bool:
+        return (
+            organization_id in user.organization_ids
+            or user.organization_id == organization_id
+        )
+
     def _check_orphanage_staff(
         self,
         user: UserContext,
@@ -24,30 +34,59 @@ class ChildService:
         if user.role != Role.ORPHANAGE_STAFF:
             raise PermissionError("Orphanage staff access required")
 
-        if organization_id not in user.organization_ids and user.organization_id != organization_id:
-            raise PermissionError("You do not have access to this organization")
+        if not self._organization_access(user, organization_id):
+            raise PermissionError(
+                "You do not have access to this organization"
+            )
 
-        if not self.repository.organization_is_orphanage(organization_id):
+        if not self.repository.organization_is_orphanage(
+            organization_id
+        ):
             raise ValueError("Organization is not an orphanage")
 
-    def _check_child_access(
+    def authorize_child_access(
         self,
         user: UserContext,
         child: Child,
     ) -> None:
+        """Allow only authorized users to access a private child record."""
         if user.role == Role.CARELIFE_ADMIN:
             return
 
         if user.role != Role.ORPHANAGE_STAFF:
-            raise PermissionError("Orphanage staff access required")
+            raise PermissionError(
+                "Orphanage staff access required"
+            )
 
         organization_id = child.orphanage_organization_id
 
         if organization_id is None:
-            raise PermissionError("Child is not assigned to an orphanage")
+            raise PermissionError(
+                "Child is not assigned to an orphanage"
+            )
 
-        if organization_id not in user.organization_ids and user.organization_id != organization_id:
-            raise PermissionError("You do not have access to this child record")
+        if not self._organization_access(user, organization_id):
+            raise PermissionError(
+                "You do not have access to this child record"
+            )
+
+    def authorize_outcome_access(
+        self,
+        user: UserContext,
+        outcome: OrphanageOutcome,
+    ) -> None:
+        """Use the child record as the source of truth for outcome access."""
+        child = self.repository.get(outcome.child_id)
+
+        if child is None:
+            raise ValueError("Child record not found")
+
+        self.authorize_child_access(user, child)
+
+        if child.orphanage_organization_id != outcome.organization_id:
+            raise PermissionError(
+                "Outcome does not belong to this child organization"
+            )
 
     def create(
         self,
@@ -93,7 +132,7 @@ class ChildService:
         if child is None:
             raise ValueError("Child record not found")
 
-        self._check_child_access(user, child)
+        self.authorize_child_access(user, child)
         return child
 
     def update(
@@ -180,12 +219,7 @@ class ChildService:
         if outcome is None:
             raise ValueError("Outcome record not found")
 
-        child = self.repository.get(outcome.child_id)
-
-        if child is None:
-            raise ValueError("Child record not found")
-
-        self._check_child_access(user, child)
+        self.authorize_outcome_access(user, outcome)
         return outcome
 
     def update_outcome(
