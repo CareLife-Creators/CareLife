@@ -1,7 +1,10 @@
-from datetime import date
 from typing import Protocol
 
-from app.domain.entities.child import Child, OrphanageOutcome
+from app.domain.entities.child import (
+    Child,
+    ChildContact,
+    OrphanageOutcome,
+)
 
 
 class ChildRepository(Protocol):
@@ -12,6 +15,9 @@ class ChildRepository(Protocol):
         ...
 
     def list_by_orphanage(self, organization_id: str) -> list[Child]:
+        ...
+
+    def list_by_parent(self, parent_id: str) -> list[Child]:
         ...
 
     def get(self, child_id: str) -> Child | None:
@@ -32,8 +38,21 @@ class ChildRepository(Protocol):
     def get_outcome(self, outcome_id: str) -> OrphanageOutcome | None:
         ...
 
-    def update_outcome(self, outcome: OrphanageOutcome) -> OrphanageOutcome | None:
+    def update_outcome(
+        self,
+        outcome: OrphanageOutcome,
+    ) -> OrphanageOutcome | None:
         ...
 
     def delete_outcome(self, outcome_id: str) -> bool:
+        ...
+
+    def create_contact(self, contact: ChildContact) -> ChildContact:
+        ...
+
+    def list_contacts(
+        self,
+        child_id: str,
+        contact_type: str,
+    ) -> list[ChildContact]:
         ...
