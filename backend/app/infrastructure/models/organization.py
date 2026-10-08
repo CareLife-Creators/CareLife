@@ -4,6 +4,7 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Integer,
     String,
     Text,
     func,
@@ -62,6 +63,12 @@ class OrganizationModel(Base):
         nullable=True,
     )
 
+    capacity: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default="20",
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -87,5 +94,9 @@ class OrganizationModel(Base):
         CheckConstraint(
             "organization_type IN ('daycare', 'orphanage', 'elderly_care')",
             name="ck_organizations_type",
+        ),
+        CheckConstraint(
+            "capacity >= 0",
+            name="ck_organizations_capacity",
         ),
     )

@@ -18,7 +18,6 @@ class OrganizationVerificationService:
         self,
         organization_id: str,
     ):
-
         organization = (
             self.repository.get_by_organization_id(
                 organization_id
@@ -33,15 +32,40 @@ class OrganizationVerificationService:
         return organization
 
     def get_pending(self):
-
         return self.repository.get_pending()
+
+    def get_daycare_directory(
+        self,
+        search: str | None = None,
+        location: str | None = None,
+    ):
+        return self.repository.get_daycare_directory(
+            search=search,
+            location=location,
+        )
+
+    def get_public_daycare(
+        self,
+        organization_id: str,
+    ):
+        organization = (
+            self.repository.get_public_daycare(
+                organization_id
+            )
+        )
+
+        if organization is None:
+            raise ValueError(
+                "Verified daycare not found"
+            )
+
+        return organization
 
     def approve(
         self,
         organization_id: str,
         reviewer_id: str,
     ):
-
         organization = (
             self.repository.get_by_organization_id(
                 organization_id
@@ -76,7 +100,6 @@ class OrganizationVerificationService:
         reviewer_id: str,
         message: str | None = None,
     ):
-
         organization = (
             self.repository.get_by_organization_id(
                 organization_id
