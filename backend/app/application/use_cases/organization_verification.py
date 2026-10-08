@@ -2,6 +2,7 @@ from app.application.interfaces.organization import (
     OrganizationRepository,
 )
 from app.domain.entities.organization import (
+    DaycareDirectoryEntry,
     OrganizationStatus,
 )
 
@@ -105,3 +106,48 @@ class OrganizationVerificationService:
             )
 
         return updated
+
+    def get_daycare_directory(
+        self,
+        search: str | None = None,
+        location: str | None = None,
+    ) -> list[DaycareDirectoryEntry]:
+
+        clean_search = (
+            search.strip()
+            if isinstance(search, str)
+            else None
+        )
+
+        clean_location = (
+            location.strip()
+            if isinstance(location, str)
+            else None
+        )
+
+        if clean_search == "":
+            clean_search = None
+
+        if clean_location == "":
+            clean_location = None
+
+        return self.repository.get_daycare_directory(
+            search=clean_search,
+            location=clean_location,
+        )
+
+    def get_public_daycare(
+        self,
+        organization_id: str,
+    ) -> DaycareDirectoryEntry:
+
+        daycare = self.repository.get_public_daycare(
+            organization_id
+        )
+
+        if daycare is None:
+            raise ValueError(
+                "Verified daycare not found"
+            )
+
+        return daycare
