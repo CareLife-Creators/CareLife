@@ -1,4 +1,5 @@
 import logging
+from datetime import date
 
 from app.application.interfaces.organization import (
     OrganizationRepository,
@@ -84,6 +85,11 @@ class OrganizationVerificationService:
                 "Only pending organizations can be approved"
             )
 
+        if organization.license_expiry_date < date.today():
+            raise ValueError(
+                "Organizations with expired licenses cannot be approved"
+            )
+
         updated = self.repository.approve(
             organization_id,
             reviewer_id,
@@ -91,7 +97,7 @@ class OrganizationVerificationService:
 
         if updated is None:
             raise ValueError(
-                "Verification information not found"
+                "Organization could not be approved; its status or license eligibility may have changed"
             )
 
         return updated
@@ -126,7 +132,7 @@ class OrganizationVerificationService:
 
         if updated is None:
             raise ValueError(
-                "Verification information not found"
+                "Organization could not be rejected because it is no longer pending"
             )
 
         return updated

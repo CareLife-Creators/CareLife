@@ -273,10 +273,8 @@ class PostgresOrganizationRepository:
     ) -> Organization | None:
 
         with get_connection() as connection:
-
             with connection.transaction():
-
-                connection.execute(
+                updated = connection.execute(
                     """
                     UPDATE organizations
                     SET
@@ -288,13 +286,31 @@ class PostgresOrganizationRepository:
                         updated_at = CURRENT_TIMESTAMP,
                         updated_by = %s
                     WHERE id = %s
+                      AND status_id = (
+                          SELECT id
+                          FROM verification_statuses
+                          WHERE name = %s
+                      )
+                      AND (
+                          SELECT od.expires_at
+                          FROM organization_documents od
+                          WHERE od.organization_id = organizations.id
+                            AND od.document_type = 'license'
+                          ORDER BY od.created_at DESC, od.id DESC
+                          LIMIT 1
+                      ) >= CURRENT_DATE
+                    RETURNING id
                     """,
                     (
                         OrganizationStatus.VERIFIED.value,
                         reviewer_id,
                         organization_id,
+                        OrganizationStatus.PENDING.value,
                     ),
-                )
+                ).fetchone()
+
+                if updated is None:
+                    return None
 
                 connection.execute(
                     """
@@ -326,9 +342,7 @@ class PostgresOrganizationRepository:
                     ),
                 )
 
-        return self.get_by_organization_id(
-            organization_id
-        )
+        return self.get_by_organization_id(organization_id)
 
     def reject(
         self,
@@ -338,10 +352,8 @@ class PostgresOrganizationRepository:
     ) -> Organization | None:
 
         with get_connection() as connection:
-
             with connection.transaction():
-
-                connection.execute(
+                updated = connection.execute(
                     """
                     UPDATE organizations
                     SET
@@ -353,13 +365,23 @@ class PostgresOrganizationRepository:
                         updated_at = CURRENT_TIMESTAMP,
                         updated_by = %s
                     WHERE id = %s
+                      AND status_id = (
+                          SELECT id
+                          FROM verification_statuses
+                          WHERE name = %s
+                      )
+                    RETURNING id
                     """,
                     (
                         OrganizationStatus.REJECTED.value,
                         reviewer_id,
                         organization_id,
+                        OrganizationStatus.PENDING.value,
                     ),
-                )
+                ).fetchone()
+
+                if updated is None:
+                    return None
 
                 connection.execute(
                     """
@@ -392,9 +414,7 @@ class PostgresOrganizationRepository:
                     ),
                 )
 
-        return self.get_by_organization_id(
-            organization_id
-        )
+        return self.get_by_organization_id(organization_id)
 
     def get_daycare_directory(
         self,
