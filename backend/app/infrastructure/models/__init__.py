@@ -4,6 +4,9 @@ from app.infrastructure.models.child import (
     ChildModel,
     OrphanageOutcomeModel,
 )
+from app.infrastructure.models.enrollment import (
+    EnrollmentModel,
+)
 from app.infrastructure.models.organization import OrganizationModel
 from app.infrastructure.models.organization_document import (
     OrganizationDocumentModel,
@@ -39,4 +42,5 @@ __all__ = [
     "ChildModel",
     "ChildContactModel",
     "OrphanageOutcomeModel",
+    "EnrollmentModel",
 ]

@@ -14,6 +14,9 @@ from app.presentation.api.routes.organization_registration import (
 from app.presentation.api.routes.signup import router as signup_router
 from app.presentation.api.routes.login import router as login_router
 from app.presentation.api.routes.children import router as children_router
+from app.presentation.api.routes.enrollment import (
+    router as enrollment_router,
+)
 
 
 settings = get_settings()
@@ -41,6 +44,7 @@ app.include_router(organization_registration_router)
 app.include_router(signup_router)
 app.include_router(login_router)
 app.include_router(children_router)
+app.include_router(enrollment_router)
 
 
 @app.get("/")
