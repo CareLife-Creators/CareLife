@@ -28,7 +28,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:18
+        image: public.ecr.aws/docker/library/postgres:18
         env:
           POSTGRES_DB: carelife_test
           POSTGRES_USER: carelife
