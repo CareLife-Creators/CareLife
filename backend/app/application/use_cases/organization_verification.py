@@ -1,10 +1,12 @@
+import logging
+
 from app.application.interfaces.organization import (
     OrganizationRepository,
 )
 from app.domain.entities.organization import (
     OrganizationStatus,
 )
-
+logger = logging.getLogger(__name__)
 
 class OrganizationVerificationService:
 
@@ -128,3 +130,34 @@ class OrganizationVerificationService:
             )
 
         return updated
+
+    def monitor_license_expiry(
+        self,
+        reminder_days: int,
+    ) -> dict[str, int | bool]:
+        expired_count = (
+            self.repository.expire_verified_organizations()
+        )
+
+        try:
+            reminders_created = (
+                self.repository.create_license_expiry_reminders(
+                    reminder_days
+                )
+            )
+        except Exception:
+            logger.exception(
+                "Failed to create organization license expiry reminders"
+            )
+
+            return {
+                "expired_organizations": expired_count,
+                "reminders_created": 0,
+                "reminder_failed": True,
+            }
+
+        return {
+            "expired_organizations": expired_count,
+            "reminders_created": reminders_created,
+            "reminder_failed": False,
+        }
