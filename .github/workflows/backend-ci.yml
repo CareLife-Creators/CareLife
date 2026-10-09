@@ -1,0 +1,78 @@
+
+name: Backend CI
+
+on:
+  push:
+    branches:
+      - "**"
+
+  pull_request:
+    branches:
+      - dev
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  backend-tests:
+    name: backend-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      DATABASE_URL: postgresql+psycopg://carelife:carelife@localhost:5432/carelife_test
+      SECRET_KEY: ci-only-secret-key-for-github-actions-not-production
+      ENVIRONMENT: testing
+      EMAIL_MODE: console
+
+    services:
+      postgres:
+        image: public.ecr.aws/docker/library/postgres:18
+        env:
+          POSTGRES_DB: carelife_test
+          POSTGRES_USER: carelife
+          POSTGRES_PASSWORD: carelife
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U carelife -d carelife_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+
+      - name: Check dependency consistency
+        working-directory: backend
+        run: python -m pip check
+
+      - name: Compile backend Python files
+        working-directory: backend
+        run: |
+          python -m compileall -q app main.py alembic/versions tests
+
+      - name: Apply database migrations
+        working-directory: backend
+        run: alembic upgrade head
+
+      - name: Run complete backend test suite
+        working-directory: backend
+        run: python -m pytest -q

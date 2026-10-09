@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     secret_key: SecretStr = Field(min_length=32)
 
     access_token_expire_minutes: int = Field(default=30, gt=0)
+    license_expiry_reminder_days: int = Field(default=30, gt=0)
 
     reset_token_expire_minutes: int = Field(default=30, gt=0)
 

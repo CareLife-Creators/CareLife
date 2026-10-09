@@ -1,4 +1,16 @@
 from app.infrastructure.models.base import Base
+from app.infrastructure.models.child import (
+    AttendanceModel,
+    ChildContactModel,
+    ChildModel,
+    DailyUpdateModel,
+    OrphanageOutcomeModel,
+)
+from app.infrastructure.models.donation import (
+    DonationCampaignModel,
+    DonationNeedModel,
+)
+from app.infrastructure.models.enrollment import EnrollmentModel
 from app.infrastructure.models.organization import OrganizationModel
 from app.infrastructure.models.organization_document import (
     OrganizationDocumentModel,
@@ -6,9 +18,7 @@ from app.infrastructure.models.organization_document import (
 from app.infrastructure.models.password_reset_token import (
     PasswordResetTokenModel,
 )
-from app.infrastructure.models.revoked_token import (
-    RevokedTokenModel,
-)
+from app.infrastructure.models.revoked_token import RevokedTokenModel
 from app.infrastructure.models.role import RoleModel
 from app.infrastructure.models.user import UserModel
 from app.infrastructure.models.user_organization import (
@@ -20,7 +30,15 @@ from app.infrastructure.models.verification_review import (
 from app.infrastructure.models.verification_status import (
     VerificationStatusModel,
 )
-
+from app.infrastructure.models.notification import NotificationModel
+from app.infrastructure.models.caregiver import (
+    CaregiverDocumentModel,
+    CaregiverProfileModel,
+)
+from app.infrastructure.models.impact import (
+    ImpactMediaModel,
+    ImpactUpdateModel,
+)
 
 __all__ = [
     "Base",
@@ -33,4 +51,15 @@ __all__ = [
     "UserOrganizationModel",
     "VerificationReviewModel",
     "VerificationStatusModel",
+    "ChildModel",
+    "ChildContactModel",
+    "OrphanageOutcomeModel",
+    "EnrollmentModel",
+    "AttendanceModel",
+    "DailyUpdateModel",
+    "DonationCampaignModel",
+    "DonationNeedModel",
+    "NotificationModel",
+    "ImpactUpdateModel",
+    "ImpactMediaModel",
 ]

@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, Depends, status
+﻿from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.application.schemas.organization import (
     OrganizationRegistrationRequest,
@@ -38,6 +38,18 @@ def register_organization(
         get_organization_registration_service
     ),
 ):
+    expected_type = {
+        Role.DAYCARE_STAFF: "daycare",
+        Role.ORPHANAGE_STAFF: "orphanage",
+        Role.CARE_HOME_STAFF: "elderly_care",
+    }[current_user.role]
+
+    if request.organization_type != expected_type:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your staff role cannot register this organization type",
+        )
+
     return service.register(
         request=request,
         submitted_by=current_user.user_id,
