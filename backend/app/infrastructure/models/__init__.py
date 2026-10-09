@@ -31,6 +31,10 @@ from app.infrastructure.models.verification_status import (
     VerificationStatusModel,
 )
 from app.infrastructure.models.notification import NotificationModel
+from app.infrastructure.models.caregiver import (
+    CaregiverDocumentModel,
+    CaregiverProfileModel,
+)
 
 __all__ = [
     "Base",
