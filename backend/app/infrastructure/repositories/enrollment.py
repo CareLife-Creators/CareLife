@@ -1,3 +1,6 @@
+from app.domain.entities.organization import (
+    OrganizationStatus,
+)
 from app.application.interfaces.enrollment import (
     EnrollmentRepository,
 )
@@ -307,23 +310,40 @@ class PostgresEnrollmentRepository(
 
                 if status == EnrollmentStatus.APPROVED:
 
+                    # CAR-46 FIX:
+                    # Check daycare verification and license validity.
                     organization_row = connection.execute(
                         """
                         SELECT
-                            capacity
-                        FROM organizations
-                        WHERE id = %s
-                          AND organization_type = 'daycare'
-                        FOR UPDATE
+                            o.capacity
+                        FROM organizations o
+                        JOIN verification_statuses status
+                            ON status.id = o.status_id
+                        JOIN LATERAL (
+                            SELECT
+                                od.expires_at
+                            FROM organization_documents od
+                            WHERE od.organization_id = o.id
+                              AND od.document_type = 'license'
+                            ORDER BY od.created_at DESC
+                            LIMIT 1
+                        ) license
+                            ON TRUE
+                        WHERE o.id = %s
+                          AND o.organization_type = 'daycare'
+                          AND status.name = %s
+                          AND license.expires_at >= CURRENT_DATE
+                        FOR UPDATE OF o
                         """,
                         (
                             daycare_id,
+                            OrganizationStatus.VERIFIED.value,
                         ),
                     ).fetchone()
 
                     if organization_row is None:
                         raise ValueError(
-                            "Daycare organization not found"
+                            "Daycare is not currently eligible for enrollment approval"
                         )
 
                     capacity = organization_row[0]
