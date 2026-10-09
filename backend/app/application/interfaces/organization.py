@@ -52,3 +52,12 @@ class OrganizationRepository(Protocol):
         organization_id: str,
     ) -> DaycareDirectoryEntry | None:
         ...
+
+    def expire_verified_organizations(self) -> int:
+        ...
+
+    def create_license_expiry_reminders(
+        self,
+        reminder_days: int,
+    ) -> int:
+        ...

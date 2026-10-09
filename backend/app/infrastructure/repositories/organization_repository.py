@@ -535,3 +535,240 @@ class PostgresOrganizationRepository:
             updated_at=row[8],
             message=row[9],
         )
+    def expire_verified_organizations(self) -> int:
+        expired_count = 0
+
+        with get_connection() as connection:
+            with connection.transaction():
+                expired_organizations = connection.execute(
+                    """
+                    SELECT
+                        o.id,
+                        o.name,
+                        license.expires_at
+                    FROM organizations o
+
+                    JOIN verification_statuses status
+                        ON status.id = o.status_id
+
+                    JOIN LATERAL (
+                        SELECT
+                            od.expires_at
+                        FROM organization_documents od
+                        WHERE od.organization_id = o.id
+                          AND od.document_type = 'license'
+                        ORDER BY
+                            od.created_at DESC,
+                            od.id DESC
+                        LIMIT 1
+                    ) license
+                        ON TRUE
+
+                    WHERE status.name = %s
+                      AND license.expires_at < CURRENT_DATE
+
+                    ORDER BY o.id
+
+                    FOR UPDATE OF o
+                    """,
+                    (OrganizationStatus.VERIFIED.value,),
+                ).fetchall()
+
+                for organization_id, organization_name, expires_at in (
+                    expired_organizations
+                ):
+                    updated = connection.execute(
+                        """
+                        UPDATE organizations
+                        SET
+                            status_id = (
+                                SELECT id
+                                FROM verification_statuses
+                                WHERE name = %s
+                            ),
+                            updated_at = CURRENT_TIMESTAMP,
+                            updated_by = NULL
+                        WHERE id = %s
+                          AND status_id = (
+                              SELECT id
+                              FROM verification_statuses
+                              WHERE name = %s
+                          )
+                        RETURNING id
+                        """,
+                        (
+                            OrganizationStatus.EXPIRED.value,
+                            organization_id,
+                            OrganizationStatus.VERIFIED.value,
+                        ),
+                    ).fetchone()
+
+                    if updated is None:
+                        continue
+
+                    connection.execute(
+                        """
+                        INSERT INTO verification_reviews (
+                            id,
+                            organization_id,
+                            reviewer_id,
+                            status_id,
+                            notes,
+                            reviewed_at
+                        )
+                        VALUES (
+                            gen_random_uuid()::text,
+                            %s,
+                            NULL,
+                            (
+                                SELECT id
+                                FROM verification_statuses
+                                WHERE name = %s
+                            ),
+                            %s,
+                            CURRENT_TIMESTAMP
+                        )
+                        """,
+                        (
+                            organization_id,
+                            OrganizationStatus.EXPIRED.value,
+                            (
+                                f"License for {organization_name} expired "
+                                f"on {expires_at.isoformat()}; verification "
+                                "automatically changed to expired."
+                            ),
+                        ),
+                    )
+
+                    expired_count += 1
+
+        return expired_count
+
+    def create_license_expiry_reminders(
+        self,
+        reminder_days: int,
+    ) -> int:
+        if reminder_days <= 0:
+            raise ValueError(
+                "Reminder period must be greater than zero"
+            )
+
+        reminders_created = 0
+
+        with get_connection() as connection:
+            with connection.transaction():
+                expiring_organizations = connection.execute(
+                    """
+                    SELECT
+                        o.id,
+                        o.name,
+                        license.expires_at,
+                        recipient.user_id
+                    FROM organizations o
+
+                    JOIN verification_statuses status
+                        ON status.id = o.status_id
+
+                    JOIN LATERAL (
+                        SELECT
+                            od.expires_at
+                        FROM organization_documents od
+                        WHERE od.organization_id = o.id
+                          AND od.document_type = 'license'
+                        ORDER BY
+                            od.created_at DESC,
+                            od.id DESC
+                        LIMIT 1
+                    ) license
+                        ON TRUE
+
+                    CROSS JOIN LATERAL (
+                        SELECT o.submitted_by AS user_id
+
+                        UNION
+
+                        SELECT uo.user_id
+                        FROM user_organizations uo
+                        WHERE uo.organization_id = o.id
+                    ) recipient
+
+                    JOIN users notification_user
+                        ON notification_user.id = recipient.user_id
+                       AND notification_user.is_active = TRUE
+
+                    WHERE status.name = %s
+                      AND license.expires_at >= CURRENT_DATE
+                      AND license.expires_at
+                          <= CURRENT_DATE + %s
+
+                    ORDER BY
+                        o.id,
+                        recipient.user_id
+                    """,
+                    (
+                        OrganizationStatus.VERIFIED.value,
+                        reminder_days,
+                    ),
+                ).fetchall()
+
+                for (
+                    organization_id,
+                    organization_name,
+                    expires_at,
+                    user_id,
+                ) in expiring_organizations:
+                    event_key = (
+                        "organization-license-expiry:"
+                        f"{organization_id}:"
+                        f"{expires_at.isoformat()}:"
+                        f"reminder:{user_id}"
+                    )
+
+                    message = (
+                        f"The license for {organization_name} expires on "
+                        f"{expires_at.isoformat()}. Please renew it before "
+                        "expiry to keep the organization's verification "
+                        "current."
+                    )
+
+                    inserted = connection.execute(
+                        """
+                        INSERT INTO notifications (
+                            id,
+                            user_id,
+                            organization_id,
+                            notification_type,
+                            title,
+                            message,
+                            event_key,
+                            is_read,
+                            created_at
+                        )
+                        VALUES (
+                            gen_random_uuid()::text,
+                            %s,
+                            %s,
+                            %s,
+                            %s,
+                            %s,
+                            %s,
+                            FALSE,
+                            CURRENT_TIMESTAMP
+                        )
+                        ON CONFLICT (event_key) DO NOTHING
+                        RETURNING id
+                        """,
+                        (
+                            user_id,
+                            organization_id,
+                            "organization_license_expiry",
+                            "Organization license expiring soon",
+                            message,
+                            event_key,
+                        ),
+                    ).fetchone()
+
+                    if inserted is not None:
+                        reminders_created += 1
+
+        return reminders_created

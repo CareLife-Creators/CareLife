@@ -30,7 +30,7 @@ from app.infrastructure.models.verification_review import (
 from app.infrastructure.models.verification_status import (
     VerificationStatusModel,
 )
-
+from app.infrastructure.models.notification import NotificationModel
 
 __all__ = [
     "Base",
@@ -51,4 +51,5 @@ __all__ = [
     "DailyUpdateModel",
     "DonationCampaignModel",
     "DonationNeedModel",
+    "NotificationModel",
 ]
