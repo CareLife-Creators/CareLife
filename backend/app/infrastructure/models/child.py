@@ -1,6 +1,16 @@
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import (
+    CheckConstraint,
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.models.base import Base
@@ -9,7 +19,10 @@ from app.infrastructure.models.base import Base
 class ChildModel(Base):
     __tablename__ = "children"
 
-    id: Mapped[str] = mapped_column(String, primary_key=True)
+    id: Mapped[str] = mapped_column(
+        String,
+        primary_key=True,
+    )
 
     parent_id: Mapped[str | None] = mapped_column(
         ForeignKey("users.id", ondelete="RESTRICT"),
@@ -181,4 +194,117 @@ class ChildContactModel(Base):
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
+    )
+
+
+
+
+class AttendanceModel(Base):
+    __tablename__ = "daycare_attendance"
+
+    id: Mapped[str] = mapped_column(
+        String,
+        primary_key=True,
+    )
+
+    enrollment_id: Mapped[str] = mapped_column(
+        ForeignKey(
+            "daycare_enrollments.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+    )
+
+    attendance_date: Mapped[date] = mapped_column(
+        Date,
+        nullable=False,
+    )
+
+    check_in_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    check_out_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    recorded_by: Mapped[str] = mapped_column(
+        ForeignKey(
+            "users.id",
+            ondelete="RESTRICT",
+        ),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "enrollment_id",
+            "attendance_date",
+            name="uq_daycare_attendance_enrollment_date",
+        ),
+        CheckConstraint(
+            "check_out_at IS NULL OR check_out_at >= check_in_at",
+            name="ck_daycare_attendance_checkout_order",
+        ),
+    )
+
+
+
+
+class DailyUpdateModel(Base):
+    __tablename__ = "daycare_daily_updates"
+
+    id: Mapped[str] = mapped_column(
+        String,
+        primary_key=True,
+    )
+
+    child_id: Mapped[str] = mapped_column(
+        ForeignKey(
+            "children.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+    )
+
+    daycare_organization_id: Mapped[str] = mapped_column(
+        ForeignKey(
+            "organizations.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+    )
+
+    update_date: Mapped[date] = mapped_column(
+        Date,
+        nullable=False,
+    )
+
+    notes: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+    )
+
+    recorded_by: Mapped[str] = mapped_column(
+        ForeignKey(
+            "users.id",
+            ondelete="RESTRICT",
+        ),
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        Index(
+            "ix_daycare_daily_updates_child_date",
+            "child_id",
+            "update_date",
+        ),
     )
