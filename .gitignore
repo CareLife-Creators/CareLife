@@ -216,3 +216,5 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+# User-uploaded impact media (keep local uploads out of version control)
+backend/uploads/impact_media/
