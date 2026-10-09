@@ -28,7 +28,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:18
+        image: public.ecr.aws/docker/library/postgres:18
         env:
           POSTGRES_DB: carelife_test
           POSTGRES_USER: carelife
@@ -71,7 +71,7 @@ jobs:
 
       - name: Apply database migrations
         working-directory: backend
-        run: alembic upgrade heads
+        run: alembic upgrade head
 
       - name: Run complete backend test suite
         working-directory: backend

@@ -24,6 +24,9 @@ class PostgresOrganizationRepository:
                         organization_type,
                         status_id,
                         submitted_by,
+                        description,
+                        location,
+                        contact,
                         created_at,
                         updated_at,
                         updated_by
@@ -40,6 +43,9 @@ class PostgresOrganizationRepository:
                         %s,
                         %s,
                         %s,
+                        %s,
+                        %s,
+                        %s,
                         %s
                     )
                     """,
@@ -49,9 +55,27 @@ class PostgresOrganizationRepository:
                         organization.organization_type,
                         organization.status.value,
                         organization.submitted_by,
+                        organization.description,
+                        organization.location,
+                        organization.contact,
                         organization.submitted_at,
                         organization.updated_at,
                         organization.submitted_by,
+                    ),
+                )
+
+                connection.execute(
+                    """
+                    INSERT INTO user_organizations (
+                        user_id,
+                        organization_id
+                    )
+                    VALUES (%s, %s)
+                    ON CONFLICT (user_id, organization_id) DO NOTHING
+                    """,
+                    (
+                        organization.submitted_by,
+                        organization.organization_id,
                     ),
                 )
 
@@ -141,7 +165,10 @@ class PostgresOrganizationRepository:
                     status.name,
                     o.created_at,
                     o.updated_at,
-                    latest_review.notes
+                    latest_review.notes,
+                    o.description,
+                    o.location,
+                    o.contact
                 FROM organizations o
 
                 JOIN verification_statuses status
@@ -246,10 +273,8 @@ class PostgresOrganizationRepository:
     ) -> Organization | None:
 
         with get_connection() as connection:
-
             with connection.transaction():
-
-                connection.execute(
+                updated = connection.execute(
                     """
                     UPDATE organizations
                     SET
@@ -261,13 +286,31 @@ class PostgresOrganizationRepository:
                         updated_at = CURRENT_TIMESTAMP,
                         updated_by = %s
                     WHERE id = %s
+                      AND status_id = (
+                          SELECT id
+                          FROM verification_statuses
+                          WHERE name = %s
+                      )
+                      AND (
+                          SELECT od.expires_at
+                          FROM organization_documents od
+                          WHERE od.organization_id = organizations.id
+                            AND od.document_type = 'license'
+                          ORDER BY od.created_at DESC, od.id DESC
+                          LIMIT 1
+                      ) >= CURRENT_DATE
+                    RETURNING id
                     """,
                     (
                         OrganizationStatus.VERIFIED.value,
                         reviewer_id,
                         organization_id,
+                        OrganizationStatus.PENDING.value,
                     ),
-                )
+                ).fetchone()
+
+                if updated is None:
+                    return None
 
                 connection.execute(
                     """
@@ -299,9 +342,7 @@ class PostgresOrganizationRepository:
                     ),
                 )
 
-        return self.get_by_organization_id(
-            organization_id
-        )
+        return self.get_by_organization_id(organization_id)
 
     def reject(
         self,
@@ -311,10 +352,8 @@ class PostgresOrganizationRepository:
     ) -> Organization | None:
 
         with get_connection() as connection:
-
             with connection.transaction():
-
-                connection.execute(
+                updated = connection.execute(
                     """
                     UPDATE organizations
                     SET
@@ -326,13 +365,23 @@ class PostgresOrganizationRepository:
                         updated_at = CURRENT_TIMESTAMP,
                         updated_by = %s
                     WHERE id = %s
+                      AND status_id = (
+                          SELECT id
+                          FROM verification_statuses
+                          WHERE name = %s
+                      )
+                    RETURNING id
                     """,
                     (
                         OrganizationStatus.REJECTED.value,
                         reviewer_id,
                         organization_id,
+                        OrganizationStatus.PENDING.value,
                     ),
-                )
+                ).fetchone()
+
+                if updated is None:
+                    return None
 
                 connection.execute(
                     """
@@ -365,9 +414,7 @@ class PostgresOrganizationRepository:
                     ),
                 )
 
-        return self.get_by_organization_id(
-            organization_id
-        )
+        return self.get_by_organization_id(organization_id)
 
     def get_daycare_directory(
         self,
@@ -534,6 +581,9 @@ class PostgresOrganizationRepository:
             submitted_at=row[7],
             updated_at=row[8],
             message=row[9],
+            description=row[10],
+            location=row[11],
+            contact=row[12],
         )
     def expire_verified_organizations(self) -> int:
         expired_count = 0

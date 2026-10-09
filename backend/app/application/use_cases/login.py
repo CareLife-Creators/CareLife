@@ -30,4 +30,7 @@ class LoginService:
         ):
             raise ValueError("Invalid email or password")
 
+        if not user.is_active:
+            raise ValueError("Invalid email or password")
+
         return user

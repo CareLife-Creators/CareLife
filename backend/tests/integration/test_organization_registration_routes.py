@@ -96,6 +96,35 @@ class OrganizationRegistrationRouteTests(unittest.TestCase):
 
         self.service.register.assert_called_once()
 
+    def test_staff_cannot_register_a_different_organization_type(self):
+        staff_user = UserContext(
+            user_id="staff-1",
+            role=Role.DAYCARE_STAFF,
+            organization_id=None,
+        )
+
+        app.dependency_overrides[get_current_user] = (
+            lambda: staff_user
+        )
+
+        mismatched_payload = {
+            **self.valid_payload,
+            "organization_name": "Test Orphanage",
+            "organization_type": "orphanage",
+        }
+
+        response = self.client.post(
+            "/organizations/register",
+            json=mismatched_payload,
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            response.json()["detail"],
+            "Your staff role cannot register this organization type",
+        )
+        self.service.register.assert_not_called()
+
     def test_invalid_payload_is_rejected(self):
         staff_user = UserContext(
             user_id="staff-1",
