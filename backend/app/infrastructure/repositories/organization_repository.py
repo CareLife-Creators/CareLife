@@ -24,6 +24,9 @@ class PostgresOrganizationRepository:
                         organization_type,
                         status_id,
                         submitted_by,
+                        description,
+                        location,
+                        contact,
                         created_at,
                         updated_at,
                         updated_by
@@ -40,6 +43,9 @@ class PostgresOrganizationRepository:
                         %s,
                         %s,
                         %s,
+                        %s,
+                        %s,
+                        %s,
                         %s
                     )
                     """,
@@ -49,9 +55,27 @@ class PostgresOrganizationRepository:
                         organization.organization_type,
                         organization.status.value,
                         organization.submitted_by,
+                        organization.description,
+                        organization.location,
+                        organization.contact,
                         organization.submitted_at,
                         organization.updated_at,
                         organization.submitted_by,
+                    ),
+                )
+
+                connection.execute(
+                    """
+                    INSERT INTO user_organizations (
+                        user_id,
+                        organization_id
+                    )
+                    VALUES (%s, %s)
+                    ON CONFLICT (user_id, organization_id) DO NOTHING
+                    """,
+                    (
+                        organization.submitted_by,
+                        organization.organization_id,
                     ),
                 )
 
@@ -141,7 +165,10 @@ class PostgresOrganizationRepository:
                     status.name,
                     o.created_at,
                     o.updated_at,
-                    latest_review.notes
+                    latest_review.notes,
+                    o.description,
+                    o.location,
+                    o.contact
                 FROM organizations o
 
                 JOIN verification_statuses status
@@ -534,6 +561,9 @@ class PostgresOrganizationRepository:
             submitted_at=row[7],
             updated_at=row[8],
             message=row[9],
+            description=row[10],
+            location=row[11],
+            contact=row[12],
         )
     def expire_verified_organizations(self) -> int:
         expired_count = 0

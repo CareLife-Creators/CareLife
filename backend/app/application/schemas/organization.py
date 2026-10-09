@@ -19,6 +19,10 @@ class OrganizationRegistrationRequest(BaseModel):
         "elderly_care",
     ]
 
+    description: str | None = Field(default=None, max_length=5000)
+    location: str | None = Field(default=None, max_length=255)
+    contact: str | None = Field(default=None, max_length=100)
+
     license_number: str = Field(
         min_length=1,
         max_length=100,
@@ -47,6 +51,19 @@ class OrganizationRegistrationRequest(BaseModel):
 
         return value
 
+    @field_validator(
+        "description",
+        "location",
+        "contact",
+        mode="before",
+    )
+    @classmethod
+    def strip_optional_text(cls, value: object) -> object:
+        if isinstance(value, str):
+            value = value.strip()
+            return value or None
+        return value
+
     @field_validator("license_expiry_date")
     @classmethod
     def validate_license_expiry(
@@ -66,6 +83,9 @@ class OrganizationVerificationResponse(BaseModel):
     organization_id: str
     organization_name: str
     organization_type: str
+    description: str | None = None
+    location: str | None = None
+    contact: str | None = None
     license_number: str
     license_expiry_date: date
     submitted_by: str
