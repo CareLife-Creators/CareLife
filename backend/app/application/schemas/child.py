@@ -1,8 +1,12 @@
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.domain.entities.child import ContactType, OutcomeStatus, OutcomeType
+from app.domain.entities.child import (
+    ContactType,
+    OutcomeStatus,
+    OutcomeType,
+)
 
 
 class ChildCreateRequest(BaseModel):
@@ -162,3 +166,49 @@ class OutcomeResponse(BaseModel):
     created_by: str
     created_at: str
     updated_at: str
+
+
+
+class AttendanceCheckInRequest(BaseModel):
+    enrollment_id: str = Field(
+        min_length=1,
+        max_length=100,
+    )
+
+
+class AttendanceResponse(BaseModel):
+    id: str
+    enrollment_id: str
+    attendance_date: date
+    check_in_at: datetime
+    check_out_at: datetime | None
+    recorded_by: str
+
+
+
+
+class DailyUpdateCreateRequest(BaseModel):
+    notes: str = Field(
+        min_length=1,
+        max_length=2000,
+    )
+
+    @field_validator("notes")
+    @classmethod
+    def validate_notes(cls, value: str) -> str:
+        value = value.strip()
+
+        if not value:
+            raise ValueError("Daily update notes are required")
+
+        return value
+
+
+class DailyUpdateResponse(BaseModel):
+    id: str
+    child_id: str
+    daycare_organization_id: str
+    update_date: date
+    notes: str
+    recorded_by: str
+    created_at: datetime

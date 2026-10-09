@@ -60,3 +60,22 @@ class OrphanageOutcome(BaseModel):
     created_by: str
     created_at: datetime
     updated_at: datetime
+
+
+class Attendance(BaseModel):
+    id: str
+    enrollment_id: str
+    attendance_date: date
+    check_in_at: datetime
+    check_out_at: datetime | None = None
+    recorded_by: str
+
+
+class DailyUpdate(BaseModel):
+    id: str
+    child_id: str
+    daycare_organization_id: str
+    update_date: date
+    notes: str
+    recorded_by: str
+    created_at: datetime
