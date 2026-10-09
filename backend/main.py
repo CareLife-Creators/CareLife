@@ -4,7 +4,7 @@ from app.presentation.api.routes.caregivers import (
     router as caregivers_router,
 )
 from app.core.config import get_settings
-
+from app.presentation.api.routes.impact import router as impact_router
 from app.presentation.api.routes.health import router as health_router
 from app.presentation.api.routes.protected import router as protected_router
 from app.presentation.api.routes.password_reset import (
@@ -57,7 +57,7 @@ app.include_router(enrollment_router)
 app.include_router(attendance_router)
 app.include_router(donations_router)
 app.include_router(caregivers_router)
-
+app.include_router(impact_router)
 @app.get("/")
 def root():
     return {"message": "CareLife API is running"}

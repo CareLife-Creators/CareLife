@@ -35,6 +35,10 @@ from app.infrastructure.models.caregiver import (
     CaregiverDocumentModel,
     CaregiverProfileModel,
 )
+from app.infrastructure.models.impact import (
+    ImpactMediaModel,
+    ImpactUpdateModel,
+)
 
 __all__ = [
     "Base",
@@ -56,4 +60,6 @@ __all__ = [
     "DonationCampaignModel",
     "DonationNeedModel",
     "NotificationModel",
+    "ImpactUpdateModel",
+    "ImpactMediaModel",
 ]
