@@ -17,30 +17,36 @@ from app.application.schemas.impact import (
     ImpactUpdateCreateRequest,
     ImpactUpdateResponse,
 )
-from app.application.use_cases.impact import (
-    MAX_VIDEO_BYTES,
-    ImpactService,
+from app.application.use_cases.impact import MAX_VIDEO_BYTES, ImpactService
+from app.domain.entities.impact import (
+    ImpactMedia,
+    ImpactUpdate,
+    ImpactUpdateStatus,
 )
-from app.domain.entities.impact import ImpactMedia, ImpactUpdate
 from app.domain.entities.user_context import Role, UserContext
-from app.presentation.api.dependencies.authorization import (
-    get_current_user,
-    require_role,
-)
+from app.presentation.api.dependencies.authorization import require_role
 from app.presentation.api.dependencies.impact import get_impact_service
 
 
 router = APIRouter(tags=["Orphanage Impact Updates"])
 
 
-def _media_response(media: ImpactMedia) -> ImpactMediaResponse:
+def _media_response(
+    media: ImpactMedia,
+    update_status: ImpactUpdateStatus,
+) -> ImpactMediaResponse:
+    if update_status == ImpactUpdateStatus.PENDING_REVIEW:
+        url = f"/admin/impact-updates/media/{media.id}/file"
+    else:
+        url = f"/impact-updates/media/{media.id}/file"
+
     return ImpactMediaResponse(
         id=media.id,
         update_id=media.update_id,
         media_type=media.media_type,
         content_type=media.content_type,
         file_size=media.file_size,
-        url=f"/impact-updates/media/{media.id}/file",
+        url=url,
         created_at=media.created_at,
     )
 
@@ -59,7 +65,10 @@ def _update_response(
         status=update.status,
         created_at=update.created_at,
         published_at=update.published_at,
-        media=[_media_response(item) for item in media],
+        media=[
+            _media_response(item, update.status)
+            for item in media
+        ],
     )
 
 
@@ -72,7 +81,6 @@ def _raise_http_error(exc: Exception) -> None:
         code = status.HTTP_400_BAD_REQUEST
     else:
         code = status.HTTP_500_INTERNAL_SERVER_ERROR
-
     raise HTTPException(status_code=code, detail=str(exc)) from exc
 
 
@@ -84,17 +92,11 @@ def _raise_http_error(exc: Exception) -> None:
 def create_impact_update(
     organization_id: str,
     request: ImpactUpdateCreateRequest,
-    current_user: UserContext = Depends(
-        require_role(Role.ORPHANAGE_STAFF)
-    ),
+    current_user: UserContext = Depends(require_role(Role.ORPHANAGE_STAFF)),
     service: ImpactService = Depends(get_impact_service),
 ):
     try:
-        update = service.create_update(
-            current_user,
-            organization_id,
-            request,
-        )
+        update = service.create_update(current_user, organization_id, request)
         return _update_response(update, service)
     except (PermissionError, LookupError, ValueError) as exc:
         _raise_http_error(exc)
@@ -109,19 +111,15 @@ async def upload_impact_media(
     organization_id: str,
     update_id: str,
     file: UploadFile = File(...),
-    current_user: UserContext = Depends(
-        require_role(Role.ORPHANAGE_STAFF)
-    ),
+    current_user: UserContext = Depends(require_role(Role.ORPHANAGE_STAFF)),
     service: ImpactService = Depends(get_impact_service),
 ):
     try:
-        # Read incrementally so an oversized request is rejected early.
         data = bytearray()
         while True:
             chunk = await file.read(1024 * 1024)
             if not chunk:
                 break
-
             data.extend(chunk)
             if len(data) > MAX_VIDEO_BYTES:
                 raise HTTPException(
@@ -137,7 +135,7 @@ async def upload_impact_media(
             file.content_type,
             bytes(data),
         )
-        return _media_response(media)
+        return _media_response(media, ImpactUpdateStatus.PENDING_REVIEW)
     except HTTPException:
         raise
     except (PermissionError, LookupError, ValueError) as exc:
@@ -151,9 +149,7 @@ async def upload_impact_media(
     response_model=list[ImpactUpdateResponse],
 )
 def list_pending_impact_updates(
-    current_user: UserContext = Depends(
-        require_role(Role.CARELIFE_ADMIN)
-    ),
+    current_user: UserContext = Depends(require_role(Role.CARELIFE_ADMIN)),
     service: ImpactService = Depends(get_impact_service),
 ):
     try:
@@ -170,18 +166,33 @@ def list_pending_impact_updates(
 def review_impact_update(
     update_id: str,
     request: ImpactReviewRequest,
-    current_user: UserContext = Depends(
-        require_role(Role.CARELIFE_ADMIN)
-    ),
+    current_user: UserContext = Depends(require_role(Role.CARELIFE_ADMIN)),
     service: ImpactService = Depends(get_impact_service),
 ):
     try:
-        update = service.review_update(
-            current_user,
-            update_id,
-            request,
-        )
+        update = service.review_update(current_user, update_id, request)
         return _update_response(update, service)
+    except (PermissionError, LookupError, ValueError) as exc:
+        _raise_http_error(exc)
+
+
+@router.get(
+    "/admin/impact-updates/media/{media_id}/file",
+)
+def get_pending_review_media(
+    media_id: str,
+    current_user: UserContext = Depends(require_role(Role.CARELIFE_ADMIN)),
+    service: ImpactService = Depends(get_impact_service),
+):
+    try:
+        path, media = service.get_review_media_path(current_user, media_id)
+        return FileResponse(
+            path=Path(path),
+            media_type=media.content_type,
+            filename=f"impact-media-{media.id}",
+            content_disposition_type="inline",
+            headers={"X-Content-Type-Options": "nosniff"},
+        )
     except (PermissionError, LookupError, ValueError) as exc:
         _raise_http_error(exc)
 

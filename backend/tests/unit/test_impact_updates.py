@@ -1,145 +1,50 @@
 from datetime import datetime, timezone
-from pathlib import Path
-from uuid import uuid4
+from unittest.mock import Mock
 
-from app.application.interfaces.impact import ImpactRepository
+import pytest
+
 from app.application.schemas.impact import (
-ImpactReviewRequest,
-ImpactUpdateCreateRequest,
+    ImpactReviewRequest,
+    ImpactUpdateCreateRequest,
 )
-from app.core.config import BACKEND_DIR
+from app.application.use_cases.impact import (
+    ImpactService,
+    validate_media_payload,
+)
 from app.domain.entities.impact import (
-ImpactMedia,
-ImpactMediaType,
-ImpactReviewDecision,
-ImpactUpdate,
-ImpactUpdateStatus,
+    ImpactMediaType,
+    ImpactReviewDecision,
+    ImpactUpdate,
+    ImpactUpdateStatus,
 )
 from app.domain.entities.user_context import Role, UserContext
 
-MAX_IMAGE_BYTES = 10 * 1024 * 1024
-MAX_VIDEO_BYTES = 30 * 1024 * 1024
 
-MEDIA_DIRECTORY = BACKEND_DIR / "uploads" / "impact_media"
-
-SUPPORTED_MEDIA = {
-"image/jpeg": (ImpactMediaType.IMAGE, ".jpg"),
-"image/png": (ImpactMediaType.IMAGE, ".png"),
-"image/webp": (ImpactMediaType.IMAGE, ".webp"),
-"video/mp4": (ImpactMediaType.VIDEO, ".mp4"),
-"video/quicktime": (ImpactMediaType.VIDEO, ".mov"),
-"video/webm": (ImpactMediaType.VIDEO, ".webm"),
-}
-
-def validate_media_payload(
-content_type: str | None,
-data: bytes,
-) -> tuple[ImpactMediaType, str]:
-if not content_type:
-raise ValueError("A supported media content type is required")
-
-```
-normalized_type = content_type.split(";", 1)[0].strip().lower()
-supported = SUPPORTED_MEDIA.get(normalized_type)
-
-if supported is None:
-    raise ValueError(
-        "Only JPEG, PNG, WebP, MP4, MOV and WebM are supported"
-    )
-
-media_type, extension = supported
-
-if not data:
-    raise ValueError("The uploaded media file is empty")
-
-limit = (
-    MAX_IMAGE_BYTES
-    if media_type == ImpactMediaType.IMAGE
-    else MAX_VIDEO_BYTES
-)
-
-if len(data) > limit:
-    raise ValueError(
-        f"This media type must not exceed {limit // (1024 * 1024)} MB"
-    )
-
-if normalized_type == "image/jpeg":
-    valid_signature = data.startswith(b"\xff\xd8\xff")
-elif normalized_type == "image/png":
-    valid_signature = data.startswith(b"\x89PNG\r\n\x1a\n")
-elif normalized_type == "image/webp":
-    valid_signature = (
-        len(data) >= 12
-        and data[:4] == b"RIFF"
-        and data[8:12] == b"WEBP"
-    )
-elif normalized_type in {"video/mp4", "video/quicktime"}:
-    valid_signature = len(data) >= 12 and data[4:8] == b"ftyp"
-else:
-    valid_signature = data.startswith(b"\x1a\x45\xdf\xa3")
-
-if not valid_signature:
-    raise ValueError(
-        "The file content does not match its declared media type"
-    )
-
-return media_type, extension
-```
-
-class ImpactService:
-def **init**(self, repository: ImpactRepository):
-self.repository = repository
-
-```
-@staticmethod
-def _organization_access(
-    user: UserContext,
-    organization_id: str,
-) -> bool:
-    return (
-        organization_id == user.organization_id
-        or organization_id in user.organization_ids
-    )
-
-def _authorize_orphanage_staff(
-    self,
-    user: UserContext,
-    organization_id: str,
-) -> None:
-    if user.role != Role.ORPHANAGE_STAFF:
-        raise PermissionError("Orphanage staff access required")
-
-    if not self._organization_access(user, organization_id):
-        raise PermissionError(
-            "You do not have access to this organization"
-        )
-
-    if not self.repository.is_authorized_orphanage_staff(
-        organization_id,
-        user.user_id,
-    ):
-        raise PermissionError(
-            "Authorized orphanage staff membership is required"
-        )
-
-def create_update(
-    self,
-    user: UserContext,
-    organization_id: str,
-    request: ImpactUpdateCreateRequest,
-) -> ImpactUpdate:
-    self._authorize_orphanage_staff(user, organization_id)
-
-    now = datetime.now(timezone.utc)
-
-    update = ImpactUpdate(
-        id=str(uuid4()),
+def make_user(
+    role: Role = Role.ORPHANAGE_STAFF,
+    organization_id: str | None = "org-1",
+) -> UserContext:
+    organizations = [organization_id] if organization_id else []
+    return UserContext(
+        user_id="user-1",
+        role=role,
         organization_id=organization_id,
-        organization_name="",
-        title=request.title,
-        content=request.content,
-        status=ImpactUpdateStatus.PENDING_REVIEW,
-        created_by=user.user_id,
+        organization_ids=organizations,
+    )
+
+
+def make_update(
+    status: ImpactUpdateStatus = ImpactUpdateStatus.PENDING_REVIEW,
+) -> ImpactUpdate:
+    now = datetime.now(timezone.utc)
+    return ImpactUpdate(
+        id="update-1",
+        organization_id="org-1",
+        organization_name="Example Orphanage",
+        title="A safe update",
+        content="A suitable update about the organization's work.",
+        status=status,
+        created_by="user-1",
         reviewed_by=None,
         review_notes=None,
         created_at=now,
@@ -148,142 +53,133 @@ def create_update(
         published_at=None,
     )
 
-    return self.repository.create_update(update)
 
-def add_media(
-    self,
-    user: UserContext,
-    organization_id: str,
-    update_id: str,
-    filename: str | None,
+def make_service() -> tuple[ImpactService, Mock]:
+    repository = Mock()
+    repository.is_authorized_orphanage_staff.return_value = True
+    repository.create_update.side_effect = lambda update: update
+    repository.get_update.return_value = make_update()
+    repository.review_update.side_effect = (
+        lambda update_id, decision, reviewer_id, review_notes: make_update(
+            ImpactUpdateStatus(decision)
+        )
+    )
+    return ImpactService(repository), repository
+
+
+def test_valid_jpeg_media_is_accepted() -> None:
+    media_type, extension = validate_media_payload(
+        "image/jpeg",
+        b"\xff\xd8\xff" + b"jpeg-data",
+    )
+    assert media_type == ImpactMediaType.IMAGE
+    assert extension == ".jpg"
+
+
+@pytest.mark.parametrize(
+    ("content_type", "data"),
+    [
+        ("image/gif", b"GIF89a"),
+        ("image/png", b"not-a-png"),
+        ("video/mp4", b"not-an-mp4"),
+        (None, b"content"),
+        ("image/jpeg", b""),
+    ],
+)
+def test_invalid_media_is_rejected(
     content_type: str | None,
     data: bytes,
-) -> ImpactMedia:
-    # Never use the client-provided filename as a filesystem path.
-    del filename
+) -> None:
+    with pytest.raises(ValueError):
+        validate_media_payload(content_type, data)
 
-    self._authorize_orphanage_staff(user, organization_id)
 
-    update = self.repository.get_update(update_id)
-
-    if update is None:
-        raise LookupError("Impact update not found")
-
-    if update.organization_id != organization_id:
-        raise PermissionError(
-            "This update does not belong to the specified organization"
-        )
-
-    if update.status != ImpactUpdateStatus.PENDING_REVIEW:
-        raise ValueError(
-            "Media can only be added before moderation"
-        )
-
-    media_type, extension = validate_media_payload(
-        content_type,
-        data,
+def test_create_update_starts_in_pending_review() -> None:
+    service, repository = make_service()
+    request = ImpactUpdateCreateRequest(
+        title="Community progress",
+        content="An update about recent community work.",
     )
 
-    media_id = str(uuid4())
-    storage_key = f"{uuid4().hex}{extension}"
-    MEDIA_DIRECTORY.mkdir(parents=True, exist_ok=True)
+    result = service.create_update(make_user(), "org-1", request)
 
-    target = MEDIA_DIRECTORY / storage_key
-    target.write_bytes(data)
+    assert result.status == ImpactUpdateStatus.PENDING_REVIEW
+    repository.create_update.assert_called_once()
 
-    media = ImpactMedia(
-        id=media_id,
-        update_id=update_id,
-        storage_key=storage_key,
-        content_type=content_type.split(";", 1)[0].strip().lower(),
-        media_type=media_type,
-        file_size=len(data),
-        created_at=datetime.now(timezone.utc),
+
+def test_staff_cannot_create_update_for_another_organization() -> None:
+    service, repository = make_service()
+    request = ImpactUpdateCreateRequest(
+        title="Community progress",
+        content="An update about recent community work.",
     )
 
-    try:
-        # Pass the uploader's ID so the repository validates that user.
-        return self.repository.add_media(
-            organization_id,
-            user.user_id,
-            media,
-        )
-    except Exception:
-        target.unlink(missing_ok=True)
-        raise
+    with pytest.raises(PermissionError):
+        service.create_update(make_user(), "org-2", request)
 
-def list_pending_updates(
-    self,
-    user: UserContext,
-) -> list[ImpactUpdate]:
-    if user.role != Role.CARELIFE_ADMIN:
-        raise PermissionError(
-            "CareLife administrator access required"
-        )
+    repository.create_update.assert_not_called()
 
-    return self.repository.list_pending_updates()
 
-def review_update(
-    self,
-    user: UserContext,
-    update_id: str,
-    request: ImpactReviewRequest,
-) -> ImpactUpdate:
-    if user.role != Role.CARELIFE_ADMIN:
-        raise PermissionError(
-            "CareLife administrator access required"
-        )
+def test_non_admin_cannot_list_pending_updates() -> None:
+    service, repository = make_service()
 
-    if request.decision == ImpactReviewDecision.APPROVE:
-        if not request.privacy_confirmed:
-            raise ValueError(
-                "Privacy confirmation is required before publication"
-            )
-    elif not request.review_notes:
-        raise ValueError(
-            "A reason is required when rejecting an impact update"
-        )
+    with pytest.raises(PermissionError):
+        service.list_pending_updates(make_user())
 
-    updated = self.repository.review_update(
-        update_id=update_id,
-        decision=request.decision.value,
-        reviewer_id=user.user_id,
-        review_notes=request.review_notes,
+    repository.list_pending_updates.assert_not_called()
+
+
+def test_approval_requires_privacy_confirmation() -> None:
+    service, repository = make_service()
+    request = ImpactReviewRequest(
+        decision=ImpactReviewDecision.APPROVE,
+        privacy_confirmed=False,
     )
 
-    if updated is None:
-        raise LookupError("Impact update not found")
+    with pytest.raises(ValueError, match="Privacy confirmation"):
+        service.review_update(
+            make_user(Role.CARELIFE_ADMIN, None),
+            "update-1",
+            request,
+        )
 
-    return updated
+    repository.review_update.assert_not_called()
 
-def list_public_updates(
-    self,
-    organization_id: str | None = None,
-) -> list[ImpactUpdate]:
-    return self.repository.list_public_updates(organization_id)
 
-def list_media(
-    self,
-    update_id: str,
-) -> list[ImpactMedia]:
-    return self.repository.list_media(update_id)
+def test_admin_can_approve_after_privacy_confirmation() -> None:
+    service, repository = make_service()
+    request = ImpactReviewRequest(
+        decision=ImpactReviewDecision.APPROVE,
+        privacy_confirmed=True,
+    )
 
-def get_public_media_path(
-    self,
-    media_id: str,
-) -> tuple[Path, ImpactMedia]:
-    media = self.repository.get_public_media(media_id)
+    result = service.review_update(
+        make_user(Role.CARELIFE_ADMIN, None),
+        "update-1",
+        request,
+    )
 
-    if media is None:
-        raise LookupError("Published media not found")
+    assert result.status == ImpactUpdateStatus.APPROVED
+    repository.review_update.assert_called_once_with(
+        update_id="update-1",
+        decision="approved",
+        reviewer_id="user-1",
+        review_notes=None,
+    )
 
-    path = MEDIA_DIRECTORY / media.storage_key
 
-    if path.resolve().parent != MEDIA_DIRECTORY.resolve():
-        raise LookupError("Published media not found")
+def test_rejection_requires_a_reason() -> None:
+    service, repository = make_service()
+    request = ImpactReviewRequest(
+        decision=ImpactReviewDecision.REJECT,
+        review_notes="   ",
+    )
 
-    if not path.is_file():
-        raise LookupError("Published media file not found")
+    with pytest.raises(ValueError, match="reason is required"):
+        service.review_update(
+            make_user(Role.CARELIFE_ADMIN, None),
+            "update-1",
+            request,
+        )
 
-    return path, media
-```
+    repository.review_update.assert_not_called()
