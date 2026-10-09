@@ -23,6 +23,7 @@ from app.presentation.api.routes.enrollment import (
 from app.presentation.api.routes.attendance import (
     router as attendance_router,
 )
+from app.presentation.api.routes.donations import router as donations_router
 
 
 settings = get_settings()
@@ -52,6 +53,7 @@ app.include_router(login_router)
 app.include_router(children_router)
 app.include_router(enrollment_router)
 app.include_router(attendance_router)
+app.include_router(donations_router)
 
 
 @app.get("/")
