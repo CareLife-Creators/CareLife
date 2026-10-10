@@ -51,7 +51,38 @@ function DaycareDirectoryPage() {
   }
 
   useEffect(() => {
-    loadDirectory('', '')
+    let cancelled = false
+
+    getDaycareDirectory({
+      search: '',
+      location: '',
+    })
+      .then((data) => {
+        if (!cancelled) {
+          setOrganizations(data)
+        }
+      })
+      .catch((err) => {
+        if (cancelled) {
+          return
+        }
+
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Unable to load daycare directory'
+        )
+        setOrganizations([])
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   async function handleViewDetails(
