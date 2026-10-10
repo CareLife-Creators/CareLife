@@ -1,34 +1,33 @@
-const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+import { API_BASE_URL } from './config'
 
 export async function getOrganizationVerification(
-    organizationId
+  organizationId
 ) {
-    const response = await fetch(
-        `${API_BASE_URL}/organizations/${organizationId}/verification-status`, {
-            credentials: 'include',
-        }
-    )
+  const response = await fetch(
+    `${API_BASE_URL}/organizations/${organizationId}/verification-status`, {
+      credentials: 'include',
+    }
+  )
 
-    if (!response.ok) {
-        if (response.status === 401) {
-            throw new Error('Authentication required')
-        }
-
-        if (response.status === 403) {
-            throw new Error(
-                'You do not have access to this organization'
-            )
-        }
-
-        if (response.status === 404) {
-            throw new Error(
-                'Verification information not found'
-            )
-        }
-
-        throw new Error('Unable to load verification status')
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('Authentication required')
     }
 
-    return response.json()
+    if (response.status === 403) {
+      throw new Error(
+        'You do not have access to this organization'
+      )
+    }
+
+    if (response.status === 404) {
+      throw new Error(
+        'Verification information not found'
+      )
+    }
+
+    throw new Error('Unable to load verification status')
+  }
+
+  return response.json()
 }
