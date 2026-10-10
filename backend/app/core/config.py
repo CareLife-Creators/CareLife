@@ -31,7 +31,11 @@ class Settings(BaseSettings):
 
     reset_token_expire_minutes: int = Field(default=30, gt=0)
 
-    reset_link_base_url: str = "http://localhost:3000/reset-password"
+    reset_link_base_url: str = "http://localhost:5173/reset-password"
+
+    cors_origins: list[str] = Field(
+        default_factory=lambda: ["http://localhost:5173"]
+    )
 
     email_mode: Literal["console", "smtp"] = "console"
 
