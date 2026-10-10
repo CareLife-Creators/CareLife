@@ -70,7 +70,8 @@ function App() {
     route === '#signup'
 
   const isResetPasswordPage =
-    route.startsWith('#reset-password')
+    route.startsWith('#reset-password') ||
+    window.location.pathname === '/reset-password'
 
 
   useEffect(() => {
