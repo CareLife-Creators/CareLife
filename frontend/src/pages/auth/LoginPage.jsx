@@ -92,9 +92,7 @@ function LoginPage({ onSignup }) {
                   type="button"
                   className="forgot-password"
                   onClick={() => {
-                    setError(
-                      'Password reset is not available yet.'
-                    )
+                    window.location.href = '/reset-password'
                   }}
                 >
                   Forgot password?
