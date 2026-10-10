@@ -3,6 +3,7 @@ import './App.css'
 
 import LoginPage from './pages/auth/LoginPage'
 import SignupPage from './pages/auth/SignupPage'
+import ResetPasswordPage from './pages/auth/ResetPasswordPage'
 
 import {
   getOrganizationVerification,
@@ -68,6 +69,9 @@ function App() {
   const isSignupPage =
     route === '#signup'
 
+  const isResetPasswordPage =
+    route.startsWith('#reset-password')
+
 
   useEffect(() => {
     function handleHashChange() {
@@ -120,15 +124,13 @@ function App() {
       isApprovalDashboard ||
       isDaycareDirectory ||
       isLoginPage ||
-      isSignupPage
+      isSignupPage ||
+      isResetPasswordPage
     ) {
-      setLoading(false)
       return undefined
     }
 
     let cancelled = false
-
-    setLoading(true)
 
     getOrganizationVerification(
       organizationId
@@ -166,7 +168,16 @@ function App() {
     isDaycareDirectory,
     isLoginPage,
     isSignupPage,
+    isResetPasswordPage,
   ])
+
+
+  /*
+   * Password reset
+   */
+  if (isResetPasswordPage) {
+    return <ResetPasswordPage />
+  }
 
 
   /*
