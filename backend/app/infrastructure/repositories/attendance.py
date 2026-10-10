@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import datetime
 
 from app.application.interfaces.child import AttendanceRepository
 from app.domain.entities.child import Attendance, DailyUpdate
