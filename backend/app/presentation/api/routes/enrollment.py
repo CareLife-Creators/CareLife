@@ -13,9 +13,6 @@ from app.application.schemas.enrollment import (
 from app.application.use_cases.enrollment import (
     EnrollmentService,
 )
-from app.domain.entities.enrollment import (
-    EnrollmentStatus,
-)
 from app.domain.entities.user_context import (
     Role,
     UserContext,
