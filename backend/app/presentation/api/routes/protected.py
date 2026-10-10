@@ -1,12 +1,11 @@
 from fastapi import APIRouter, Depends
 
 from app.domain.entities.user_context import Role, UserContext
-from app.presentation.api.dependencies.authorization import require_role
 from app.presentation.api.dependencies.authorization import (
+    get_current_user,
     require_organization_access,
     require_role,
 )
-from app.presentation.api.dependencies.authorization import get_current_user
 
 router = APIRouter(
     prefix="/protected",
