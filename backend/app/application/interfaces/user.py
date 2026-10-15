@@ -21,3 +21,10 @@ class UserRepository(Protocol):
         user: User,
     ) -> User:
         ...
+
+    def update_profile(
+        self,
+        user_id: str,
+        changes: dict[str, str | None],
+    ) -> User | None:
+        ...
