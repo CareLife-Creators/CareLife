@@ -63,10 +63,33 @@ class OrganizationModel(Base):
         nullable=True,
     )
 
+    # Capacity already exists in the CareLife schema.
     capacity: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
         server_default="20",
+    )
+
+    # Additional daycare service information.
+    # These fields remain optional for other organization types.
+    age_range: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+    )
+
+    opening_hours: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
+    facilities: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    fees: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
     )
 
     created_at: Mapped[datetime] = mapped_column(
@@ -92,7 +115,8 @@ class OrganizationModel(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "organization_type IN ('daycare', 'orphanage', 'elderly_care')",
+            "organization_type IN "
+            "('daycare', 'orphanage', 'elderly_care')",
             name="ck_organizations_type",
         ),
         CheckConstraint(
