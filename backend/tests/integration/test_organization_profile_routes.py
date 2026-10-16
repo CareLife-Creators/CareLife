@@ -185,12 +185,14 @@ class OrganizationProfileRouteTests(unittest.TestCase):
         self.assertNotIn("submitted_by", body)
         self.assertNotIn("status", body)
 
-    def test_unknown_profile_returns_not_found(self):
+    def test_unknown_profile_is_rejected_for_non_member(self):
         response = self.client.get(
             "/organizations/missing-org/profile"
         )
 
-        self.assertEqual(response.status_code, 404)
+        # Membership is checked before resource lookup, avoiding
+        # organization-ID enumeration by users without access.
+        self.assertEqual(response.status_code, 403)
 
 
 if __name__ == "__main__":
