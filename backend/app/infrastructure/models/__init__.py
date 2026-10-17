@@ -39,6 +39,10 @@ from app.infrastructure.models.impact import (
     ImpactMediaModel,
     ImpactUpdateModel,
 )
+from app.infrastructure.models.remote_checkin import (
+    RemoteCheckInModel,
+    ResidentFamilyConsentModel,
+)
 
 __all__ = [
     "Base",
@@ -62,4 +66,6 @@ __all__ = [
     "NotificationModel",
     "ImpactUpdateModel",
     "ImpactMediaModel",
+    "RemoteCheckInModel",
+    "ResidentFamilyConsentModel",
 ]
