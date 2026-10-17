@@ -46,6 +46,8 @@ from app.infrastructure.models.remote_checkin import (
     RemoteCheckInModel,
     ResidentFamilyConsentModel,
 )
+from app.infrastructure.models.resident import ResidentProfileModel
+
 
 __all__ = [
     "Base",
@@ -72,4 +74,5 @@ __all__ = [
     "ImpactMediaModel",
     "RemoteCheckInModel",
     "ResidentFamilyConsentModel",
+    "ResidentProfileModel",
 ]
