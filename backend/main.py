@@ -23,6 +23,9 @@ from app.presentation.api.routes.health import (
 from app.presentation.api.routes.impact import (
     router as impact_router,
 )
+from app.presentation.api.routes.in_kind_donations import (
+    router as in_kind_donations_router,
+)
 from app.presentation.api.routes.login import (
     router as login_router,
 )
@@ -80,10 +83,12 @@ app.include_router(children_router)
 app.include_router(enrollment_router)
 app.include_router(attendance_router)
 app.include_router(donations_router)
+app.include_router(in_kind_donations_router)
 app.include_router(caregivers_router)
 app.include_router(impact_router)
 app.include_router(user_profile_router)
 app.include_router(remote_checkins_router)
+
 
 @app.get("/")
 def root():

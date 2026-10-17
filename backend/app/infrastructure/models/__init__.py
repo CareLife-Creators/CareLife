@@ -11,6 +11,9 @@ from app.infrastructure.models.donation import (
     DonationNeedModel,
 )
 from app.infrastructure.models.enrollment import EnrollmentModel
+from app.infrastructure.models.in_kind_donation import (
+    InKindDonationPledgeModel,
+)
 from app.infrastructure.models.organization import OrganizationModel
 from app.infrastructure.models.organization_document import (
     OrganizationDocumentModel,
@@ -63,6 +66,7 @@ __all__ = [
     "DailyUpdateModel",
     "DonationCampaignModel",
     "DonationNeedModel",
+    "InKindDonationPledgeModel",
     "NotificationModel",
     "ImpactUpdateModel",
     "ImpactMediaModel",
