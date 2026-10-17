@@ -96,6 +96,7 @@ class OrganizationVerificationServiceTests(unittest.TestCase):
             location="Dhaka",
             min_capacity=10,
             max_capacity=50,
+            facility="Nursing",
         )
 
         self.assertEqual(result, [])
@@ -105,6 +106,7 @@ class OrganizationVerificationServiceTests(unittest.TestCase):
             location="Dhaka",
             min_capacity=10,
             max_capacity=50,
+            facility="Nursing",
         )
 
 
