@@ -11,11 +11,6 @@ from app.application.schemas.organization import (
     OrganizationVerificationDecisionRequest,
     OrganizationVerificationResponse,
 )
-from app.application.schemas.organization import (
-    DaycareDirectoryResponse,
-    OrganizationVerificationDecisionRequest,
-    OrganizationVerificationResponse,
-)
 from app.application.use_cases.organization_verification import (
     OrganizationVerificationService,
 )
@@ -66,11 +61,6 @@ def get_daycare_directory(
 
 
 @router.get(
-    "/daycare/{organization_id}",
-    response_model=DaycareDirectoryResponse,
-)
-
-@router.get(
     "/elder-care",
     response_model=list[ElderCareDirectoryResponse],
 )
@@ -91,6 +81,10 @@ def get_elder_care_directory(
         default=None,
         ge=0,
     ),
+    facility: str | None = Query(
+        default=None,
+        max_length=100,
+    ),
     service: OrganizationVerificationService = Depends(
         get_organization_verification_service
     ),
@@ -110,12 +104,17 @@ def get_elder_care_directory(
         location=location,
         min_capacity=min_capacity,
         max_capacity=max_capacity,
+        facility=facility,
     )
 
     return [
         ElderCareDirectoryResponse.from_entity(organization)
         for organization in organizations
     ]
+@router.get(
+    "/daycare/{organization_id}",
+    response_model=DaycareDirectoryResponse,
+)
 def get_public_daycare(
     organization_id: str,
     service: OrganizationVerificationService = Depends(
