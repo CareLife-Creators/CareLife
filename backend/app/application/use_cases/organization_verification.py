@@ -1,6 +1,9 @@
 import logging
 from datetime import date
-
+from app.domain.entities.organization import (
+    ElderCareDirectoryEntry,
+    OrganizationStatus,
+)
 from app.application.interfaces.organization import (
     OrganizationRepository,
 )
@@ -45,6 +48,19 @@ class OrganizationVerificationService:
         return self.repository.get_daycare_directory(
             search=search,
             location=location,
+        )
+    def get_elder_care_directory(
+        self,
+        search: str | None = None,
+        location: str | None = None,
+        min_capacity: int | None = None,
+        max_capacity: int | None = None,
+    ) -> list[ElderCareDirectoryEntry]:
+        return self.repository.get_elder_care_directory(
+            search=search,
+            location=location,
+            min_capacity=min_capacity,
+            max_capacity=max_capacity,
         )
 
     def get_public_daycare(
