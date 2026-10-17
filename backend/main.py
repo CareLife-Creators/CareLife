@@ -47,6 +47,9 @@ from app.presentation.api.routes.signup import (
 from app.presentation.api.routes.user_profile import (
     router as user_profile_router,
 )
+from app.presentation.api.routes.remote_checkins import (
+    router as remote_checkins_router,
+)
 
 
 settings = get_settings()
@@ -80,7 +83,7 @@ app.include_router(donations_router)
 app.include_router(caregivers_router)
 app.include_router(impact_router)
 app.include_router(user_profile_router)
-
+app.include_router(remote_checkins_router)
 
 @app.get("/")
 def root():
