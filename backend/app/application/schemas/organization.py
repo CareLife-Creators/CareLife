@@ -3,7 +3,6 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.domain.entities.organization import OrganizationStatus
 from app.domain.entities.organization import (
     ElderCareDirectoryEntry,
     OrganizationStatus,
@@ -124,6 +123,7 @@ class DaycareDirectoryResponse(BaseModel):
             location=organization.location,
             contact=organization.contact,
         )
+
 
 class ElderCareDirectoryResponse(BaseModel):
     """Public response returned by the elder-care directory."""
