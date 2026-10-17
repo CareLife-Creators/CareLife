@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
 
 import pytest
 
@@ -11,6 +11,9 @@ from app.application.use_cases.remote_checkins import (
 )
 from app.domain.entities.remote_checkin import WellbeingStatus
 from app.domain.entities.user_context import Role, UserContext
+from app.infrastructure.repositories.remote_checkins import (
+    PostgresRemoteCheckInRepository,
+)
 
 
 def make_user(
@@ -111,4 +114,83 @@ def test_administrator_can_request_consent_update():
         resident_id="resident-1",
         family_representative_id="family-1",
         consent_granted=True,
+    )
+
+
+def make_connection_context():
+    context = MagicMock()
+    connection = context.__enter__.return_value
+    connection.transaction.return_value.__enter__.return_value = None
+    return context, connection
+
+
+def test_repository_rejects_checkin_without_active_consent(monkeypatch):
+    context, connection = make_connection_context()
+    connection.execute.return_value.fetchone.return_value = None
+    monkeypatch.setattr(
+        "app.infrastructure.repositories.remote_checkins.get_connection",
+        lambda: context,
+    )
+
+    repository = PostgresRemoteCheckInRepository()
+
+    with pytest.raises(PermissionError, match="Active consent"):
+        repository.create_checkin(
+            actor_user_id="family-1",
+            resident_id="resident-1",
+            wellbeing_status="well",
+            notes=None,
+        )
+
+    connection.execute.assert_called_once()
+
+
+def test_family_history_requires_active_consent(monkeypatch):
+    context, connection = make_connection_context()
+    connection.execute.return_value.fetchone.return_value = None
+    monkeypatch.setattr(
+        "app.infrastructure.repositories.remote_checkins.get_connection",
+        lambda: context,
+    )
+
+    repository = PostgresRemoteCheckInRepository()
+
+    with pytest.raises(PermissionError, match="Active consent"):
+        repository.list_checkins(
+            user=make_user(
+                Role.FAMILY_REPRESENTATIVE,
+                "family-1",
+            ),
+            resident_id="resident-1",
+        )
+
+    connection.execute.assert_called_once()
+
+
+def test_care_home_history_query_is_scoped_to_member_organizations(
+    monkeypatch,
+):
+    context, connection = make_connection_context()
+    connection.execute.side_effect = [
+        Mock(fetchone=Mock(return_value=(1,))),
+        Mock(fetchall=Mock(return_value=[])),
+    ]
+    monkeypatch.setattr(
+        "app.infrastructure.repositories.remote_checkins.get_connection",
+        lambda: context,
+    )
+
+    repository = PostgresRemoteCheckInRepository()
+    repository.list_checkins(
+        user=make_user(Role.CARE_HOME_STAFF, "staff-1"),
+        resident_id="resident-1",
+    )
+
+    history_query, parameters = connection.execute.call_args_list[1].args
+    assert "organization_id IN" in history_query
+    assert "user_organizations" in history_query
+    assert parameters == (
+        "resident-1",
+        "resident-1",
+        "staff-1",
     )
