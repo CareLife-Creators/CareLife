@@ -88,6 +88,25 @@ class OrganizationVerificationServiceTests(unittest.TestCase):
                 "Incomplete documents",
             )
 
+    def test_elder_care_directory_passes_supported_filters(self):
+        self.repository.get_elder_care_directory.return_value = []
+
+        result = self.service.get_elder_care_directory(
+            search="Sunrise",
+            location="Dhaka",
+            min_capacity=10,
+            max_capacity=50,
+        )
+
+        self.assertEqual(result, [])
+
+        self.repository.get_elder_care_directory.assert_called_once_with(
+            search="Sunrise",
+            location="Dhaka",
+            min_capacity=10,
+            max_capacity=50,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
