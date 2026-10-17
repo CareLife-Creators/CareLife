@@ -2,13 +2,10 @@ from typing import Protocol
 
 from app.domain.entities.organization import (
     DaycareDirectoryEntry,
-    Organization,
-)
-from app.domain.entities.organization import (
-    DaycareDirectoryEntry,
     ElderCareDirectoryEntry,
     Organization,
 )
+
 
 class OrganizationRepository(Protocol):
 
@@ -57,15 +54,6 @@ class OrganizationRepository(Protocol):
     ) -> DaycareDirectoryEntry | None:
         ...
 
-    def expire_verified_organizations(self) -> int:
-        ...
-
-    def create_license_expiry_reminders(
-        self,
-        reminder_days: int,
-    ) -> int:
-        ...
-
     def get_elder_care_directory(
         self,
         search: str | None = None,
@@ -74,4 +62,13 @@ class OrganizationRepository(Protocol):
         max_capacity: int | None = None,
         facility: str | None = None,
     ) -> list[ElderCareDirectoryEntry]:
+        ...
+
+    def expire_verified_organizations(self) -> int:
+        ...
+
+    def create_license_expiry_reminders(
+        self,
+        reminder_days: int,
+    ) -> int:
         ...
