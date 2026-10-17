@@ -1,5 +1,5 @@
 import re
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import (
     BaseModel,
@@ -242,8 +242,8 @@ class ResidentProfileResponse(BaseModel):
     status: ResidentProfileStatus
     created_by: str
     updated_by: str
-    created_at: object
-    updated_at: object
+    created_at: datetime
+    updated_at: datetime
 
     @classmethod
     def from_entity(
