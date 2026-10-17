@@ -35,6 +35,17 @@ _CHECKIN_COLUMNS = """
     recorded_at
 """
 
+_QUALIFIED_CHECKIN_COLUMNS = """
+    c.id,
+    c.consent_id,
+    c.resident_id,
+    c.organization_id,
+    c.actor_user_id,
+    c.wellbeing_status,
+    c.notes,
+    c.recorded_at
+"""
+
 
 def _to_consent(row) -> ResidentConsent:
     return ResidentConsent(
@@ -77,6 +88,8 @@ class PostgresRemoteCheckInRepository:
             """
             SELECT 1
             FROM organizations o
+            JOIN verification_statuses vs
+              ON vs.id = o.status_id
             JOIN user_organizations uo
               ON uo.organization_id = o.id
             JOIN users u
@@ -84,6 +97,8 @@ class PostgresRemoteCheckInRepository:
             JOIN roles r
               ON r.id = u.role_id
             WHERE o.id = %s
+              AND o.organization_type = 'elderly_care'
+              AND vs.name = 'verified'
               AND u.id = %s
               AND u.is_active = TRUE
               AND r.name = 'care_home_staff'
@@ -111,6 +126,23 @@ class PostgresRemoteCheckInRepository:
 
         with get_connection() as connection:
             with connection.transaction():
+                eligible_care_home = connection.execute(
+                    """
+                    SELECT 1
+                    FROM organizations o
+                    JOIN verification_statuses vs
+                      ON vs.id = o.status_id
+                    WHERE o.id = %s
+                      AND o.organization_type = 'elderly_care'
+                      AND vs.name = 'verified'
+                    """,
+                    (organization_id,),
+                ).fetchone()
+
+                if eligible_care_home is None:
+                    raise LookupError(
+                        "Verified elderly-care organization not found"
+                    )
 
                 if user.role == Role.CARE_HOME_STAFF:
                     self._assert_care_home_access(
@@ -309,23 +341,7 @@ class PostgresRemoteCheckInRepository:
 
                 rows = connection.execute(
                     f"""
-                    SELECT {_CHECKIN_COLUMNS.replace(
-                        "id,", "c.id,", 1
-                    ).replace(
-                        "consent_id,", "c.consent_id,", 1
-                    ).replace(
-                        "resident_id,", "c.resident_id,", 1
-                    ).replace(
-                        "organization_id,", "c.organization_id,", 1
-                    ).replace(
-                        "actor_user_id,", "c.actor_user_id,", 1
-                    ).replace(
-                        "wellbeing_status,", "c.wellbeing_status,", 1
-                    ).replace(
-                        "notes,", "c.notes,", 1
-                    ).replace(
-                        "recorded_at", "c.recorded_at", 1
-                    )}
+                    SELECT {_QUALIFIED_CHECKIN_COLUMNS}
                     FROM resident_remote_checkins c
                     WHERE c.resident_id = %s
                       AND EXISTS (
@@ -369,9 +385,21 @@ class PostgresRemoteCheckInRepository:
                     SELECT {_CHECKIN_COLUMNS}
                     FROM resident_remote_checkins
                     WHERE resident_id = %s
+                      AND organization_id IN (
+                          SELECT DISTINCT consent.organization_id
+                          FROM resident_family_consents consent
+                          JOIN user_organizations uo
+                            ON uo.organization_id = consent.organization_id
+                          JOIN users u ON u.id = uo.user_id
+                          JOIN roles r ON r.id = u.role_id
+                          WHERE consent.resident_id = %s
+                            AND u.id = %s
+                            AND u.is_active = TRUE
+                            AND r.name = 'care_home_staff'
+                      )
                     ORDER BY recorded_at DESC, id DESC
                     """,
-                    (resident_id,),
+                    (resident_id, resident_id, user.user_id),
                 ).fetchall()
 
             elif user.role == Role.CARELIFE_ADMIN:
