@@ -1,16 +1,10 @@
 from app.domain.entities.organization import (
     DaycareDirectoryEntry,
-    Organization,
-    OrganizationStatus,
-)
-from app.infrastructure.database.connection import get_connection
-
-from app.domain.entities.organization import (
-    DaycareDirectoryEntry,
     ElderCareDirectoryEntry,
     Organization,
     OrganizationStatus,
 )
+from app.infrastructure.database.connection import get_connection
 
 class PostgresOrganizationRepository:
 
@@ -510,26 +504,33 @@ class PostgresOrganizationRepository:
         location: str | None = None,
         min_capacity: int | None = None,
         max_capacity: int | None = None,
+        facility: str | None = None,
     ) -> list[ElderCareDirectoryEntry]:
 
         search_text = search.strip() if search else None
         location_text = location.strip() if location else None
+        facility_text = facility.strip() if facility else None
 
         if not search_text:
             search_text = None
-
         if not location_text:
             location_text = None
+        if not facility_text:
+            facility_text = None
 
         search_pattern = (
             f"%{search_text}%"
             if search_text is not None
             else None
         )
-
         location_pattern = (
             f"%{location_text}%"
             if location_text is not None
+            else None
+        )
+        facility_pattern = (
+            f"%{facility_text}%"
+            if facility_text is not None
             else None
         )
 
@@ -543,14 +544,19 @@ class PostgresOrganizationRepository:
                     o.description,
                     o.location,
                     o.contact,
-                    o.capacity
+                    o.capacity,
+                    o.age_range,
+                    o.opening_hours,
+                    o.facilities,
+                    o.fees
                 FROM organizations o
 
                 JOIN verification_statuses status
                     ON status.id = o.status_id
 
                 JOIN LATERAL (
-                    SELECT od.expires_at
+                    SELECT
+                        od.expires_at
                     FROM organization_documents od
                     WHERE od.organization_id = o.id
                       AND od.document_type = 'license'
@@ -568,6 +574,10 @@ class PostgresOrganizationRepository:
                       OR COALESCE(o.location, '') ILIKE %s
                       OR COALESCE(o.description, '') ILIKE %s
                       OR COALESCE(o.contact, '') ILIKE %s
+                      OR COALESCE(o.age_range, '') ILIKE %s
+                      OR COALESCE(o.opening_hours, '') ILIKE %s
+                      OR COALESCE(o.facilities, '') ILIKE %s
+                      OR COALESCE(o.fees, '') ILIKE %s
                   )
 
                   AND (
@@ -585,6 +595,11 @@ class PostgresOrganizationRepository:
                       OR o.capacity <= %s
                   )
 
+                  AND (
+                      %s IS NULL
+                      OR COALESCE(o.facilities, '') ILIKE %s
+                  )
+
                 ORDER BY o.name ASC
                 """,
                 (
@@ -594,12 +609,18 @@ class PostgresOrganizationRepository:
                     search_pattern,
                     search_pattern,
                     search_pattern,
+                    search_pattern,
+                    search_pattern,
+                    search_pattern,
+                    search_pattern,
                     location_pattern,
                     location_pattern,
                     min_capacity,
                     min_capacity,
                     max_capacity,
                     max_capacity,
+                    facility_pattern,
+                    facility_pattern,
                 ),
             ).fetchall()
 
@@ -687,6 +708,10 @@ class PostgresOrganizationRepository:
             location=row[4],
             contact=row[5],
             capacity=row[6],
+            age_range=row[7],
+            opening_hours=row[8],
+            facilities=row[9],
+            fees=row[10],
         )
 
     @staticmethod
