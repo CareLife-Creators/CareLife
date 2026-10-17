@@ -4,7 +4,11 @@ from app.domain.entities.organization import (
     DaycareDirectoryEntry,
     Organization,
 )
-
+from app.domain.entities.organization import (
+    DaycareDirectoryEntry,
+    ElderCareDirectoryEntry,
+    Organization,
+)
 
 class OrganizationRepository(Protocol):
 
@@ -60,4 +64,14 @@ class OrganizationRepository(Protocol):
         self,
         reminder_days: int,
     ) -> int:
+        ...
+
+    def get_elder_care_directory(
+        self,
+        search: str | None = None,
+        location: str | None = None,
+        min_capacity: int | None = None,
+        max_capacity: int | None = None,
+        facility: str | None = None,
+    ) -> list[ElderCareDirectoryEntry]:
         ...
