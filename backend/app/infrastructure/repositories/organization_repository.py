@@ -1,10 +1,10 @@
 from app.domain.entities.organization import (
     DaycareDirectoryEntry,
+    ElderCareDirectoryEntry,
     Organization,
     OrganizationStatus,
 )
 from app.infrastructure.database.connection import get_connection
-
 
 class PostgresOrganizationRepository:
 
@@ -498,6 +498,137 @@ class PostgresOrganizationRepository:
             for row in rows
             if row is not None
         ]
+    def get_elder_care_directory(
+        self,
+        search: str | None = None,
+        location: str | None = None,
+        min_capacity: int | None = None,
+        max_capacity: int | None = None,
+        facility: str | None = None,
+    ) -> list[ElderCareDirectoryEntry]:
+
+        search_text = search.strip() if search else None
+        location_text = location.strip() if location else None
+        facility_text = facility.strip() if facility else None
+
+        if not search_text:
+            search_text = None
+        if not location_text:
+            location_text = None
+        if not facility_text:
+            facility_text = None
+
+        search_pattern = (
+            f"%{search_text}%"
+            if search_text is not None
+            else None
+        )
+        location_pattern = (
+            f"%{location_text}%"
+            if location_text is not None
+            else None
+        )
+        facility_pattern = (
+            f"%{facility_text}%"
+            if facility_text is not None
+            else None
+        )
+
+        with get_connection() as connection:
+            rows = connection.execute(
+                """
+                SELECT
+                    o.id,
+                    o.name,
+                    o.organization_type,
+                    o.description,
+                    o.location,
+                    o.contact,
+                    o.capacity,
+                    o.age_range,
+                    o.opening_hours,
+                    o.facilities,
+                    o.fees
+                FROM organizations o
+
+                JOIN verification_statuses status
+                    ON status.id = o.status_id
+
+                JOIN LATERAL (
+                    SELECT
+                        od.expires_at
+                    FROM organization_documents od
+                    WHERE od.organization_id = o.id
+                      AND od.document_type = 'license'
+                    ORDER BY od.created_at DESC, od.id DESC
+                    LIMIT 1
+                ) license ON TRUE
+
+                WHERE o.organization_type = 'elderly_care'
+                  AND status.name = %s
+                  AND license.expires_at >= CURRENT_DATE
+
+                  AND (
+                      %s IS NULL
+                      OR o.name ILIKE %s
+                      OR COALESCE(o.location, '') ILIKE %s
+                      OR COALESCE(o.description, '') ILIKE %s
+                      OR COALESCE(o.contact, '') ILIKE %s
+                      OR COALESCE(o.age_range, '') ILIKE %s
+                      OR COALESCE(o.opening_hours, '') ILIKE %s
+                      OR COALESCE(o.facilities, '') ILIKE %s
+                      OR COALESCE(o.fees, '') ILIKE %s
+                  )
+
+                  AND (
+                      %s IS NULL
+                      OR COALESCE(o.location, '') ILIKE %s
+                  )
+
+                  AND (
+                      %s IS NULL
+                      OR o.capacity >= %s
+                  )
+
+                  AND (
+                      %s IS NULL
+                      OR o.capacity <= %s
+                  )
+
+                  AND (
+                      %s IS NULL
+                      OR COALESCE(o.facilities, '') ILIKE %s
+                  )
+
+                ORDER BY o.name ASC
+                """,
+                (
+                    OrganizationStatus.VERIFIED.value,
+                    search_pattern,
+                    search_pattern,
+                    search_pattern,
+                    search_pattern,
+                    search_pattern,
+                    search_pattern,
+                    search_pattern,
+                    search_pattern,
+                    search_pattern,
+                    location_pattern,
+                    location_pattern,
+                    min_capacity,
+                    min_capacity,
+                    max_capacity,
+                    max_capacity,
+                    facility_pattern,
+                    facility_pattern,
+                ),
+            ).fetchall()
+
+        return [
+            self._to_elder_care_directory_entry(row)
+            for row in rows
+            if row is not None
+        ]
 
     def get_public_daycare(
         self,
@@ -560,6 +691,27 @@ class PostgresOrganizationRepository:
             description=row[3],
             location=row[4],
             contact=row[5],
+        )
+    
+    @staticmethod
+    def _to_elder_care_directory_entry(
+        row,
+    ) -> ElderCareDirectoryEntry | None:
+        if row is None:
+            return None
+
+        return ElderCareDirectoryEntry(
+            organization_id=row[0],
+            organization_name=row[1],
+            organization_type=row[2],
+            description=row[3],
+            location=row[4],
+            contact=row[5],
+            capacity=row[6],
+            age_range=row[7],
+            opening_hours=row[8],
+            facilities=row[9],
+            fees=row[10],
         )
 
     @staticmethod

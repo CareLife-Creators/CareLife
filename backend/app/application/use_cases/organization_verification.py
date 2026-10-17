@@ -5,8 +5,10 @@ from app.application.interfaces.organization import (
     OrganizationRepository,
 )
 from app.domain.entities.organization import (
+    ElderCareDirectoryEntry,
     OrganizationStatus,
 )
+
 logger = logging.getLogger(__name__)
 
 class OrganizationVerificationService:
@@ -45,6 +47,21 @@ class OrganizationVerificationService:
         return self.repository.get_daycare_directory(
             search=search,
             location=location,
+        )
+    def get_elder_care_directory(
+        self,
+        search: str | None = None,
+        location: str | None = None,
+        min_capacity: int | None = None,
+        max_capacity: int | None = None,
+        facility: str | None = None,
+    ) -> list[ElderCareDirectoryEntry]:
+        return self.repository.get_elder_care_directory(
+            search=search,
+            location=location,
+            min_capacity=min_capacity,
+            max_capacity=max_capacity,
+            facility=facility,
         )
 
     def get_public_daycare(

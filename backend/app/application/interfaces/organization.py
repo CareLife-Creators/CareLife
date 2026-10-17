@@ -2,6 +2,7 @@ from typing import Protocol
 
 from app.domain.entities.organization import (
     DaycareDirectoryEntry,
+    ElderCareDirectoryEntry,
     Organization,
 )
 
@@ -51,6 +52,16 @@ class OrganizationRepository(Protocol):
         self,
         organization_id: str,
     ) -> DaycareDirectoryEntry | None:
+        ...
+
+    def get_elder_care_directory(
+        self,
+        search: str | None = None,
+        location: str | None = None,
+        min_capacity: int | None = None,
+        max_capacity: int | None = None,
+        facility: str | None = None,
+    ) -> list[ElderCareDirectoryEntry]:
         ...
 
     def expire_verified_organizations(self) -> int:

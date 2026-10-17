@@ -3,8 +3,10 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.domain.entities.organization import OrganizationStatus
-
+from app.domain.entities.organization import (
+    ElderCareDirectoryEntry,
+    OrganizationStatus,
+)
 
 class OrganizationRegistrationRequest(BaseModel):
 
@@ -120,4 +122,41 @@ class DaycareDirectoryResponse(BaseModel):
             description=organization.description,
             location=organization.location,
             contact=organization.contact,
+        )
+
+
+class ElderCareDirectoryResponse(BaseModel):
+    """Public response returned by the elder-care directory."""
+
+    organization_id: str
+    organization_name: str
+    organization_type: str
+
+    description: str | None = None
+    location: str | None = None
+    contact: str | None = None
+
+    capacity: int
+    age_range: str | None = None
+    opening_hours: str | None = None
+    facilities: str | None = None
+    fees: str | None = None
+
+    @classmethod
+    def from_entity(
+        cls,
+        organization: ElderCareDirectoryEntry,
+    ) -> "ElderCareDirectoryResponse":
+        return cls(
+            organization_id=organization.organization_id,
+            organization_name=organization.organization_name,
+            organization_type=organization.organization_type,
+            description=organization.description,
+            location=organization.location,
+            contact=organization.contact,
+            capacity=organization.capacity,
+            age_range=organization.age_range,
+            opening_hours=organization.opening_hours,
+            facilities=organization.facilities,
+            fees=organization.fees,
         )
