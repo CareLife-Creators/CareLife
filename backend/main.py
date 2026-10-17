@@ -44,6 +44,9 @@ from app.presentation.api.routes.password_reset import (
 from app.presentation.api.routes.protected import (
     router as protected_router,
 )
+from app.presentation.api.routes.residents import (
+    router as residents_router,
+)
 from app.presentation.api.routes.signup import (
     router as signup_router,
 )
@@ -88,6 +91,7 @@ app.include_router(caregivers_router)
 app.include_router(impact_router)
 app.include_router(user_profile_router)
 app.include_router(remote_checkins_router)
+app.include_router(residents_router)
 
 
 @app.get("/")
