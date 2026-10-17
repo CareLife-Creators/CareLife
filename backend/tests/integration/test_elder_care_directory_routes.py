@@ -40,6 +40,10 @@ class ElderCareDirectoryRouteTests(unittest.TestCase):
                 location="Dhaka",
                 contact="01700000000",
                 capacity=35,
+                age_range="65+",
+                opening_hours="24/7",
+                facilities="Nursing support",
+                fees="Contact for rates",
             )
         ]
 
@@ -50,16 +54,34 @@ class ElderCareDirectoryRouteTests(unittest.TestCase):
                 "location": "Dhaka",
                 "min_capacity": 20,
                 "max_capacity": 50,
+                "facility": "Nursing",
             },
         )
 
         self.assertEqual(response.status_code, 200)
+        self.service.get_elder_care_directory.assert_called_once_with(
+            search="Sunrise",
+            location="Dhaka",
+            min_capacity=20,
+            max_capacity=50,
+            facility="Nursing",
+        )
         self.assertEqual(len(response.json()), 1)
         self.assertEqual(
             response.json()[0]["organization_name"],
             "Sunrise Elder Care",
         )
         self.assertEqual(response.json()[0]["capacity"], 35)
+        self.assertEqual(response.json()[0]["age_range"], "65+")
+        self.assertEqual(response.json()[0]["opening_hours"], "24/7")
+        self.assertEqual(
+            response.json()[0]["facilities"],
+            "Nursing support",
+        )
+        self.assertEqual(
+            response.json()[0]["fees"],
+            "Contact for rates",
+        )
 
     def test_no_matches_return_empty_list(self):
         self.service.get_elder_care_directory.return_value = []
