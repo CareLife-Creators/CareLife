@@ -52,7 +52,23 @@ function DaycareDirectoryPage() {
   }
 
   useEffect(() => {
-    loadDirectory('', '')
+    let cancelled = false
+    getDaycareDirectory({ search: '', location: '' })
+      .then((data) => {
+        if (cancelled) return
+        setOrganizations(Array.isArray(data) ? data : [])
+        setError('')
+        setDetailsError('')
+      })
+      .catch((err) => {
+        if (cancelled) return
+        setError(err instanceof Error ? err.message : 'Unable to load daycare directory')
+        setOrganizations([])
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => { cancelled = true }
   }, [])
 
   async function handleViewDetails(
@@ -105,11 +121,11 @@ function DaycareDirectoryPage() {
             </p>
 
             <h1>
-              Find a Verified Daycare
+              Find a daycare center
             </h1>
 
             <p>
-              Search verified daycare centers by name,
+              Search daycare centers by name,
               location, or public organization information.
             </p>
           </div>
@@ -193,7 +209,7 @@ function DaycareDirectoryPage() {
 
         {loading ? (
           <div className="daycare-directory-empty">
-            Loading verified daycare centers...
+            Loading daycare centers...
           </div>
         ) : organizations.length === 0 ? (
           <div className="daycare-directory-empty">
@@ -214,7 +230,7 @@ function DaycareDirectoryPage() {
 
               <div>
                 <span>
-                  VERIFIED RESULTS
+                  DAYCARE RESULTS
                 </span>
 
                 <h2>
@@ -253,9 +269,6 @@ function DaycareDirectoryPage() {
 
                       </div>
 
-                      <span className="daycare-verified">
-                        Verified
-                      </span>
 
                     </div>
 
