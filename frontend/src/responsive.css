@@ -1,0 +1,676 @@
+/* =========================================
+   CARELIFE SHARED UI REFINEMENTS
+   CAR-96
+   ========================================= */
+
+
+/* Common control behavior */
+
+button,
+a,
+input,
+textarea,
+select {
+    -webkit-tap-highlight-color: transparent;
+}
+
+button {
+    touch-action: manipulation;
+}
+
+button:disabled {
+    cursor: not-allowed;
+}
+
+input,
+textarea,
+select {
+    max-width: 100%;
+}
+
+textarea {
+    resize: vertical;
+}
+
+input,
+textarea,
+select {
+    transition: border-color var(--cl-transition), box-shadow var(--cl-transition), background var(--cl-transition);
+}
+
+
+/* =========================================
+   AUTHENTICATION
+   ========================================= */
+
+.auth-page {
+    padding: clamp(20px, 4vw, 48px) clamp(14px, 3vw, 28px);
+    background: radial-gradient( circle at 15% 10%, rgba(187, 235, 210, 0.4), transparent 35%), radial-gradient( circle at 90% 85%, rgba(193, 230, 216, 0.32), transparent 34%), #f4f8f6;
+}
+
+.auth-card {
+    max-width: 460px;
+    padding: clamp(24px, 5vw, 42px);
+    border: 1px solid rgba(207, 221, 214, 0.9);
+    border-radius: 22px;
+    box-shadow: var(--cl-shadow-lg);
+    animation: cl-fade-up 350ms ease both;
+}
+
+.auth-brand {
+    margin-bottom: clamp(23px, 4vw, 36px);
+    color: var(--cl-primary-dark);
+}
+
+.auth-brand-icon {
+    border-radius: 12px;
+    color: #ffffff;
+    background: linear-gradient( 135deg, #176b5b, #104e43);
+    box-shadow: 0 7px 16px rgba(16, 78, 67, 0.18);
+}
+
+.auth-eyebrow {
+    color: var(--cl-primary);
+}
+
+.auth-content h1 {
+    color: var(--cl-ink);
+    font-size: clamp(26px, 5vw, 34px);
+    letter-spacing: -0.04em;
+    overflow-wrap: anywhere;
+}
+
+.auth-description {
+    color: var(--cl-muted);
+    line-height: 1.7;
+}
+
+.form-field label {
+    color: var(--cl-text);
+    line-height: 1.5;
+}
+
+.form-field input {
+    min-height: 46px;
+    border-color: var(--cl-border-strong);
+    border-radius: 11px;
+}
+
+.form-field input:hover:not(:disabled) {
+    border-color: #a9cbbb;
+}
+
+.form-field input:focus {
+    border-color: var(--cl-primary);
+    box-shadow: 0 0 0 3px rgba(23, 107, 91, 0.12);
+}
+
+.auth-submit {
+    min-height: 47px;
+    border-radius: 11px;
+    background: linear-gradient( 135deg, #176b5b, #104e43);
+    box-shadow: 0 7px 16px rgba(16, 78, 67, 0.14);
+    transition: transform var(--cl-transition), box-shadow var(--cl-transition), opacity var(--cl-transition);
+}
+
+.auth-submit:hover:not(:disabled) {
+    opacity: 1;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(16, 78, 67, 0.19);
+}
+
+.auth-submit:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.auth-switch {
+    line-height: 1.8;
+}
+
+.auth-switch button,
+.forgot-password,
+.password-toggle {
+    min-height: 28px;
+}
+
+.auth-switch button:hover,
+.forgot-password:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.auth-message {
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 520px) {
+    .auth-page {
+        align-items: flex-start;
+        padding: 18px 12px;
+    }
+    .auth-card {
+        padding: 24px 19px;
+        border-radius: 18px;
+    }
+    .auth-brand {
+        margin-bottom: 25px;
+    }
+    .auth-form {
+        gap: 18px;
+    }
+    .password-label-row {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+}
+
+
+/* =========================================
+   DAYCARE DIRECTORY
+   ========================================= */
+
+.daycare-directory {
+    min-height: 100vh;
+    padding: clamp(24px, 4vw, 50px) clamp(14px, 3vw, 28px);
+    color: var(--cl-ink);
+    background: radial-gradient( circle at 100% 0, rgba(206, 238, 222, 0.35), transparent 33%), #f4f8f6;
+}
+
+.daycare-directory-container {
+    width: min(1180px, 100%);
+    margin: 0 auto;
+}
+
+.daycare-directory-header {
+    margin-bottom: 27px;
+}
+
+.daycare-directory-eyebrow {
+    color: var(--cl-primary);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    line-height: 1.7;
+}
+
+.daycare-directory-header h1 {
+    color: var(--cl-ink);
+    font-size: clamp(27px, 4vw, 42px);
+    font-weight: 850;
+    letter-spacing: -0.045em;
+    line-height: 1.17;
+}
+
+.daycare-directory-header p {
+    color: var(--cl-muted);
+    font-size: 14px;
+    line-height: 1.75;
+}
+
+.daycare-search-card {
+    padding: clamp(16px, 3vw, 25px);
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-lg);
+    background: #ffffff;
+    box-shadow: var(--cl-shadow-md);
+}
+
+.daycare-search-fields {
+    align-items: end;
+}
+
+.daycare-field label {
+    color: var(--cl-text);
+    line-height: 1.5;
+}
+
+.daycare-field input {
+    min-height: 46px;
+    border-color: var(--cl-border-strong);
+    border-radius: 10px;
+    color: var(--cl-ink);
+}
+
+.daycare-field input:focus {
+    outline: 0;
+    border-color: var(--cl-primary);
+    box-shadow: 0 0 0 3px rgba(23, 107, 91, 0.12);
+}
+
+.daycare-search-button,
+.daycare-clear-button,
+.daycare-details-button {
+    min-height: 44px;
+    border-radius: 10px;
+    transition: transform var(--cl-transition), background var(--cl-transition), box-shadow var(--cl-transition);
+}
+
+.daycare-search-button {
+    background: var(--cl-primary-dark);
+    color: #ffffff;
+}
+
+.daycare-search-button:hover {
+    background: var(--cl-primary);
+    box-shadow: var(--cl-shadow-sm);
+    transform: translateY(-1px);
+}
+
+.daycare-clear-button {
+    color: var(--cl-text);
+    background: #edf3ef;
+}
+
+.daycare-clear-button:hover {
+    background: #e0ece5;
+}
+
+.daycare-results-heading {
+    margin-top: 27px;
+}
+
+.daycare-results-heading span {
+    color: var(--cl-primary);
+    letter-spacing: 0.13em;
+}
+
+.daycare-results-heading h2 {
+    color: var(--cl-ink);
+    font-size: clamp(20px, 3vw, 26px);
+    letter-spacing: -0.03em;
+}
+
+.daycare-results-grid {
+    align-items: stretch;
+}
+
+.daycare-card {
+    min-width: 0;
+    border-color: var(--cl-border);
+    border-radius: 17px;
+    box-shadow: var(--cl-shadow-sm);
+    transition: transform var(--cl-transition), box-shadow var(--cl-transition), border-color var(--cl-transition);
+}
+
+.daycare-card:hover {
+    border-color: #c4dfd1;
+    box-shadow: var(--cl-shadow-md);
+    transform: translateY(-3px);
+}
+
+.daycare-card h3 {
+    color: var(--cl-ink);
+    font-size: clamp(17px, 2vw, 21px);
+    overflow-wrap: anywhere;
+}
+
+.daycare-type {
+    color: var(--cl-primary);
+    letter-spacing: 0.06em;
+    line-height: 1.6;
+}
+
+.daycare-verified {
+    background: #e4f6eb;
+    color: #176b45;
+}
+
+.daycare-card-details span,
+.daycare-detail-grid span {
+    color: var(--cl-muted);
+    font-weight: 600;
+}
+
+.daycare-card-details strong,
+.daycare-detail-grid strong {
+    color: var(--cl-ink);
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.daycare-description {
+    color: var(--cl-muted);
+    font-size: 13px;
+    line-height: 1.8;
+}
+
+.daycare-details-button {
+    background: var(--cl-primary-soft);
+    color: var(--cl-primary-dark);
+}
+
+.daycare-details-button:hover {
+    background: #d5eee2;
+    transform: translateY(-1px);
+}
+
+.daycare-directory-empty,
+.daycare-directory-message {
+    border-color: var(--cl-border);
+    border-radius: 15px;
+    box-shadow: var(--cl-shadow-sm);
+    overflow-wrap: anywhere;
+}
+
+.daycare-directory-empty h2 {
+    color: var(--cl-ink);
+}
+
+.daycare-directory-empty p {
+    color: var(--cl-muted);
+    line-height: 1.7;
+}
+
+.daycare-detail-card {
+    border-color: var(--cl-border);
+    border-radius: var(--cl-radius-lg);
+    box-shadow: var(--cl-shadow-md);
+    overflow-wrap: anywhere;
+}
+
+.daycare-detail-header h2 {
+    color: var(--cl-ink);
+    font-size: clamp(20px, 3vw, 27px);
+    overflow-wrap: anywhere;
+}
+
+.daycare-detail-header button {
+    min-height: 42px;
+    flex: 0 0 auto;
+    color: var(--cl-text);
+    background: #edf3ef;
+    transition: background var(--cl-transition);
+}
+
+.daycare-detail-header button:hover {
+    background: #dfece5;
+}
+
+.daycare-detail-grid {
+    min-width: 0;
+}
+
+.daycare-detail-description p {
+    color: var(--cl-muted);
+    font-size: 14px;
+    line-height: 1.8;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+    .daycare-search-fields {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .daycare-search-button,
+    .daycare-clear-button {
+        width: 100%;
+    }
+    .daycare-results-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .daycare-detail-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    .daycare-directory {
+        padding: 22px 13px 32px;
+    }
+    .daycare-search-card {
+        padding: 15px;
+        border-radius: 15px;
+    }
+    .daycare-search-fields,
+    .daycare-results-grid,
+    .daycare-detail-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .daycare-detail-description {
+        grid-column: auto;
+    }
+    .daycare-card {
+        padding: 18px;
+    }
+    .daycare-card-top {
+        flex-wrap: wrap;
+    }
+    .daycare-detail-card {
+        padding: 17px;
+    }
+    .daycare-detail-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+    .daycare-detail-header button {
+        width: fit-content;
+    }
+}
+
+
+/* =========================================
+   ORGANIZATION APPROVAL DASHBOARD
+   ========================================= */
+
+.approval-dashboard {
+    min-height: 100vh;
+    padding: clamp(22px, 4vw, 42px) clamp(13px, 3vw, 26px) 48px;
+    color: var(--cl-ink);
+    background: radial-gradient( circle at 100% 0, rgba(206, 238, 222, 0.35), transparent 32%), #f4f8f6;
+}
+
+.approval-dashboard-container {
+    width: min(1180px, 100%);
+    margin: 0 auto;
+}
+
+.approval-header {
+    align-items: flex-start;
+}
+
+.approval-eyebrow {
+    color: var(--cl-primary);
+    letter-spacing: 0.13em;
+}
+
+.approval-header h1 {
+    color: var(--cl-ink);
+    font-size: clamp(25px, 4vw, 38px);
+    font-weight: 850;
+    letter-spacing: -0.045em;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.approval-description {
+    color: var(--cl-muted);
+    line-height: 1.75;
+}
+
+.approval-refresh-button {
+    min-height: 44px;
+    border-color: var(--cl-border-strong);
+    border-radius: 10px;
+    color: var(--cl-primary-dark);
+    transition: transform var(--cl-transition), background var(--cl-transition);
+}
+
+.approval-refresh-button:hover:not(:disabled) {
+    background: #edf8f1;
+    transform: translateY(-1px);
+}
+
+.approval-summary-card {
+    border-color: var(--cl-border);
+    border-radius: 15px;
+    box-shadow: var(--cl-shadow-sm);
+}
+
+.approval-summary-card span {
+    color: var(--cl-muted);
+}
+
+.approval-summary-card strong {
+    color: var(--cl-primary-dark);
+    font-size: 34px;
+}
+
+.approval-card {
+    border-color: var(--cl-border);
+    border-radius: 17px;
+    box-shadow: var(--cl-shadow-sm);
+    transition: transform var(--cl-transition), box-shadow var(--cl-transition);
+}
+
+.approval-card:hover {
+    box-shadow: var(--cl-shadow-md);
+}
+
+.approval-card-heading h2 {
+    color: var(--cl-ink);
+    overflow-wrap: anywhere;
+}
+
+.approval-card-heading p {
+    color: var(--cl-muted);
+    line-height: 1.6;
+}
+
+.approval-details {
+    align-items: stretch;
+}
+
+.approval-details>div {
+    border-color: #e8f0eb;
+    background: #f7faf8;
+}
+
+.approval-details span,
+.approval-existing-message>span {
+    color: var(--cl-muted);
+    line-height: 1.6;
+}
+
+.approval-details strong {
+    color: var(--cl-ink);
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+}
+
+.approval-existing-message {
+    border-color: var(--cl-border);
+    background: #fafcfb;
+}
+
+.approval-existing-message p {
+    color: var(--cl-muted);
+    line-height: 1.75;
+    overflow-wrap: anywhere;
+}
+
+.approval-reject-form textarea {
+    min-height: 100px;
+}
+
+.approval-reject-form textarea:focus {
+    border-color: var(--cl-primary);
+    box-shadow: 0 0 0 3px rgba(23, 107, 91, 0.12);
+}
+
+.approval-card-actions {
+    flex-wrap: wrap;
+}
+
+.approval-card-actions button {
+    min-height: 43px;
+    transition: transform var(--cl-transition), opacity var(--cl-transition), background var(--cl-transition);
+}
+
+.approval-card-actions button:hover:not(:disabled) {
+    opacity: 1;
+    transform: translateY(-1px);
+}
+
+.approval-approve-button {
+    border-color: var(--cl-primary-dark);
+    background: var(--cl-primary-dark);
+}
+
+.approval-approve-button:hover:not(:disabled) {
+    background: var(--cl-primary);
+}
+
+.approval-empty-state {
+    border-color: #c9dbd1;
+    border-radius: 17px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: var(--cl-shadow-sm);
+}
+
+.approval-empty-state h2 {
+    color: var(--cl-ink);
+}
+
+.approval-empty-state p {
+    color: var(--cl-muted);
+    line-height: 1.75;
+}
+
+@media (max-width: 760px) {
+    .approval-header {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 18px;
+    }
+    .approval-refresh-button {
+        width: 100%;
+    }
+    .approval-details {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .approval-card-heading {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .approval-card-actions {
+        gap: 9px;
+    }
+}
+
+@media (max-width: 480px) {
+    .approval-dashboard {
+        padding: 21px 13px 32px;
+    }
+    .approval-details {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .approval-card-content {
+        padding: 17px;
+    }
+    .approval-card-actions {
+        padding: 14px 17px;
+    }
+    .approval-card-actions button {
+        flex: 1 1 100%;
+        width: 100%;
+        min-height: 44px;
+    }
+    .approval-empty-state {
+        padding: 35px 17px;
+    }
+}
+
+
+/* =========================================
+   ACCESSIBILITY: REDUCED MOTION
+   ========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
