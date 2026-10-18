@@ -60,6 +60,12 @@ from app.presentation.api.routes.remote_checkins import (
 from app.presentation.api.routes.audit_logs import (
     router as audit_logs_router,
 )
+from app.presentation.api.routes.messaging import (
+    router as messaging_router,
+)
+from app.presentation.api.routes.notifications import (
+    router as notifications_router,
+)
 
 
 settings = get_settings()
@@ -98,6 +104,8 @@ app.include_router(user_profile_router)
 app.include_router(remote_checkins_router)
 app.include_router(residents_router)
 app.include_router(audit_logs_router)
+app.include_router(messaging_router)
+app.include_router(notifications_router)
 
 @app.get("/")
 def root():
