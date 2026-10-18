@@ -2,7 +2,6 @@ from datetime import datetime
 
 from sqlalchemy import (
     DateTime,
-    ForeignKey,
     Index,
     String,
     func,
@@ -20,11 +19,9 @@ class AuditLogModel(Base):
         primary_key=True,
     )
 
+    # Historical identifier, intentionally not a user foreign key.
     actor_user_id: Mapped[str] = mapped_column(
-        ForeignKey(
-            "users.id",
-            ondelete="RESTRICT",
-        ),
+        String,
         nullable=False,
     )
 
