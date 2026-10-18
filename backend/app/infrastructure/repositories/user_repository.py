@@ -122,6 +122,61 @@ class PostgresUserRepository:
             is_active=row[6],
         )
 
+    def update_profile(
+        self,
+        user_id: str,
+        changes: dict[str, str | None],
+    ) -> User | None:
+        allowed_fields = {"full_name", "phone"}
+
+        if not changes:
+            raise ValueError(
+                "At least one profile field must be provided."
+            )
+
+        if not set(changes).issubset(allowed_fields):
+            raise ValueError(
+                "Only full_name and phone can be updated."
+            )
+
+        assignments = [
+            f"{field} = %s"
+            for field in changes
+        ]
+
+        values = [
+            changes[field]
+            for field in changes
+        ]
+
+        assignments.extend([
+            "updated_at = CURRENT_TIMESTAMP",
+            "updated_by = %s",
+        ])
+
+        # Record the authenticated user as the updater.
+        values.append(user_id)
+
+        # Identify the profile that is being updated.
+        values.append(user_id)
+
+        with get_connection() as connection:
+            with connection.transaction():
+                row = connection.execute(
+                    f"""
+                    UPDATE users
+                    SET {", ".join(assignments)}
+                    WHERE id = %s
+                    RETURNING id
+                    """,
+                    values,
+                ).fetchone()
+
+        if row is None:
+            return None
+
+        return self.get_by_id(user_id)
+
     def create(
         self,
         user: User,

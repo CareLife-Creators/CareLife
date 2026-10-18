@@ -11,6 +11,9 @@ from app.infrastructure.models.donation import (
     DonationNeedModel,
 )
 from app.infrastructure.models.enrollment import EnrollmentModel
+from app.infrastructure.models.in_kind_donation import (
+    InKindDonationPledgeModel,
+)
 from app.infrastructure.models.organization import OrganizationModel
 from app.infrastructure.models.organization_document import (
     OrganizationDocumentModel,
@@ -39,6 +42,12 @@ from app.infrastructure.models.impact import (
     ImpactMediaModel,
     ImpactUpdateModel,
 )
+from app.infrastructure.models.remote_checkin import (
+    RemoteCheckInModel,
+    ResidentFamilyConsentModel,
+)
+from app.infrastructure.models.resident import ResidentProfileModel
+
 
 __all__ = [
     "Base",
@@ -59,7 +68,11 @@ __all__ = [
     "DailyUpdateModel",
     "DonationCampaignModel",
     "DonationNeedModel",
+    "InKindDonationPledgeModel",
     "NotificationModel",
     "ImpactUpdateModel",
     "ImpactMediaModel",
+    "RemoteCheckInModel",
+    "ResidentFamilyConsentModel",
+    "ResidentProfileModel",
 ]

@@ -42,3 +42,20 @@ class DaycareDirectoryEntry(BaseModel):
     description: str | None = None
     location: str | None = None
     contact: str | None = None
+
+class ElderCareDirectoryEntry(BaseModel):
+    """Public information for an eligible elder-care home."""
+
+    organization_id: str
+    organization_name: str
+    organization_type: str
+
+    description: str | None = None
+    location: str | None = None
+    contact: str | None = None
+
+    capacity: int
+    age_range: str | None = None
+    opening_hours: str | None = None
+    facilities: str | None = None
+    fees: str | None = None

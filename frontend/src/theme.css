@@ -1,0 +1,569 @@
+/* =========================================
+   CARELIFE THEME LAYER
+   Visual polish: type, depth, motion
+   Loaded last so it refines every page.
+   ========================================= */
+
+:root {
+  font-family: "Plus Jakarta Sans", Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --cl-accent: #f4a259;
+  --cl-glow: rgba(31, 138, 115, 0.18);
+  --cl-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body {
+  background:
+    radial-gradient(900px 500px at 8% -5%, rgba(160, 222, 196, 0.35), transparent 60%),
+    radial-gradient(700px 420px at 100% 0%, rgba(244, 162, 89, 0.12), transparent 60%),
+    var(--cl-background);
+  background-attachment: fixed;
+}
+
+h1, h2, h3, h4 {
+  letter-spacing: -0.025em;
+}
+
+/* ---------- Motion ---------- */
+
+@keyframes cl-fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cl-pop {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes cl-float {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(0, -18px, 0); }
+}
+
+@keyframes cl-pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(31, 138, 115, 0.35); }
+  100% { box-shadow: 0 0 0 16px rgba(31, 138, 115, 0); }
+}
+
+.daycare-directory-header,
+.daycare-search-card,
+.approval-header,
+.approval-summary,
+.intro,
+.status-hero {
+  animation: cl-fade-up 520ms var(--cl-ease) both;
+}
+
+.daycare-search-card { animation-delay: 80ms; }
+.approval-summary    { animation-delay: 80ms; }
+.status-hero         { animation-delay: 90ms; }
+
+.daycare-card,
+.approval-card,
+.content-grid > .card,
+.detail-item {
+  animation: cl-fade-up 520ms var(--cl-ease) both;
+}
+
+.daycare-results-grid > :nth-child(1), .approval-list > :nth-child(1), .content-grid > :nth-child(1) { animation-delay: 120ms; }
+.daycare-results-grid > :nth-child(2), .approval-list > :nth-child(2), .content-grid > :nth-child(2) { animation-delay: 180ms; }
+.daycare-results-grid > :nth-child(3), .approval-list > :nth-child(3) { animation-delay: 240ms; }
+.daycare-results-grid > :nth-child(4), .approval-list > :nth-child(4) { animation-delay: 300ms; }
+.daycare-results-grid > :nth-child(5), .approval-list > :nth-child(5) { animation-delay: 360ms; }
+.daycare-results-grid > :nth-child(n+6), .approval-list > :nth-child(n+6) { animation-delay: 420ms; }
+
+/* ---------- Auth pages ---------- */
+
+.auth-page {
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-page::before,
+.auth-page::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+  animation: cl-float 9s ease-in-out infinite;
+}
+
+.auth-page::before {
+  top: -120px;
+  left: -100px;
+  width: 360px;
+  height: 360px;
+  background: rgba(31, 138, 115, 0.28);
+}
+
+.auth-page::after {
+  right: -120px;
+  bottom: -120px;
+  width: 380px;
+  height: 380px;
+  background: rgba(244, 162, 89, 0.25);
+  animation-delay: -4s;
+}
+
+.auth-card {
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  animation: cl-pop 520ms var(--cl-ease) both;
+}
+
+.auth-brand-icon {
+  animation: cl-pulse-ring 2.4s ease-out infinite;
+}
+
+.form-field input {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.auth-submit {
+  letter-spacing: 0.01em;
+}
+
+.auth-submit:active:not(:disabled) {
+  transform: translateY(0) scale(0.99);
+}
+
+/* ---------- Buttons (shared feel) ---------- */
+
+.daycare-search-button,
+.approval-approve-button,
+.refresh-button,
+.approval-refresh-button,
+.daycare-details-button {
+  transition: transform 180ms var(--cl-ease), box-shadow 180ms var(--cl-ease), background 180ms ease, border-color 180ms ease;
+}
+
+.daycare-search-button:hover:not(:disabled),
+.approval-approve-button:hover:not(:disabled),
+.refresh-button:hover:not(:disabled),
+.approval-refresh-button:hover:not(:disabled),
+.daycare-details-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(16, 78, 67, 0.18);
+}
+
+.daycare-search-button:active:not(:disabled),
+.approval-approve-button:active:not(:disabled),
+.refresh-button:active:not(:disabled),
+.approval-refresh-button:active:not(:disabled),
+.daycare-details-button:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+
+.daycare-search-button,
+.approval-approve-button {
+  color: #fff;
+  border: 0;
+  background: linear-gradient(135deg, #1f8a73, #104e43);
+}
+
+/* ---------- Daycare directory ---------- */
+
+.daycare-directory {
+  background: transparent;
+}
+
+.daycare-directory-header h1 {
+  font-size: clamp(30px, 5vw, 46px);
+  background: linear-gradient(120deg, #104e43 20%, #1f8a73 70%, #f4a259 120%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.daycare-directory-eyebrow {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  color: var(--cl-primary-dark);
+  background: var(--cl-primary-soft);
+}
+
+.daycare-search-card {
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: var(--cl-shadow-md);
+}
+
+.daycare-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--cl-border);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: var(--cl-shadow-sm);
+  transition: transform 260ms var(--cl-ease), box-shadow 260ms var(--cl-ease), border-color 260ms ease;
+}
+
+.daycare-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: linear-gradient(90deg, #1f8a73, #f4a259);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 320ms var(--cl-ease);
+}
+
+.daycare-card:hover {
+  transform: translateY(-6px);
+  border-color: #b9dccb;
+  box-shadow: var(--cl-shadow-lg);
+}
+
+.daycare-card:hover::before {
+  transform: scaleX(1);
+}
+
+.daycare-verified {
+  border-radius: 999px;
+}
+
+.daycare-detail-card {
+  border-radius: 22px;
+  box-shadow: var(--cl-shadow-lg);
+  animation: cl-pop 360ms var(--cl-ease) both;
+}
+
+/* ---------- Approval dashboard ---------- */
+
+.approval-dashboard {
+  background: transparent;
+}
+
+.approval-header h1 {
+  font-size: clamp(26px, 4.5vw, 38px);
+}
+
+.approval-card,
+.approval-summary-card {
+  border: 1px solid var(--cl-border);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: var(--cl-shadow-sm);
+  transition: transform 240ms var(--cl-ease), box-shadow 240ms var(--cl-ease);
+}
+
+.approval-card:hover,
+.approval-summary-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--cl-shadow-md);
+}
+
+.approval-message {
+  animation: cl-pop 300ms var(--cl-ease) both;
+}
+
+/* ---------- Organization verification (sidebar layout) ---------- */
+
+.sidebar {
+  background:
+    radial-gradient(circle at 0 0, rgba(91, 178, 143, 0.28), transparent 45%),
+    radial-gradient(circle at 100% 100%, rgba(244, 162, 89, 0.12), transparent 40%),
+    #0f3a31;
+}
+
+.nav-item {
+  transition: background 180ms ease, transform 180ms var(--cl-ease);
+}
+
+.nav-item:hover {
+  transform: translateX(3px);
+}
+
+.brand-icon {
+  background: linear-gradient(135deg, #2bb594, #176b5b);
+}
+
+.card,
+.status-hero,
+.notice {
+  border-radius: 20px;
+  transition: transform 240ms var(--cl-ease), box-shadow 240ms var(--cl-ease);
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--cl-shadow-md);
+}
+
+.status-hero {
+  box-shadow: var(--cl-shadow-md);
+}
+
+.status-icon {
+  animation: cl-pulse-ring 2.2s ease-out infinite;
+}
+
+.timeline-item.current .timeline-dot {
+  animation: cl-pulse-ring 2s ease-out infinite;
+}
+
+.detail-item {
+  transition: background 180ms ease, transform 180ms var(--cl-ease);
+}
+
+.detail-item:hover {
+  transform: translateY(-2px);
+}
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+
+/* =========================================
+   CARELIFE POLISH PASS — calmer, more intentional UI
+   ========================================= */
+
+:root {
+  --cl-shadow-sm: 0 2px 8px rgba(18, 61, 52, 0.045);
+  --cl-shadow-md: 0 12px 32px rgba(18, 61, 52, 0.075);
+  --cl-shadow-lg: 0 24px 64px rgba(18, 61, 52, 0.11);
+  --cl-ease: cubic-bezier(0.2, 0.75, 0.25, 1);
+}
+
+body {
+  color: var(--cl-ink);
+  background-color: #f5f8f6;
+  background-image:
+    radial-gradient(ellipse at 12% 0%, rgba(187, 230, 207, 0.32), transparent 38%),
+    radial-gradient(ellipse at 95% 8%, rgba(244, 162, 89, 0.09), transparent 28%);
+  background-attachment: scroll;
+}
+
+::selection {
+  color: #0f3a31;
+  background: #c9f0dc;
+}
+
+:where(button, a, input, textarea, select):focus-visible {
+  outline: 3px solid rgba(31, 138, 115, 0.68);
+  outline-offset: 3px;
+}
+
+.site-nav {
+  background: rgba(248, 251, 249, 0.88);
+  border-bottom-color: rgba(202, 220, 210, 0.75);
+  box-shadow: 0 4px 20px rgba(18, 61, 52, 0.035);
+}
+
+.site-nav-menu {
+  gap: 8px;
+}
+
+.site-nav-link {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.site-nav-link.active {
+  box-shadow: inset 0 0 0 1px rgba(31, 138, 115, 0.08);
+}
+
+.site-nav-cta {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.daycare-directory,
+.approval-dashboard {
+  background: transparent;
+}
+
+.daycare-directory-container,
+.approval-dashboard-container {
+  animation: cl-fade-up 420ms var(--cl-ease) both;
+}
+
+.daycare-directory-header {
+  max-width: 760px;
+  margin-bottom: clamp(24px, 4vw, 38px);
+}
+
+.daycare-directory-header h1 {
+  max-width: 15ch;
+  margin-top: 12px;
+  margin-bottom: 12px;
+  line-height: 1.1;
+  letter-spacing: -0.055em;
+}
+
+.daycare-directory-header p,
+.approval-description {
+  max-width: 62ch;
+  font-size: 15px;
+}
+
+.daycare-search-card,
+.approval-summary-card,
+.approval-card,
+.daycare-card {
+  box-shadow: 0 4px 16px rgba(18, 61, 52, 0.045);
+}
+
+.daycare-search-card {
+  border-color: rgba(207, 221, 214, 0.85);
+}
+
+.daycare-field input,
+.approval-reject-form textarea {
+  background: #fbfdfc;
+}
+
+.daycare-field input:focus,
+.approval-reject-form textarea:focus {
+  background: #ffffff;
+}
+
+.daycare-results-grid {
+  gap: clamp(14px, 2vw, 22px);
+}
+
+.daycare-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 100%;
+}
+
+.daycare-card:hover,
+.approval-card:hover {
+  transform: translateY(-4px);
+  border-color: #c1ddce;
+  box-shadow: 0 18px 42px rgba(18, 61, 52, 0.09);
+}
+
+.daycare-card::before {
+  opacity: 0.9;
+}
+
+.daycare-details-button {
+  margin-top: auto;
+}
+
+.approval-header {
+  margin-bottom: 24px;
+}
+
+.approval-header h1 {
+  letter-spacing: -0.05em;
+  line-height: 1.12;
+}
+
+.approval-summary-card {
+  min-width: 0;
+}
+
+.approval-summary-card strong {
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+}
+
+.approval-details > div {
+  min-width: 0;
+  border-radius: 11px;
+}
+
+.approval-card-actions button,
+.daycare-search-button,
+.daycare-clear-button,
+.daycare-details-button,
+.approval-refresh-button {
+  font-weight: 700;
+}
+
+.auth-page {
+  isolation: isolate;
+}
+
+.auth-card {
+  box-shadow: 0 24px 70px rgba(18, 61, 52, 0.12);
+}
+
+.auth-content h1 {
+  letter-spacing: -0.05em;
+  line-height: 1.12;
+}
+
+.auth-brand-icon,
+.status-icon,
+.timeline-item.current .timeline-dot {
+  animation: none;
+}
+
+.sidebar {
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.nav-item {
+  min-height: 48px;
+  border-radius: 12px;
+}
+
+.nav-item.active {
+  box-shadow: inset 3px 0 0 #8edbb6;
+}
+
+.card,
+.status-hero,
+.notice {
+  border-color: var(--cl-border);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+@media (max-width: 760px) {
+  .site-nav {
+    padding: 9px 14px;
+  }
+
+  .daycare-directory-container,
+  .approval-dashboard-container {
+    width: 100%;
+  }
+
+  .daycare-directory-header h1 {
+    max-width: 18ch;
+  }
+
+  .daycare-card:hover,
+  .approval-card:hover,
+  .approval-summary-card:hover,
+  .card:hover {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .daycare-directory-container,
+  .approval-dashboard-container {
+    animation: none;
+  }
+}

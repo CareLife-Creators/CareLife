@@ -5,9 +5,9 @@ from fastapi import (
     Query,
     status,
 )
-
 from app.application.schemas.organization import (
     DaycareDirectoryResponse,
+    ElderCareDirectoryResponse,
     OrganizationVerificationDecisionRequest,
     OrganizationVerificationResponse,
 )
@@ -60,6 +60,57 @@ def get_daycare_directory(
     ]
 
 
+@router.get(
+    "/elder-care",
+    response_model=list[ElderCareDirectoryResponse],
+)
+def get_elder_care_directory(
+    search: str | None = Query(
+        default=None,
+        max_length=100,
+    ),
+    location: str | None = Query(
+        default=None,
+        max_length=100,
+    ),
+    min_capacity: int | None = Query(
+        default=None,
+        ge=0,
+    ),
+    max_capacity: int | None = Query(
+        default=None,
+        ge=0,
+    ),
+    facility: str | None = Query(
+        default=None,
+        max_length=100,
+    ),
+    service: OrganizationVerificationService = Depends(
+        get_organization_verification_service
+    ),
+):
+    if (
+        min_capacity is not None
+        and max_capacity is not None
+        and min_capacity > max_capacity
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="min_capacity cannot be greater than max_capacity",
+        )
+
+    organizations = service.get_elder_care_directory(
+        search=search,
+        location=location,
+        min_capacity=min_capacity,
+        max_capacity=max_capacity,
+        facility=facility,
+    )
+
+    return [
+        ElderCareDirectoryResponse.from_entity(organization)
+        for organization in organizations
+    ]
 @router.get(
     "/daycare/{organization_id}",
     response_model=DaycareDirectoryResponse,
