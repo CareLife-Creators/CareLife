@@ -57,6 +57,9 @@ from app.presentation.api.routes.user_profile import (
 from app.presentation.api.routes.remote_checkins import (
     router as remote_checkins_router,
 )
+from app.presentation.api.routes.audit_logs import (
+    router as audit_logs_router,
+)
 
 
 settings = get_settings()
@@ -94,7 +97,7 @@ app.include_router(impact_router)
 app.include_router(user_profile_router)
 app.include_router(remote_checkins_router)
 app.include_router(residents_router)
-
+app.include_router(audit_logs_router)
 
 @app.get("/")
 def root():
