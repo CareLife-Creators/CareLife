@@ -31,6 +31,7 @@ from app.presentation.api.routes.login import (
 )
 from app.presentation.api.routes.organization_profile import (
     router as organization_profile_router,
+    orphanage_public_router as orphanage_public_profile_router,
 )
 from app.presentation.api.routes.organization_registration import (
     router as organization_registration_router,
@@ -80,6 +81,7 @@ app.include_router(password_reset_router)
 app.include_router(organization_verification_router)
 app.include_router(organization_registration_router)
 app.include_router(organization_profile_router)
+app.include_router(orphanage_public_profile_router)
 app.include_router(signup_router)
 app.include_router(login_router)
 app.include_router(children_router)

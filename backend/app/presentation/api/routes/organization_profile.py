@@ -4,6 +4,7 @@ from app.application.schemas.organization_profile import (
     OrganizationProfileResponse,
     OrganizationProfileUpdateRequest,
     PublicOrganizationProfileResponse,
+    PublicOrphanageProfileResponse,
 )
 from app.application.use_cases.organization_profile import (
     OrganizationProfileService,
@@ -20,6 +21,11 @@ from app.presentation.api.dependencies.organization_profile import (
 router = APIRouter(
     prefix="/organizations",
     tags=["Organization Profile"],
+)
+
+orphanage_public_router = APIRouter(
+    prefix="/orphanages",
+    tags=["Orphanage Public Profile"],
 )
 
 
@@ -159,7 +165,38 @@ def get_public_organization_profile(
     except LookupError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=(
-                "Public organization profile not found."
-            ),
+            detail="Public organization profile not found.",
+        ) from exc
+
+
+@orphanage_public_router.get(
+    "/{organization_id}/public-profile",
+    response_model=PublicOrphanageProfileResponse,
+)
+def get_public_orphanage_profile(
+    organization_id: str,
+    service: OrganizationProfileService = Depends(
+        get_organization_profile_service
+    ),
+) -> PublicOrphanageProfileResponse:
+    """
+    Return the public profile for an eligible orphanage.
+
+    No authentication is required because this endpoint is public.
+    Only organizations with verified status, a current license,
+    and organization type 'orphanage' can be returned.
+    """
+    try:
+        profile = service.get_public_orphanage_profile(
+            organization_id
+        )
+
+        return PublicOrphanageProfileResponse.from_entity(
+            profile
+        )
+
+    except LookupError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Public orphanage profile not found.",
         ) from exc

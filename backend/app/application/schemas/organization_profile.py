@@ -189,3 +189,32 @@ class PublicOrganizationProfileResponse(BaseModel):
             facilities=profile.facilities,
             fees=profile.fees,
         )
+
+
+class PublicOrphanageProfileResponse(
+    PublicOrganizationProfileResponse
+):
+    """
+    Public orphanage profile.
+
+    Includes a verification badge while excluding internal
+    verification records, license details, and user records.
+    """
+
+    verification_status: OrganizationStatus
+
+    @classmethod
+    def from_entity(
+        cls,
+        profile: OrganizationProfile,
+    ) -> "PublicOrphanageProfileResponse":
+        public_profile = (
+            PublicOrganizationProfileResponse.from_entity(
+                profile
+            )
+        )
+
+        return cls(
+            **public_profile.model_dump(),
+            verification_status=profile.status,
+        )
