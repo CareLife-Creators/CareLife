@@ -11,25 +11,22 @@ function LoginPage({ onSignup }) {
 
   async function handleSubmit(event) {
     event.preventDefault()
-
     setError('')
     setIsSubmitting(true)
 
     try {
-      const data = await login({
-        email,
-        password,
-      })
+      const data = await login({ email: email.trim(), password })
 
-      localStorage.setItem('carelife_user', email)
+      if (!data || !data.access_token) {
+        throw new Error('Sign in succeeded but no access token was returned. Please contact the project administrator.')
+      }
+
+      localStorage.setItem('carelife_user', email.trim())
       localStorage.setItem('carelife_access_token', data.access_token)
-
       window.location.hash = '#dashboard'
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : 'Unable to sign in'
+        err instanceof Error ? err.message : 'Unable to sign in. Please try again.'
       )
     } finally {
       setIsSubmitting(false)
@@ -39,44 +36,34 @@ function LoginPage({ onSignup }) {
   return (
     <main className="auth-page">
       <section className="auth-card">
-        <div className="auth-brand">
-          <div className="auth-brand-icon">C</div>
+        <a className="auth-brand" href="#home" aria-label="CareLife home">
+          <span className="auth-brand-icon">C</span>
           <span>CareLife</span>
-        </div>
+        </a>
 
         <div className="auth-content">
           <p className="auth-eyebrow">WELCOME BACK</p>
-
           <h1>Sign in to CareLife</h1>
-
           <p className="auth-description">
-            Access your CareLife account and continue managing your
-            organization.
+            Access your account and continue to the CareLife workspace.
           </p>
 
           {error && (
-            <div className="auth-message auth-message-error">
+            <div className="auth-message auth-message-error" role="alert">
               {error}
             </div>
           )}
 
-          <form
-            className="auth-form"
-            onSubmit={handleSubmit}
-          >
+          <form className="auth-form" onSubmit={handleSubmit}>
             <div className="form-field">
-              <label htmlFor="login-email">
-                Email address
-              </label>
-
+              <label htmlFor="login-email">Email address</label>
               <input
                 id="login-email"
                 name="email"
                 type="email"
+                autoComplete="email"
                 value={email}
-                onChange={(event) =>
-                  setEmail(event.target.value)
-                }
+                onChange={(event) => setEmail(event.target.value)}
                 placeholder="you@example.com"
                 required
               />
@@ -84,18 +71,11 @@ function LoginPage({ onSignup }) {
 
             <div className="form-field">
               <div className="password-label-row">
-                <label htmlFor="login-password">
-                  Password
-                </label>
-
+                <label htmlFor="login-password">Password</label>
                 <button
                   type="button"
                   className="forgot-password"
-                  onClick={() => {
-                    setError(
-                      'Password reset is not available yet.'
-                    )
-                  }}
+                  onClick={() => setError('Password reset is not available yet. Contact your CareLife administrator for help.')}
                 >
                   Forgot password?
                 </button>
@@ -105,59 +85,36 @@ function LoginPage({ onSignup }) {
                 <input
                   id="login-password"
                   name="password"
-                  type={
-                    showPassword
-                      ? 'text'
-                      : 'password'
-                  }
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
                   value={password}
-                  onChange={(event) =>
-                    setPassword(event.target.value)
-                  }
+                  onChange={(event) => setPassword(event.target.value)}
                   placeholder="Enter your password"
                   minLength={8}
                   required
                 />
-
                 <button
                   type="button"
                   className="password-toggle"
-                  onClick={() =>
-                    setShowPassword(
-                      (current) => !current
-                    )
-                  }
-                  aria-label={
-                    showPassword
-                      ? 'Hide password'
-                      : 'Show password'
-                  }
+                  onClick={() => setShowPassword((current) => !current)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showPassword}
                 >
                   {showPassword ? 'Hide' : 'Show'}
                 </button>
               </div>
             </div>
 
-            <button
-              type="submit"
-              className="auth-submit"
-              disabled={isSubmitting}
-            >
-              {isSubmitting
-                ? 'Signing in...'
-                : 'Sign in'}
+            <button type="submit" className="auth-submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Signing in…' : 'Sign in'}
             </button>
           </form>
 
           <p className="auth-switch">
-            Don't have an account?{' '}
-            <button
-              type="button"
-              onClick={onSignup}
-            >
-              Create an account
-            </button>
+            Don’t have an account?{' '}
+            <button type="button" onClick={onSignup}>Create an account</button>
           </p>
+          <a className="auth-home-link" href="#home">← Back to CareLife</a>
         </div>
       </section>
     </main>

@@ -1,34 +1,16 @@
-const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+import { apiRequest } from './client'
 
-export async function getOrganizationVerification(
-    organizationId
-) {
-    const response = await fetch(
-        `${API_BASE_URL}/organizations/${organizationId}/verification-status`, {
-            credentials: 'include',
-        }
-    )
-
-    if (!response.ok) {
-        if (response.status === 401) {
-            throw new Error('Authentication required')
-        }
-
-        if (response.status === 403) {
-            throw new Error(
-                'You do not have access to this organization'
-            )
-        }
-
-        if (response.status === 404) {
-            throw new Error(
-                'Verification information not found'
-            )
-        }
-
-        throw new Error('Unable to load verification status')
-    }
-
-    return response.json()
+export async function getOrganizationVerification(organizationId) {
+  if (!organizationId || !String(organizationId).trim()) {
+    throw new Error('Enter your organization ID to view verification status.')
+  }
+  const safeId = encodeURIComponent(String(organizationId).trim())
+  try {
+    return await apiRequest('/organizations/' + safeId + '/verification-status')
+  } catch (error) {
+    if (error.status === 401) throw new Error('Your session has expired. Please sign in again.', { cause: error })
+    if (error.status === 403) throw new Error('You do not have access to this organization.', { cause: error })
+    if (error.status === 404) throw new Error('Verification information was not found for that organization ID.', { cause: error })
+    throw new Error('Unable to load verification status. Please try again.', { cause: error })
+  }
 }
