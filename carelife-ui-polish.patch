@@ -1,0 +1,673 @@
+From e27ad681008c0d8606d4cd06648d1e4d2f2278de Mon Sep 17 00:00:00 2001
+From: x <x@x>
+Date: Sun, 18 Oct 2026 10:51:26 +0000
+Subject: [PATCH] CAR-96 UI polish: theme layer, shared navbar
+
+---
+ frontend/index.html                           |   6 +-
+ frontend/src/components/SiteNav.css           | 149 ++++++++
+ frontend/src/components/SiteNav.jsx           |  66 ++++
+ frontend/src/main.jsx                         |   1 +
+ .../pages/daycare/DaycareDirectoryPage.jsx    |   4 +
+ .../OrganizationApprovalDashboard.jsx         |   4 +
+ frontend/src/theme.css                        | 332 ++++++++++++++++++
+ 7 files changed, 561 insertions(+), 1 deletion(-)
+ create mode 100644 frontend/src/components/SiteNav.css
+ create mode 100644 frontend/src/components/SiteNav.jsx
+ create mode 100644 frontend/src/theme.css
+
+diff --git a/frontend/index.html b/frontend/index.html
+index f94d687..7e267f3 100644
+--- a/frontend/index.html
++++ b/frontend/index.html
+@@ -4,7 +4,11 @@
+     <meta charset="UTF-8" />
+     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+-    <title>frontend</title>
++    <title>CareLife</title>
++    <meta name="theme-color" content="#104e43" />
++    <link rel="preconnect" href="https://fonts.googleapis.com" />
++    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
++    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+   </head>
+   <body>
+     <div id="root"></div>
+diff --git a/frontend/src/components/SiteNav.css b/frontend/src/components/SiteNav.css
+new file mode 100644
+index 0000000..9d3304d
+--- /dev/null
++++ b/frontend/src/components/SiteNav.css
+@@ -0,0 +1,149 @@
++.site-nav {
++  position: sticky;
++  top: 0;
++  z-index: 50;
++  padding: 10px clamp(12px, 3vw, 28px);
++  background: rgba(244, 248, 246, 0.72);
++  backdrop-filter: blur(14px) saturate(1.4);
++  -webkit-backdrop-filter: blur(14px) saturate(1.4);
++  border-bottom: 1px solid rgba(207, 221, 214, 0.7);
++}
++
++.site-nav-inner {
++  position: relative;
++  display: flex;
++  align-items: center;
++  justify-content: space-between;
++  gap: 16px;
++  width: min(1180px, 100%);
++  margin: 0 auto;
++}
++
++.site-nav-brand {
++  display: inline-flex;
++  align-items: center;
++  gap: 10px;
++  color: var(--cl-primary-dark);
++  font-weight: 800;
++  font-size: 19px;
++  letter-spacing: -0.02em;
++  text-decoration: none;
++}
++
++.site-nav-logo {
++  display: grid;
++  place-items: center;
++  width: 36px;
++  height: 36px;
++  border-radius: 11px;
++  color: #fff;
++  background: linear-gradient(135deg, #1f8a73, #104e43);
++  box-shadow: 0 6px 14px rgba(16, 78, 67, 0.25);
++  transition: transform 220ms ease;
++}
++
++.site-nav-brand:hover .site-nav-logo {
++  transform: rotate(-8deg) scale(1.06);
++}
++
++.site-nav-menu {
++  display: flex;
++  align-items: center;
++  gap: 6px;
++}
++
++.site-nav-link {
++  position: relative;
++  padding: 9px 14px;
++  border-radius: 999px;
++  color: var(--cl-text);
++  font-size: 14px;
++  font-weight: 600;
++  text-decoration: none;
++  transition: background 180ms ease, color 180ms ease;
++}
++
++.site-nav-link:hover {
++  background: var(--cl-primary-soft);
++  color: var(--cl-primary-dark);
++}
++
++.site-nav-link.active {
++  background: var(--cl-primary-soft);
++  color: var(--cl-primary-dark);
++}
++
++.site-nav-cta {
++  margin-left: 6px;
++  padding: 9px 18px;
++  border-radius: 999px;
++  color: #fff;
++  font-size: 14px;
++  font-weight: 700;
++  text-decoration: none;
++  background: linear-gradient(135deg, #1f8a73, #104e43);
++  box-shadow: 0 6px 14px rgba(16, 78, 67, 0.22);
++  transition: transform 180ms ease, box-shadow 180ms ease;
++}
++
++.site-nav-cta:hover {
++  transform: translateY(-1px);
++  box-shadow: 0 10px 20px rgba(16, 78, 67, 0.28);
++}
++
++.site-nav-toggle {
++  display: none;
++  flex-direction: column;
++  justify-content: center;
++  gap: 5px;
++  width: 44px;
++  height: 44px;
++  padding: 0 12px;
++  border: 1px solid var(--cl-border-strong);
++  border-radius: 12px;
++  background: #fff;
++  cursor: pointer;
++}
++
++.site-nav-toggle span {
++  display: block;
++  height: 2px;
++  border-radius: 2px;
++  background: var(--cl-primary-dark);
++}
++
++@media (max-width: 760px) {
++  .site-nav-toggle {
++    display: flex;
++  }
++
++  .site-nav-menu {
++    position: absolute;
++    top: calc(100% + 10px);
++    right: 0;
++    left: 0;
++    display: none;
++    flex-direction: column;
++    align-items: stretch;
++    gap: 4px;
++    padding: 12px;
++    border: 1px solid var(--cl-border);
++    border-radius: 18px;
++    background: #fff;
++    box-shadow: var(--cl-shadow-lg);
++  }
++
++  .site-nav-menu.open {
++    display: flex;
++    animation: cl-fade-up 200ms ease both;
++  }
++
++  .site-nav-link,
++  .site-nav-cta {
++    min-height: 44px;
++    margin: 0;
++    padding: 12px 16px;
++    border-radius: 12px;
++    text-align: center;
++  }
++}
+diff --git a/frontend/src/components/SiteNav.jsx b/frontend/src/components/SiteNav.jsx
+new file mode 100644
+index 0000000..923c7bc
+--- /dev/null
++++ b/frontend/src/components/SiteNav.jsx
+@@ -0,0 +1,66 @@
++import { useState } from 'react'
++import './SiteNav.css'
++
++const links = [
++  { href: '#daycare-directory', label: 'Daycare Directory' },
++  { href: '#organization-approval', label: 'Approvals' },
++  { href: '#', label: 'Verification' },
++]
++
++function SiteNav() {
++  const [open, setOpen] = useState(false)
++  const current = window.location.hash
++
++  return (
++    <header className="site-nav">
++      <div className="site-nav-inner">
++        <a className="site-nav-brand" href="#daycare-directory">
++          <span className="site-nav-logo">C</span>
++          <span>CareLife</span>
++        </a>
++
++        <button
++          type="button"
++          className="site-nav-toggle"
++          aria-expanded={open}
++          aria-controls="site-nav-menu"
++          aria-label={open ? 'Close menu' : 'Open menu'}
++          onClick={() => setOpen((value) => !value)}
++        >
++          <span />
++          <span />
++          <span />
++        </button>
++
++        <nav
++          id="site-nav-menu"
++          className={open ? 'site-nav-menu open' : 'site-nav-menu'}
++        >
++          {links.map((link) => (
++            <a
++              key={link.label}
++              href={link.href}
++              className={
++                current === link.href
++                  ? 'site-nav-link active'
++                  : 'site-nav-link'
++              }
++              onClick={() => setOpen(false)}
++            >
++              {link.label}
++            </a>
++          ))}
++          <a
++            href="#login"
++            className="site-nav-cta"
++            onClick={() => setOpen(false)}
++          >
++            Sign in
++          </a>
++        </nav>
++      </div>
++    </header>
++  )
++}
++
++export default SiteNav
+diff --git a/frontend/src/main.jsx b/frontend/src/main.jsx
+index be7064b..a3380bc 100644
+--- a/frontend/src/main.jsx
++++ b/frontend/src/main.jsx
+@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client'
+ import './index.css'
+ import App from './App.jsx'
+ import './responsive.css'
++import './theme.css'
+ 
+ createRoot(document.getElementById('root')).render(
+   <StrictMode>
+diff --git a/frontend/src/pages/daycare/DaycareDirectoryPage.jsx b/frontend/src/pages/daycare/DaycareDirectoryPage.jsx
+index 8c88e1c..877925d 100644
+--- a/frontend/src/pages/daycare/DaycareDirectoryPage.jsx
++++ b/frontend/src/pages/daycare/DaycareDirectoryPage.jsx
+@@ -4,6 +4,7 @@ import {
+   getPublicDaycare,
+ } from '../../api/daycareDirectory'
+ import './DaycareDirectoryPage.css'
++import SiteNav from '../../components/SiteNav'
+ 
+ function DaycareDirectoryPage() {
+   const [search, setSearch] = useState('')
+@@ -92,6 +93,8 @@ function DaycareDirectoryPage() {
+   }
+ 
+   return (
++    <>
++    <SiteNav />
+     <main className="daycare-directory">
+       <div className="daycare-directory-container">
+ 
+@@ -407,6 +410,7 @@ function DaycareDirectoryPage() {
+ 
+       </div>
+     </main>
++    </>
+   )
+ }
+ 
+diff --git a/frontend/src/pages/organization/OrganizationApprovalDashboard.jsx b/frontend/src/pages/organization/OrganizationApprovalDashboard.jsx
+index f65829b..8cafa90 100644
+--- a/frontend/src/pages/organization/OrganizationApprovalDashboard.jsx
++++ b/frontend/src/pages/organization/OrganizationApprovalDashboard.jsx
+@@ -5,6 +5,7 @@ import {
+   rejectOrganization,
+ } from '../../api/organizationApproval'
+ import './OrganizationApprovalDashboard.css'
++import SiteNav from '../../components/SiteNav'
+ 
+ function OrganizationApprovalDashboard() {
+   const [organizations, setOrganizations] = useState([])
+@@ -133,6 +134,8 @@ function OrganizationApprovalDashboard() {
+   }
+ 
+   return (
++    <>
++    <SiteNav />
+     <main className="approval-dashboard">
+       <div className="approval-dashboard-container">
+         <header className="approval-header">
+@@ -346,6 +349,7 @@ function OrganizationApprovalDashboard() {
+         )}
+       </div>
+     </main>
++    </>
+   )
+ }
+ 
+diff --git a/frontend/src/theme.css b/frontend/src/theme.css
+new file mode 100644
+index 0000000..8b03225
+--- /dev/null
++++ b/frontend/src/theme.css
+@@ -0,0 +1,332 @@
++/* =========================================
++   CARELIFE THEME LAYER
++   Visual polish: type, depth, motion
++   Loaded last so it refines every page.
++   ========================================= */
++
++:root {
++  font-family: "Plus Jakarta Sans", Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
++  --cl-accent: #f4a259;
++  --cl-glow: rgba(31, 138, 115, 0.18);
++  --cl-ease: cubic-bezier(0.22, 1, 0.36, 1);
++}
++
++body {
++  background:
++    radial-gradient(900px 500px at 8% -5%, rgba(160, 222, 196, 0.35), transparent 60%),
++    radial-gradient(700px 420px at 100% 0%, rgba(244, 162, 89, 0.12), transparent 60%),
++    var(--cl-background);
++  background-attachment: fixed;
++}
++
++h1, h2, h3, h4 {
++  letter-spacing: -0.025em;
++}
++
++/* ---------- Motion ---------- */
++
++@keyframes cl-fade-up {
++  from { opacity: 0; transform: translateY(14px); }
++  to   { opacity: 1; transform: translateY(0); }
++}
++
++@keyframes cl-pop {
++  from { opacity: 0; transform: scale(0.94); }
++  to   { opacity: 1; transform: scale(1); }
++}
++
++@keyframes cl-float {
++  0%, 100% { transform: translate3d(0, 0, 0); }
++  50%      { transform: translate3d(0, -18px, 0); }
++}
++
++@keyframes cl-pulse-ring {
++  0%   { box-shadow: 0 0 0 0 rgba(31, 138, 115, 0.35); }
++  100% { box-shadow: 0 0 0 16px rgba(31, 138, 115, 0); }
++}
++
++.daycare-directory-header,
++.daycare-search-card,
++.approval-header,
++.approval-summary,
++.intro,
++.status-hero {
++  animation: cl-fade-up 520ms var(--cl-ease) both;
++}
++
++.daycare-search-card { animation-delay: 80ms; }
++.approval-summary    { animation-delay: 80ms; }
++.status-hero         { animation-delay: 90ms; }
++
++.daycare-card,
++.approval-card,
++.content-grid > .card,
++.detail-item {
++  animation: cl-fade-up 520ms var(--cl-ease) both;
++}
++
++.daycare-results-grid > :nth-child(1), .approval-list > :nth-child(1), .content-grid > :nth-child(1) { animation-delay: 120ms; }
++.daycare-results-grid > :nth-child(2), .approval-list > :nth-child(2), .content-grid > :nth-child(2) { animation-delay: 180ms; }
++.daycare-results-grid > :nth-child(3), .approval-list > :nth-child(3) { animation-delay: 240ms; }
++.daycare-results-grid > :nth-child(4), .approval-list > :nth-child(4) { animation-delay: 300ms; }
++.daycare-results-grid > :nth-child(5), .approval-list > :nth-child(5) { animation-delay: 360ms; }
++.daycare-results-grid > :nth-child(n+6), .approval-list > :nth-child(n+6) { animation-delay: 420ms; }
++
++/* ---------- Auth pages ---------- */
++
++.auth-page {
++  position: relative;
++  overflow: hidden;
++}
++
++.auth-page::before,
++.auth-page::after {
++  content: "";
++  position: absolute;
++  z-index: 0;
++  border-radius: 50%;
++  filter: blur(60px);
++  pointer-events: none;
++  animation: cl-float 9s ease-in-out infinite;
++}
++
++.auth-page::before {
++  top: -120px;
++  left: -100px;
++  width: 360px;
++  height: 360px;
++  background: rgba(31, 138, 115, 0.28);
++}
++
++.auth-page::after {
++  right: -120px;
++  bottom: -120px;
++  width: 380px;
++  height: 380px;
++  background: rgba(244, 162, 89, 0.25);
++  animation-delay: -4s;
++}
++
++.auth-card {
++  position: relative;
++  z-index: 1;
++  background: rgba(255, 255, 255, 0.82);
++  backdrop-filter: blur(16px);
++  -webkit-backdrop-filter: blur(16px);
++  border: 1px solid rgba(255, 255, 255, 0.9);
++  animation: cl-pop 520ms var(--cl-ease) both;
++}
++
++.auth-brand-icon {
++  animation: cl-pulse-ring 2.4s ease-out infinite;
++}
++
++.form-field input {
++  background: rgba(255, 255, 255, 0.9);
++}
++
++.auth-submit {
++  letter-spacing: 0.01em;
++}
++
++.auth-submit:active:not(:disabled) {
++  transform: translateY(0) scale(0.99);
++}
++
++/* ---------- Buttons (shared feel) ---------- */
++
++.daycare-search-button,
++.approval-approve-button,
++.refresh-button,
++.approval-refresh-button,
++.daycare-details-button {
++  transition: transform 180ms var(--cl-ease), box-shadow 180ms var(--cl-ease), background 180ms ease, border-color 180ms ease;
++}
++
++.daycare-search-button:hover:not(:disabled),
++.approval-approve-button:hover:not(:disabled),
++.refresh-button:hover:not(:disabled),
++.approval-refresh-button:hover:not(:disabled),
++.daycare-details-button:hover:not(:disabled) {
++  transform: translateY(-2px);
++  box-shadow: 0 10px 22px rgba(16, 78, 67, 0.18);
++}
++
++.daycare-search-button:active:not(:disabled),
++.approval-approve-button:active:not(:disabled),
++.refresh-button:active:not(:disabled),
++.approval-refresh-button:active:not(:disabled),
++.daycare-details-button:active:not(:disabled) {
++  transform: translateY(0) scale(0.98);
++}
++
++.daycare-search-button,
++.approval-approve-button {
++  color: #fff;
++  border: 0;
++  background: linear-gradient(135deg, #1f8a73, #104e43);
++}
++
++/* ---------- Daycare directory ---------- */
++
++.daycare-directory {
++  background: transparent;
++}
++
++.daycare-directory-header h1 {
++  font-size: clamp(30px, 5vw, 46px);
++  background: linear-gradient(120deg, #104e43 20%, #1f8a73 70%, #f4a259 120%);
++  -webkit-background-clip: text;
++  background-clip: text;
++  color: transparent;
++}
++
++.daycare-directory-eyebrow {
++  display: inline-block;
++  padding: 6px 12px;
++  border-radius: 999px;
++  color: var(--cl-primary-dark);
++  background: var(--cl-primary-soft);
++}
++
++.daycare-search-card {
++  border: 1px solid rgba(255, 255, 255, 0.9);
++  border-radius: 22px;
++  background: rgba(255, 255, 255, 0.85);
++  backdrop-filter: blur(10px);
++  -webkit-backdrop-filter: blur(10px);
++  box-shadow: var(--cl-shadow-md);
++}
++
++.daycare-card {
++  position: relative;
++  overflow: hidden;
++  border: 1px solid var(--cl-border);
++  border-radius: 20px;
++  background: #fff;
++  box-shadow: var(--cl-shadow-sm);
++  transition: transform 260ms var(--cl-ease), box-shadow 260ms var(--cl-ease), border-color 260ms ease;
++}
++
++.daycare-card::before {
++  content: "";
++  position: absolute;
++  inset: 0 0 auto 0;
++  height: 4px;
++  background: linear-gradient(90deg, #1f8a73, #f4a259);
++  transform: scaleX(0);
++  transform-origin: left;
++  transition: transform 320ms var(--cl-ease);
++}
++
++.daycare-card:hover {
++  transform: translateY(-6px);
++  border-color: #b9dccb;
++  box-shadow: var(--cl-shadow-lg);
++}
++
++.daycare-card:hover::before {
++  transform: scaleX(1);
++}
++
++.daycare-verified {
++  border-radius: 999px;
++}
++
++.daycare-detail-card {
++  border-radius: 22px;
++  box-shadow: var(--cl-shadow-lg);
++  animation: cl-pop 360ms var(--cl-ease) both;
++}
++
++/* ---------- Approval dashboard ---------- */
++
++.approval-dashboard {
++  background: transparent;
++}
++
++.approval-header h1 {
++  font-size: clamp(26px, 4.5vw, 38px);
++}
++
++.approval-card,
++.approval-summary-card {
++  border: 1px solid var(--cl-border);
++  border-radius: 20px;
++  background: #fff;
++  box-shadow: var(--cl-shadow-sm);
++  transition: transform 240ms var(--cl-ease), box-shadow 240ms var(--cl-ease);
++}
++
++.approval-card:hover,
++.approval-summary-card:hover {
++  transform: translateY(-3px);
++  box-shadow: var(--cl-shadow-md);
++}
++
++.approval-message {
++  animation: cl-pop 300ms var(--cl-ease) both;
++}
++
++/* ---------- Organization verification (sidebar layout) ---------- */
++
++.sidebar {
++  background:
++    radial-gradient(circle at 0 0, rgba(91, 178, 143, 0.28), transparent 45%),
++    radial-gradient(circle at 100% 100%, rgba(244, 162, 89, 0.12), transparent 40%),
++    #0f3a31;
++}
++
++.nav-item {
++  transition: background 180ms ease, transform 180ms var(--cl-ease);
++}
++
++.nav-item:hover {
++  transform: translateX(3px);
++}
++
++.brand-icon {
++  background: linear-gradient(135deg, #2bb594, #176b5b);
++}
++
++.card,
++.status-hero,
++.notice {
++  border-radius: 20px;
++  transition: transform 240ms var(--cl-ease), box-shadow 240ms var(--cl-ease);
++}
++
++.card:hover {
++  transform: translateY(-3px);
++  box-shadow: var(--cl-shadow-md);
++}
++
++.status-hero {
++  box-shadow: var(--cl-shadow-md);
++}
++
++.status-icon {
++  animation: cl-pulse-ring 2.2s ease-out infinite;
++}
++
++.timeline-item.current .timeline-dot {
++  animation: cl-pulse-ring 2s ease-out infinite;
++}
++
++.detail-item {
++  transition: background 180ms ease, transform 180ms var(--cl-ease);
++}
++
++.detail-item:hover {
++  transform: translateY(-2px);
++}
++
++/* ---------- Reduced motion ---------- */
++
++@media (prefers-reduced-motion: reduce) {
++  *, *::before, *::after {
++    animation-duration: 0.001ms !important;
++    animation-iteration-count: 1 !important;
++    transition-duration: 0.001ms !important;
++  }
++}
+-- 
+2.43.0
+

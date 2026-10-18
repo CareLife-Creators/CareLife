@@ -4,6 +4,7 @@ import {
   getPublicDaycare,
 } from '../../api/daycareDirectory'
 import './DaycareDirectoryPage.css'
+import SiteNav from '../../components/SiteNav'
 
 function DaycareDirectoryPage() {
   const [search, setSearch] = useState('')
@@ -92,6 +93,8 @@ function DaycareDirectoryPage() {
   }
 
   return (
+    <>
+    <SiteNav />
     <main className="daycare-directory">
       <div className="daycare-directory-container">
 
@@ -407,6 +410,7 @@ function DaycareDirectoryPage() {
 
       </div>
     </main>
+    </>
   )
 }
 
