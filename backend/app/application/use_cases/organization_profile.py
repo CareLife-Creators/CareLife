@@ -149,6 +149,32 @@ class OrganizationProfileService:
 
         return profile
 
+    def get_public_orphanage_profile(
+        self,
+        organization_id: str,
+    ) -> OrganizationProfile:
+        """
+        Return an eligible public orphanage profile only.
+
+        The repository already requires verified status and a
+        current license. This method additionally prevents a
+        daycare or elderly-care organization from being served
+        through the orphanage-specific endpoint.
+        """
+        profile = self.repository.get_public(
+            organization_id
+        )
+
+        if (
+            profile is None
+            or profile.organization_type != "orphanage"
+        ):
+            raise LookupError(
+                "Public orphanage profile not found."
+            )
+
+        return profile
+
     @staticmethod
     def _ensure_correct_organization_type(
         profile: OrganizationProfile,
