@@ -5,6 +5,10 @@ from app.domain.entities.organization import (
     OrganizationStatus,
 )
 from app.infrastructure.database.connection import get_connection
+from app.infrastructure.repositories.audit_log_repository import (
+    PostgresAuditLogRepository,
+)
+
 
 class PostgresOrganizationRepository:
 
@@ -12,10 +16,8 @@ class PostgresOrganizationRepository:
         self,
         organization: Organization,
     ) -> Organization:
-
         with get_connection() as connection:
             with connection.transaction():
-
                 connection.execute(
                     """
                     INSERT INTO organizations (
@@ -150,9 +152,7 @@ class PostgresOrganizationRepository:
         self,
         organization_id: str,
     ) -> Organization | None:
-
         with get_connection() as connection:
-
             row = connection.execute(
                 """
                 SELECT
@@ -170,10 +170,8 @@ class PostgresOrganizationRepository:
                     o.location,
                     o.contact
                 FROM organizations o
-
                 JOIN verification_statuses status
                     ON status.id = o.status_id
-
                 LEFT JOIN LATERAL (
                     SELECT
                         od.document_number,
@@ -183,21 +181,16 @@ class PostgresOrganizationRepository:
                       AND od.document_type = 'license'
                     ORDER BY od.created_at DESC
                     LIMIT 1
-                ) document
-                    ON TRUE
-
+                ) document ON TRUE
                 LEFT JOIN LATERAL (
-                    SELECT
-                        vr.notes
+                    SELECT vr.notes
                     FROM verification_reviews vr
                     WHERE vr.organization_id = o.id
                     ORDER BY
                         vr.reviewed_at DESC,
                         vr.id DESC
                     LIMIT 1
-                ) latest_review
-                    ON TRUE
-
+                ) latest_review ON TRUE
                 WHERE o.id = %s
                 """,
                 (organization_id,),
@@ -208,9 +201,7 @@ class PostgresOrganizationRepository:
     def get_pending(
         self,
     ) -> list[Organization]:
-
         with get_connection() as connection:
-
             rows = connection.execute(
                 """
                 SELECT
@@ -225,10 +216,8 @@ class PostgresOrganizationRepository:
                     o.updated_at,
                     latest_review.notes
                 FROM organizations o
-
                 JOIN verification_statuses status
                     ON status.id = o.status_id
-
                 LEFT JOIN LATERAL (
                     SELECT
                         od.document_number,
@@ -238,23 +227,17 @@ class PostgresOrganizationRepository:
                       AND od.document_type = 'license'
                     ORDER BY od.created_at DESC
                     LIMIT 1
-                ) document
-                    ON TRUE
-
+                ) document ON TRUE
                 LEFT JOIN LATERAL (
-                    SELECT
-                        vr.notes
+                    SELECT vr.notes
                     FROM verification_reviews vr
                     WHERE vr.organization_id = o.id
                     ORDER BY
                         vr.reviewed_at DESC,
                         vr.id DESC
                     LIMIT 1
-                ) latest_review
-                    ON TRUE
-
+                ) latest_review ON TRUE
                 WHERE status.name = %s
-
                 ORDER BY o.created_at ASC
                 """,
                 (OrganizationStatus.PENDING.value,),
@@ -271,7 +254,6 @@ class PostgresOrganizationRepository:
         organization_id: str,
         reviewer_id: str,
     ) -> Organization | None:
-
         with get_connection() as connection:
             with connection.transaction():
                 updated = connection.execute(
@@ -342,6 +324,16 @@ class PostgresOrganizationRepository:
                     ),
                 )
 
+                # CAR-131: Keep the audit event inside this transaction.
+                PostgresAuditLogRepository().record_on_connection(
+                    connection,
+                    actor_user_id=reviewer_id,
+                    actor_role="carelife_admin",
+                    action="organization.verification.approved",
+                    target_type="organization",
+                    target_id=organization_id,
+                )
+
         return self.get_by_organization_id(organization_id)
 
     def reject(
@@ -350,7 +342,6 @@ class PostgresOrganizationRepository:
         reviewer_id: str,
         message: str | None = None,
     ) -> Organization | None:
-
         with get_connection() as connection:
             with connection.transaction():
                 updated = connection.execute(
@@ -414,6 +405,16 @@ class PostgresOrganizationRepository:
                     ),
                 )
 
+                # CAR-131: Keep the audit event inside this transaction.
+                PostgresAuditLogRepository().record_on_connection(
+                    connection,
+                    actor_user_id=reviewer_id,
+                    actor_role="carelife_admin",
+                    action="organization.verification.rejected",
+                    target_type="organization",
+                    target_id=organization_id,
+                )
+
         return self.get_by_organization_id(organization_id)
 
     def get_daycare_directory(
@@ -421,7 +422,6 @@ class PostgresOrganizationRepository:
         search: str | None = None,
         location: str | None = None,
     ) -> list[DaycareDirectoryEntry]:
-
         search_pattern = (
             f"%{search}%"
             if search is not None
@@ -435,7 +435,6 @@ class PostgresOrganizationRepository:
         )
 
         with get_connection() as connection:
-
             rows = connection.execute(
                 """
                 SELECT
@@ -445,41 +444,30 @@ class PostgresOrganizationRepository:
                     o.description,
                     o.location,
                     o.contact
-
                 FROM organizations o
-
                 JOIN verification_statuses status
                     ON status.id = o.status_id
-
                 JOIN LATERAL (
-                    SELECT
-                        od.expires_at
+                    SELECT od.expires_at
                     FROM organization_documents od
                     WHERE od.organization_id = o.id
                       AND od.document_type = 'license'
                     ORDER BY od.created_at DESC
                     LIMIT 1
-                ) license
-                    ON TRUE
-
+                ) license ON TRUE
                 WHERE o.organization_type = 'daycare'
-
                   AND status.name = %s
-
                   AND license.expires_at >= CURRENT_DATE
-
                   AND (
                       %s IS NULL
                       OR o.name ILIKE %s
                       OR COALESCE(o.location, '') ILIKE %s
                       OR COALESCE(o.description, '') ILIKE %s
                   )
-
                   AND (
                       %s IS NULL
                       OR COALESCE(o.location, '') ILIKE %s
                   )
-
                 ORDER BY o.name ASC
                 """,
                 (
@@ -498,6 +486,7 @@ class PostgresOrganizationRepository:
             for row in rows
             if row is not None
         ]
+
     def get_elder_care_directory(
         self,
         search: str | None = None,
@@ -506,7 +495,6 @@ class PostgresOrganizationRepository:
         max_capacity: int | None = None,
         facility: str | None = None,
     ) -> list[ElderCareDirectoryEntry]:
-
         search_text = search.strip() if search else None
         location_text = location.strip() if location else None
         facility_text = facility.strip() if facility else None
@@ -550,24 +538,19 @@ class PostgresOrganizationRepository:
                     o.facilities,
                     o.fees
                 FROM organizations o
-
                 JOIN verification_statuses status
                     ON status.id = o.status_id
-
                 JOIN LATERAL (
-                    SELECT
-                        od.expires_at
+                    SELECT od.expires_at
                     FROM organization_documents od
                     WHERE od.organization_id = o.id
                       AND od.document_type = 'license'
                     ORDER BY od.created_at DESC, od.id DESC
                     LIMIT 1
                 ) license ON TRUE
-
                 WHERE o.organization_type = 'elderly_care'
                   AND status.name = %s
                   AND license.expires_at >= CURRENT_DATE
-
                   AND (
                       %s IS NULL
                       OR o.name ILIKE %s
@@ -579,27 +562,22 @@ class PostgresOrganizationRepository:
                       OR COALESCE(o.facilities, '') ILIKE %s
                       OR COALESCE(o.fees, '') ILIKE %s
                   )
-
                   AND (
                       %s IS NULL
                       OR COALESCE(o.location, '') ILIKE %s
                   )
-
                   AND (
                       %s IS NULL
                       OR o.capacity >= %s
                   )
-
                   AND (
                       %s IS NULL
                       OR o.capacity <= %s
                   )
-
                   AND (
                       %s IS NULL
                       OR COALESCE(o.facilities, '') ILIKE %s
                   )
-
                 ORDER BY o.name ASC
                 """,
                 (
@@ -634,9 +612,7 @@ class PostgresOrganizationRepository:
         self,
         organization_id: str,
     ) -> DaycareDirectoryEntry | None:
-
         with get_connection() as connection:
-
             row = connection.execute(
                 """
                 SELECT
@@ -646,23 +622,17 @@ class PostgresOrganizationRepository:
                     o.description,
                     o.location,
                     o.contact
-
                 FROM organizations o
-
                 JOIN verification_statuses status
                     ON status.id = o.status_id
-
                 JOIN LATERAL (
-                    SELECT
-                        od.expires_at
+                    SELECT od.expires_at
                     FROM organization_documents od
                     WHERE od.organization_id = o.id
                       AND od.document_type = 'license'
                     ORDER BY od.created_at DESC
                     LIMIT 1
-                ) license
-                    ON TRUE
-
+                ) license ON TRUE
                 WHERE o.id = %s
                   AND o.organization_type = 'daycare'
                   AND status.name = %s
@@ -680,7 +650,6 @@ class PostgresOrganizationRepository:
     def _to_daycare_directory_entry(
         row,
     ) -> DaycareDirectoryEntry | None:
-
         if row is None:
             return None
 
@@ -692,7 +661,7 @@ class PostgresOrganizationRepository:
             location=row[4],
             contact=row[5],
         )
-    
+
     @staticmethod
     def _to_elder_care_directory_entry(
         row,
@@ -718,7 +687,6 @@ class PostgresOrganizationRepository:
     def _to_entity(
         row,
     ) -> Organization | None:
-
         if row is None:
             return None
 
@@ -737,6 +705,7 @@ class PostgresOrganizationRepository:
             location=row[11],
             contact=row[12],
         )
+
     def expire_verified_organizations(self) -> int:
         expired_count = 0
 
@@ -749,13 +718,10 @@ class PostgresOrganizationRepository:
                         o.name,
                         license.expires_at
                     FROM organizations o
-
                     JOIN verification_statuses status
                         ON status.id = o.status_id
-
                     JOIN LATERAL (
-                        SELECT
-                            od.expires_at
+                        SELECT od.expires_at
                         FROM organization_documents od
                         WHERE od.organization_id = o.id
                           AND od.document_type = 'license'
@@ -763,22 +729,20 @@ class PostgresOrganizationRepository:
                             od.created_at DESC,
                             od.id DESC
                         LIMIT 1
-                    ) license
-                        ON TRUE
-
+                    ) license ON TRUE
                     WHERE status.name = %s
                       AND license.expires_at < CURRENT_DATE
-
                     ORDER BY o.id
-
                     FOR UPDATE OF o
                     """,
                     (OrganizationStatus.VERIFIED.value,),
                 ).fetchall()
 
-                for organization_id, organization_name, expires_at in (
-                    expired_organizations
-                ):
+                for (
+                    organization_id,
+                    organization_name,
+                    expires_at,
+                ) in expired_organizations:
                     updated = connection.execute(
                         """
                         UPDATE organizations
@@ -867,13 +831,10 @@ class PostgresOrganizationRepository:
                         license.expires_at,
                         recipient.user_id
                     FROM organizations o
-
                     JOIN verification_statuses status
                         ON status.id = o.status_id
-
                     JOIN LATERAL (
-                        SELECT
-                            od.expires_at
+                        SELECT od.expires_at
                         FROM organization_documents od
                         WHERE od.organization_id = o.id
                           AND od.document_type = 'license'
@@ -881,28 +842,21 @@ class PostgresOrganizationRepository:
                             od.created_at DESC,
                             od.id DESC
                         LIMIT 1
-                    ) license
-                        ON TRUE
-
+                    ) license ON TRUE
                     CROSS JOIN LATERAL (
                         SELECT o.submitted_by AS user_id
-
                         UNION
-
                         SELECT uo.user_id
                         FROM user_organizations uo
                         WHERE uo.organization_id = o.id
                     ) recipient
-
                     JOIN users notification_user
                         ON notification_user.id = recipient.user_id
                        AND notification_user.is_active = TRUE
-
                     WHERE status.name = %s
                       AND license.expires_at >= CURRENT_DATE
                       AND license.expires_at
                           <= CURRENT_DATE + %s
-
                     ORDER BY
                         o.id,
                         recipient.user_id
