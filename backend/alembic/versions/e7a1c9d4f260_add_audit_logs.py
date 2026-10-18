@@ -22,6 +22,9 @@ def upgrade() -> None:
             sa.String(),
             nullable=False,
         ),
+        # Keep the actor ID as a historical identifier rather than a
+        # foreign key, so account lifecycle changes never erase or block
+        # the permanent audit trail.
         sa.Column(
             "actor_user_id",
             sa.String(),
@@ -53,11 +56,6 @@ def upgrade() -> None:
             server_default=sa.text("CURRENT_TIMESTAMP"),
             nullable=False,
         ),
-        sa.ForeignKeyConstraint(
-            ["actor_user_id"],
-            ["users.id"],
-            ondelete="RESTRICT",
-        ),
         sa.PrimaryKeyConstraint("id"),
     )
 
@@ -73,7 +71,6 @@ def upgrade() -> None:
         ["target_type", "target_id", "created_at"],
     )
 
-    # Enforce append-only behavior at the database level.
     op.execute(
         """
         CREATE FUNCTION prevent_audit_log_mutation()
