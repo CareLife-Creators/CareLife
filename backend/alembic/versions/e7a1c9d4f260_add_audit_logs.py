@@ -22,9 +22,6 @@ def upgrade() -> None:
             sa.String(),
             nullable=False,
         ),
-        # Keep the actor ID as a historical identifier rather than a
-        # foreign key, so account lifecycle changes never erase or block
-        # the permanent audit trail.
         sa.Column(
             "actor_user_id",
             sa.String(),
@@ -55,6 +52,11 @@ def upgrade() -> None:
             sa.DateTime(timezone=True),
             server_default=sa.text("CURRENT_TIMESTAMP"),
             nullable=False,
+        ),
+        sa.ForeignKeyConstraint(
+            ["actor_user_id"],
+            ["users.id"],
+            ondelete="RESTRICT",
         ),
         sa.PrimaryKeyConstraint("id"),
     )
