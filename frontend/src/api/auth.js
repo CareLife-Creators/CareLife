@@ -1,89 +1,61 @@
+import { apiRequest } from './client'
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
-
-export async function signup({ email, password }) {
-  const response = await fetch(`${API_BASE_URL}/auth/signup`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      email,
-      password,
-    }),
-  })
-
-  const data = await response.json()
-
-  if (!response.ok) {
-    if (response.status === 409) {
-      throw new Error(
-        'An account with this email already exists'
-      )
-    }
-
-    if (response.status === 422) {
-      throw new Error(
-        'Please enter a valid email and password'
-      )
-    }
-
-    throw new Error('Unable to create account')
+function translateAuthError(error, action) {
+  if (error.status === 409) {
+    return new Error('An account with this email already exists')
   }
 
-  return data
+  if (error.status === 422) {
+    return new Error('Please enter a valid email and password')
+  }
+
+  if (action === 'login' && error.status === 401) {
+    return new Error('Invalid email or password')
+  }
+
+  return new Error(
+    action === 'signup' ? 'Unable to create account: ' + error.message
+      : 'Unable to sign in: ' + error.message
+  )
+}
+
+export async function signup({ email, password }) {
+  try {
+    return await apiRequest('/auth/signup', {
+      method: 'POST',
+      authenticated: false,
+      body: JSON.stringify({ email, password }),
+    })
+  } catch (error) {
+    throw translateAuthError(error, 'signup')
+  }
 }
 
 export async function login({ email, password }) {
-  const response = await fetch(`${API_BASE_URL}/auth/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      email,
-      password,
-    }),
-  })
-
-  const data = await response.json()
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      throw new Error('Invalid email or password')
-    }
-
-    if (response.status === 422) {
-      throw new Error(
-        'Please enter a valid email and password'
-      )
-    }
-
-    throw new Error('Unable to sign in')
+  try {
+    return await apiRequest('/auth/login', {
+      method: 'POST',
+      authenticated: false,
+      body: JSON.stringify({ email, password }),
+    })
+  } catch (error) {
+    throw translateAuthError(error, 'login')
   }
-
-  return data
 }
 
 export async function logout() {
   const token = localStorage.getItem('carelife_access_token')
 
-  if (token) {
-    const response = await fetch(`${API_BASE_URL}/auth/logout`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-
-    if (!response.ok) {
-      throw new Error('Logout failed')
+  try {
+    if (token) {
+      await apiRequest('/auth/logout', { method: 'POST' })
     }
+  } catch {
+    // Always clear the local session, even when the API is unavailable.
+  } finally {
+    localStorage.removeItem('carelife_access_token')
+    localStorage.removeItem('carelife_user')
+    localStorage.removeItem('carelife_organization_id')
+    window.location.hash = '#home'
   }
-
-  localStorage.removeItem('carelife_access_token')
-  localStorage.removeItem('carelife_user')
-
-  window.location.hash = '#login'
 }

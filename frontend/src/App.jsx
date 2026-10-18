@@ -3,750 +3,115 @@ import './App.css'
 
 import LoginPage from './pages/auth/LoginPage'
 import SignupPage from './pages/auth/SignupPage'
-
-import {
-  getOrganizationVerification,
-} from './api/organizationVerification'
-
-import OrganizationApprovalDashboard from './pages/organization/OrganizationApprovalDashboard'
+import HomePage from './pages/HomePage'
+import DashboardPage from './pages/DashboardPage'
 import DaycareDirectoryPage from './pages/daycare/DaycareDirectoryPage'
+import OrganizationApprovalDashboard from './pages/organization/OrganizationApprovalDashboard'
+import VerificationStatusPage from './pages/organization/VerificationStatusPage'
+import SiteNav from './components/SiteNav'
 
-import { logout } from './api/auth'
+const knownRoutes = new Set([
+  '#home',
+  '#dashboard',
+  '#login',
+  '#signup',
+  '#daycare-directory',
+  '#organization-approval',
+  '#verification',
+])
 
-const organizationId = 'daycare-1'
+const authenticatedRoutes = new Set([
+  '#dashboard',
+  '#organization-approval',
+  '#verification',
+])
 
+function readRoute() {
+  const hash = window.location.hash.trim()
 
-function formatDate(value) {
-  if (!value) {
-    return '—'
+  if (!hash || hash === '#') {
+    return '#home'
   }
 
-  return new Date(value).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
+  return knownRoutes.has(hash) ? hash : '#not-found'
 }
 
-
-function getStatusLabel(status) {
-  const labels = {
-    pending: 'Pending Verification',
-    approved: 'Approved',
-    rejected: 'Rejected',
-    expired: 'Expired',
-  }
-
-  return labels[status] || status
+function NotFoundPage() {
+  return (
+    <>
+      <SiteNav />
+      <main className="route-not-found">
+        <span className="route-not-found-icon" aria-hidden="true">?</span>
+        <p className="route-eyebrow">PAGE NOT FOUND</p>
+        <h1>This page is not available yet.</h1>
+        <p>
+          The address may be outdated, or this page has not been added to
+          the current CareLife frontend.
+        </p>
+        <a className="route-primary-action" href="#home">Return to CareLife</a>
+      </main>
+    </>
+  )
 }
-
 
 function App() {
-  const [route, setRoute] = useState(
-    () => window.location.hash
-  )
-
-  const [organization, setOrganization] =
-    useState(null)
-
-  const [loading, setLoading] =
-    useState(true)
-
-  const [error, setError] =
-    useState('')
-
-
-  const isApprovalDashboard =
-    route === '#organization-approval'
-
-  const isDaycareDirectory =
-    route === '#daycare-directory'
-
-  const isLoginPage =
-    route === '#login'
-
-  const isSignupPage =
-    route === '#signup'
-
+  const [route, setRoute] = useState(readRoute)
 
   useEffect(() => {
-    function handleHashChange() {
-      setRoute(window.location.hash)
-    }
+    const handleHashChange = () => setRoute(readRoute())
+    window.addEventListener('hashchange', handleHashChange)
 
-    window.addEventListener(
-      'hashchange',
-      handleHashChange
-    )
-
-    return () => {
-      window.removeEventListener(
-        'hashchange',
-        handleHashChange
-      )
-    }
+    return () => window.removeEventListener('hashchange', handleHashChange)
   }, [])
 
-
-  async function loadVerificationStatus() {
-    try {
-      setLoading(true)
-      setError('')
-
-      const data =
-        await getOrganizationVerification(
-          organizationId
-        )
-
-      setOrganization(data)
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Unable to load verification status'
-      )
-    } finally {
-      setLoading(false)
-    }
-  }
-
+  const isAuthenticated = Boolean(localStorage.getItem('carelife_access_token'))
+  const requiresAuthentication = authenticatedRoutes.has(route)
 
   useEffect(() => {
-    /*
-     * These pages do not need organization
-     * verification data.
-     */
-    if (
-      isApprovalDashboard ||
-      isDaycareDirectory ||
-      isLoginPage ||
-      isSignupPage
-    ) {
-      setLoading(false)
-      return undefined
+    if (requiresAuthentication && !isAuthenticated) {
+      window.location.hash = '#login'
     }
+  }, [requiresAuthentication, isAuthenticated])
 
-    let cancelled = false
-
-    setLoading(true)
-
-    getOrganizationVerification(
-      organizationId
+  if (requiresAuthentication && !isAuthenticated) {
+    return (
+      <main className="route-redirect" aria-live="polite">
+        <div className="route-redirect-mark" aria-hidden="true">C</div>
+        <p>Taking you to sign in…</p>
+        <a href="#login">Continue to sign in</a>
+      </main>
     )
-      .then((data) => {
-        if (cancelled) {
-          return
-        }
+  }
 
-        setOrganization(data)
-        setError('')
-      })
-      .catch((err) => {
-        if (cancelled) {
-          return
-        }
+  if (route === '#home') {
+    return <HomePage />
+  }
 
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'Unable to load verification status'
-        )
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setLoading(false)
-        }
-      })
+  if (route === '#dashboard') {
+    return <DashboardPage />
+  }
 
-    return () => {
-      cancelled = true
-    }
-  }, [
-    isApprovalDashboard,
-    isDaycareDirectory,
-    isLoginPage,
-    isSignupPage,
-  ])
-
-
-  /*
-   * CAR-44
-   * Daycare Directory
-   */
-  if (isDaycareDirectory) {
+  if (route === '#daycare-directory') {
     return <DaycareDirectoryPage />
   }
 
-
-  /*
-   * Organization Approval Dashboard
-   */
-  if (isApprovalDashboard) {
+  if (route === '#organization-approval') {
     return <OrganizationApprovalDashboard />
   }
 
-
-  /*
-   * Login
-   */
-  if (isLoginPage) {
-    return (
-      <LoginPage
-        onSignup={() => {
-          window.location.href = '#signup'
-        }}
-      />
-    )
+  if (route === '#verification') {
+    return <VerificationStatusPage />
   }
 
-
-  /*
-   * Signup
-   */
-  if (isSignupPage) {
-    return (
-      <SignupPage
-        onLogin={() => {
-          window.location.href = '#login'
-        }}
-      />
-    )
+  if (route === '#login') {
+    return <LoginPage onSignup={() => { window.location.hash = '#signup' }} />
   }
 
-
-  const status =
-    organization?.status || 'pending'
-
-  const statusLabel =
-    getStatusLabel(status)
-
-
-  return (
-    <div className="app-layout">
-
-      <aside className="sidebar">
-
-        <div className="brand">
-
-          <div className="brand-icon">
-            C
-          </div>
-
-          <div>
-            <h1>CareLife</h1>
-
-            <p>
-              Care Management
-            </p>
-          </div>
-
-        </div>
-
-
-        <nav className="navigation">
-
-          <a
-            href="#daycare-directory"
-            className="nav-item"
-          >
-            <span>⌕</span>
-            Daycare Directory
-          </a>
-
-
-          <a
-            href="#"
-            className="nav-item"
-          >
-            <span>⌂</span>
-            Dashboard
-          </a>
-
-
-          <a
-            href="#"
-            className="nav-item active"
-          >
-            <span>✓</span>
-            Verification
-          </a>
-
-
-          <a
-            href="#"
-            className="nav-item"
-          >
-            <span>▣</span>
-            Organization Profile
-          </a>
-
-
-          <a
-            href="#"
-            className="nav-item"
-          >
-            <span>⚙</span>
-            Settings
-          </a>
-
-        </nav>
-
-
-        <div className="sidebar-bottom">
-
-          <div className="help-box">
-
-            <strong>
-              Need help?
-            </strong>
-
-            <p>
-              Contact CareLife support if you
-              have questions about your
-              verification.
-            </p>
-
-            <button type="button">
-              Contact Support
-            </button>
-
-          </div>
-
-        </div>
-
-      </aside>
-
-
-      <main className="main-content">
-
-        <header className="topbar">
-
-          <div>
-
-            <p className="breadcrumb">
-              Organization / Verification
-            </p>
-
-            <h2>
-              Verification Status
-            </h2>
-
-          </div>
-
-
-          <div className="profile">
-
-            <div className="profile-avatar">
-              OS
-            </div>
-
-
-            <button
-              type="button"
-              onClick={logout}
-            >
-              Logout
-            </button>
-
-
-            <div>
-
-              <strong>
-                Organization Staff
-              </strong>
-
-              <span>
-                Staff Account
-              </span>
-
-            </div>
-
-          </div>
-
-        </header>
-
-
-        <section className="page-content">
-
-          {loading && (
-            <div className="notice">
-
-              <div className="notice-icon">
-                i
-              </div>
-
-              <div>
-
-                <strong>
-                  Loading verification status
-                </strong>
-
-                <p>
-                  CareLife is retrieving the
-                  latest saved verification
-                  information.
-                </p>
-
-              </div>
-
-            </div>
-          )}
-
-
-          {!loading && error && (
-            <div className="notice">
-
-              <div className="notice-icon">
-                !
-              </div>
-
-              <div>
-
-                <strong>
-                  Unable to load verification
-                  status
-                </strong>
-
-                <p>
-                  {error}
-                </p>
-
-              </div>
-
-            </div>
-          )}
-
-
-          {!loading &&
-            !error &&
-            organization && (
-              <>
-
-                <div className="intro">
-
-                  <div>
-
-                    <span className="section-label">
-                      ORGANIZATION VERIFICATION
-                    </span>
-
-                    <h3>
-                      {
-                        organization.organization_name
-                      }
-                    </h3>
-
-                    <p>
-                      {
-                        organization.organization_type
-                      }
-                    </p>
-
-                  </div>
-
-
-                  <button
-                    type="button"
-                    className="refresh-button"
-                    onClick={
-                      loadVerificationStatus
-                    }
-                  >
-                    ↻ Refresh Status
-                  </button>
-
-                </div>
-
-
-                <div className="status-hero">
-
-                  <div className="status-icon">
-
-                    {status === 'approved'
-                      ? '✓'
-                      : status === 'rejected'
-                        ? '!'
-                        : status === 'expired'
-                          ? '!'
-                          : '•'}
-
-                  </div>
-
-
-                  <div className="status-content">
-
-                    <span className="status-label">
-                      CURRENT STATUS
-                    </span>
-
-                    <h4>
-                      {statusLabel}
-                    </h4>
-
-                    <p>
-                      {
-                        organization.message ||
-                        'No additional verification message is available.'
-                      }
-                    </p>
-
-                  </div>
-
-
-                  <span className="status-pill">
-                    {status}
-                  </span>
-
-                </div>
-
-
-                <div className="content-grid">
-
-                  <section className="card">
-
-                    <div className="card-header">
-
-                      <div>
-
-                        <span className="section-label">
-                          VERIFICATION DETAILS
-                        </span>
-
-                        <h4>
-                          Application Information
-                        </h4>
-
-                      </div>
-
-                    </div>
-
-
-                    <div className="details-grid">
-
-                      <div className="detail-item">
-
-                        <span>
-                          Submitted Date
-                        </span>
-
-                        <strong>
-                          {formatDate(
-                            organization.submitted_at
-                          )}
-                        </strong>
-
-                      </div>
-
-
-                      <div className="detail-item">
-
-                        <span>
-                          Last Updated
-                        </span>
-
-                        <strong>
-                          {formatDate(
-                            organization.updated_at
-                          )}
-                        </strong>
-
-                      </div>
-
-
-                      <div className="detail-item">
-
-                        <span>
-                          Organization Type
-                        </span>
-
-                        <strong>
-                          {
-                            organization.organization_type
-                          }
-                        </strong>
-
-                      </div>
-
-
-                      <div className="detail-item">
-
-                        <span>
-                          Verification Status
-                        </span>
-
-                        <strong>
-                          {statusLabel}
-                        </strong>
-
-                      </div>
-
-                    </div>
-
-                  </section>
-
-
-                  <section className="card">
-
-                    <div className="card-header">
-
-                      <div>
-
-                        <span className="section-label">
-                          VERIFICATION PROGRESS
-                        </span>
-
-                        <h4>
-                          Application Timeline
-                        </h4>
-
-                      </div>
-
-                    </div>
-
-
-                    <div className="timeline">
-
-                      <div className="timeline-item completed">
-
-                        <div className="timeline-dot">
-                          ✓
-                        </div>
-
-                        <div>
-
-                          <strong>
-                            Application Submitted
-                          </strong>
-
-                          <span>
-                            {formatDate(
-                              organization.submitted_at
-                            )}
-                          </span>
-
-                        </div>
-
-                      </div>
-
-
-                      <div className="timeline-line"></div>
-
-
-                      <div
-                        className={
-                          status === 'pending'
-                            ? 'timeline-item current'
-                            : 'timeline-item completed'
-                        }
-                      >
-
-                        <div className="timeline-dot">
-
-                          {status === 'pending'
-                            ? '•'
-                            : '✓'}
-
-                        </div>
-
-                        <div>
-
-                          <strong>
-                            Under Review
-                          </strong>
-
-                          <span>
-
-                            {status === 'pending'
-                              ? 'Currently being reviewed'
-                              : 'Review stage completed'}
-
-                          </span>
-
-                        </div>
-
-                      </div>
-
-
-                      <div className="timeline-line"></div>
-
-
-                      <div
-                        className={
-                          status === 'pending'
-                            ? 'timeline-item upcoming'
-                            : 'timeline-item completed'
-                        }
-                      >
-
-                        <div className="timeline-dot">
-
-                          {status === 'pending'
-                            ? '3'
-                            : '✓'}
-
-                        </div>
-
-                        <div>
-
-                          <strong>
-                            Verification Decision
-                          </strong>
-
-                          <span>
-
-                            {status === 'pending'
-                              ? 'Waiting for administration review'
-                              : `Current result: ${statusLabel}`}
-
-                          </span>
-
-                        </div>
-
-                      </div>
-
-                    </div>
-
-                  </section>
-
-                </div>
-
-
-                <div className="notice">
-
-                  <div className="notice-icon">
-                    i
-                  </div>
-
-                  <div>
-
-                    <strong>
-                      Keep your organization
-                      information up to date
-                    </strong>
-
-                    <p>
-                      Verification decisions are
-                      based on the information
-                      submitted by your
-                      organization. Make sure your
-                      profile information stays
-                      accurate.
-                    </p>
-
-                  </div>
-
-                </div>
-
-              </>
-            )}
-
-        </section>
-
-      </main>
-
-    </div>
-  )
+  if (route === '#signup') {
+    return <SignupPage onLogin={() => { window.location.hash = '#login' }} />
+  }
+
+  return <NotFoundPage />
 }
-
 
 export default App

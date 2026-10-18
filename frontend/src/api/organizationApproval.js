@@ -1,66 +1,46 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+import { apiRequest } from './client'
 
-export async function getPendingOrganizations() {
-  const response = await fetch(
-    `${API_BASE_URL}/organizations/verification/pending`,
-    {
-      credentials: 'include',
-    }
-  )
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      throw new Error('Authentication required')
-    }
-
-    if (response.status === 403) {
-      throw new Error('Admin access required')
-    }
-
-    throw new Error('Unable to load pending organizations')
+function explainApprovalError(error, fallback) {
+  if (error.status === 401) {
+    return new Error('Please sign in to continue.')
   }
 
-  return response.json()
+  if (error.status === 403) {
+    return new Error('Admin access is required to manage organization approvals.')
+  }
+
+  return new Error(error.message || fallback)
+}
+
+export async function getPendingOrganizations() {
+  try {
+    return await apiRequest('/organizations/verification/pending')
+  } catch (error) {
+    throw explainApprovalError(error, 'Unable to load pending organizations')
+  }
 }
 
 export async function approveOrganization(organizationId) {
-  const response = await fetch(
-    `${API_BASE_URL}/organizations/${organizationId}/verification/approve`,
-    {
-      method: 'POST',
-      credentials: 'include',
-    }
-  )
-
-  if (!response.ok) {
-    throw new Error('Unable to approve organization')
+  try {
+    return await apiRequest(
+      '/organizations/' + encodeURIComponent(organizationId) + '/verification/approve',
+      { method: 'POST' }
+    )
+  } catch (error) {
+    throw explainApprovalError(error, 'Unable to approve organization')
   }
-
-  return response.json()
 }
 
-export async function rejectOrganization(
-  organizationId,
-  message = null
-) {
-  const response = await fetch(
-    `${API_BASE_URL}/organizations/${organizationId}/verification/reject`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({
-        message,
-      }),
-    }
-  )
-
-  if (!response.ok) {
-    throw new Error('Unable to reject organization')
+export async function rejectOrganization(organizationId, message = null) {
+  try {
+    return await apiRequest(
+      '/organizations/' + encodeURIComponent(organizationId) + '/verification/reject',
+      {
+        method: 'POST',
+        body: JSON.stringify({ message }),
+      }
+    )
+  } catch (error) {
+    throw explainApprovalError(error, 'Unable to reject organization')
   }
-
-  return response.json()
 }
