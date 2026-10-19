@@ -47,6 +47,7 @@ def login(
         message="Login successful",
         user_id=user.id,
         email=user.email,
+        role=user.role_name,
         access_token=create_access_token(user.id),
         token_type="bearer",
     )
