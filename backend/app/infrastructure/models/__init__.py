@@ -30,6 +30,10 @@ from app.infrastructure.models.messaging import (
     ConversationModel,
     MessageModel,
 )
+from app.infrastructure.models.elder_care_booking import (
+    ElderCareBookingModel,
+    ElderCareBookingStatusHistoryModel,
+)
 from app.infrastructure.models.revoked_token import RevokedTokenModel
 from app.infrastructure.models.role import RoleModel
 from app.infrastructure.models.user import UserModel
@@ -92,4 +96,6 @@ __all__ = [
     "CaregiverAvailabilityModel",
 "CaregiverAppointmentModel",
 "DonationPaymentModel",
+"ElderCareBookingModel",
+"ElderCareBookingStatusHistoryModel",
 ]
