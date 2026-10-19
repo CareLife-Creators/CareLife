@@ -244,9 +244,9 @@ class PostgresCaregiverBookingRepository(
                     slot
                 )
 
-                if ends_at <= datetime.now(timezone.utc):
+                if starts_at <= datetime.now(timezone.utc):
                     raise ValueError(
-                        "This availability slot has expired."
+                        "This availability slot has already started or expired."
                     )
 
                 if caregiver_id == requester_user_id:
