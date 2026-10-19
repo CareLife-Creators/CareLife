@@ -56,7 +56,9 @@ from app.infrastructure.models.remote_checkin import (
     ResidentFamilyConsentModel,
 )
 from app.infrastructure.models.resident import ResidentProfileModel
-
+from app.infrastructure.models.donation_payment import (
+    DonationPaymentModel,
+)
 
 __all__ = [
     "Base",
@@ -89,4 +91,5 @@ __all__ = [
     "MessageModel",
     "CaregiverAvailabilityModel",
 "CaregiverAppointmentModel",
+"DonationPaymentModel",
 ]
