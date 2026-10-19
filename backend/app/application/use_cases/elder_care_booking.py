@@ -19,12 +19,10 @@ from app.domain.entities.user_context import Role, UserContext
 
 REQUESTER_ROLES = {
     Role.FAMILY_REPRESENTATIVE,
-    Role.PARENT_GUARDIAN,
 }
 
 VIEWER_ROLES = {
     Role.FAMILY_REPRESENTATIVE,
-    Role.PARENT_GUARDIAN,
     Role.INDEPENDENT_CAREGIVER,
     Role.CARE_HOME_STAFF,
     Role.CARELIFE_ADMIN,
