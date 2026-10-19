@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from app.presentation.api.routes.caregiver_booking import (
+    router as caregiver_booking_router,
+)
 from app.core.config import get_settings
 from app.presentation.api.routes.attendance import (
     router as attendance_router,
@@ -106,6 +108,7 @@ app.include_router(residents_router)
 app.include_router(audit_logs_router)
 app.include_router(messaging_router)
 app.include_router(notifications_router)
+app.include_router(caregiver_booking_router)
 
 @app.get("/")
 def root():

@@ -6,6 +6,10 @@ from app.infrastructure.models.child import (
     DailyUpdateModel,
     OrphanageOutcomeModel,
 )
+from app.infrastructure.models.caregiver_booking import (
+    CaregiverAppointmentModel,
+    CaregiverAvailabilityModel,
+)
 from app.infrastructure.models.audit_log import AuditLogModel
 from app.infrastructure.models.donation import (
     DonationCampaignModel,
@@ -83,4 +87,6 @@ __all__ = [
     "AuditLogModel",
     "ConversationModel",
     "MessageModel",
+    "CaregiverAvailabilityModel",
+"CaregiverAppointmentModel",
 ]
