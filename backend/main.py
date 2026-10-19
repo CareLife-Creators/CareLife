@@ -71,6 +71,9 @@ from app.presentation.api.routes.notifications import (
 from app.presentation.api.routes.donation_payments import (
     router as donation_payments_router,
 )
+from app.presentation.api.routes.elder_care_bookings import (
+    router as elder_care_bookings_router,
+)
 
 settings = get_settings()
 
@@ -88,6 +91,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(elder_care_bookings_router)
 app.include_router(health_router)
 app.include_router(protected_router)
 app.include_router(password_reset_router)
