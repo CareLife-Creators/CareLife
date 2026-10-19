@@ -177,6 +177,54 @@ class PostgresUserRepository:
 
         return self.get_by_id(user_id)
 
+    def create_if_not_exists(
+        self,
+        user: User,
+    ) -> User | None:
+        """Create a user unless the normalized email already exists.
+
+        The database conflict handler closes the race between signup's
+        lookup and insert without revealing whether the email is registered.
+        """
+        with get_connection() as connection:
+            with connection.transaction():
+                row = connection.execute(
+                    """
+                    INSERT INTO users (
+                        id,
+                        role_id,
+                        email,
+                        password_hash,
+                        full_name,
+                        phone,
+                        is_active
+                    )
+                    VALUES (
+                        %s,
+                        (SELECT id FROM roles WHERE name = %s),
+                        %s,
+                        %s,
+                        %s,
+                        %s,
+                        %s
+                    )
+                    ON CONFLICT DO NOTHING
+                    RETURNING id
+                    """,
+                    (
+                        user.id,
+                        user.role_name,
+                        user.email,
+                        user.password_hash,
+                        user.full_name,
+                        user.phone,
+                        user.is_active,
+                    ),
+                ).fetchone()
+        if row is None:
+            return None
+        return user
+
     def create(
         self,
         user: User,
