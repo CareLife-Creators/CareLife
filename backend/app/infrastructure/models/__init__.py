@@ -36,6 +36,7 @@ from app.infrastructure.models.elder_care_booking import (
 )
 from app.infrastructure.models.revoked_token import RevokedTokenModel
 from app.infrastructure.models.role import RoleModel
+from app.infrastructure.models.role_request import RoleRequestModel
 from app.infrastructure.models.user import UserModel
 from app.infrastructure.models.user_organization import (
     UserOrganizationModel,
@@ -71,6 +72,7 @@ __all__ = [
     "PasswordResetTokenModel",
     "RevokedTokenModel",
     "RoleModel",
+    "RoleRequestModel",
     "UserModel",
     "UserOrganizationModel",
     "VerificationReviewModel",

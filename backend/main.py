@@ -56,6 +56,9 @@ from app.presentation.api.routes.signup import (
 from app.presentation.api.routes.user_profile import (
     router as user_profile_router,
 )
+from app.presentation.api.routes.role_requests import (
+    router as role_requests_router,
+)
 from app.presentation.api.routes.remote_checkins import (
     router as remote_checkins_router,
 )
@@ -109,6 +112,7 @@ app.include_router(in_kind_donations_router)
 app.include_router(caregivers_router)
 app.include_router(impact_router)
 app.include_router(user_profile_router)
+app.include_router(role_requests_router)
 app.include_router(remote_checkins_router)
 app.include_router(residents_router)
 app.include_router(audit_logs_router)
