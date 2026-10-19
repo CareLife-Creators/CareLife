@@ -202,6 +202,31 @@ class DonationPaymentServiceTests(unittest.TestCase):
         )
         self.gateway.query_payment.assert_not_called()
 
+    def test_callback_failure_hint_cannot_override_gateway_pending_status(self):
+        self.repository.get_payment_by_bkash_id.return_value = self.payment
+        self.gateway.query_payment.return_value = {
+            "paymentID": "bkash-payment-1",
+            "transactionStatus": "Initiated",
+        }
+        self.repository.update_payment_result.return_value = self.payment
+
+        result = self.service.process_callback(
+            "bkash-payment-1",
+            "failure",
+        )
+
+        self.assertEqual(result.status, DonationPaymentStatus.PENDING)
+        self.gateway.query_payment.assert_called_once_with(
+            "bkash-payment-1"
+        )
+        self.repository.update_payment_result.assert_called_once_with(
+            payment_id="payment-1",
+            status=DonationPaymentStatus.PENDING,
+            bkash_transaction_id=None,
+            provider_status="Initiated",
+            failure_reason=None,
+        )
+
     def test_unknown_callback_payment_is_rejected(self):
         self.repository.get_payment_by_bkash_id.return_value = None
 
