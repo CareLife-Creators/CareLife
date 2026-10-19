@@ -101,14 +101,12 @@ class DonationPaymentService:
         self,
         payment: DonationPayment,
         result: dict,
-        callback_status: str = "",
     ) -> DonationPayment:
         provider_status = str(
             result.get("transactionStatus") or "Unknown"
         )[:100]
 
         normalized_status = provider_status.casefold()
-        callback_hint = callback_status.strip().casefold()
 
         if normalized_status == "completed":
             try:
@@ -185,26 +183,6 @@ class DonationPaymentService:
                 "The bKash payment was not successful.",
             )
 
-        # A callback hint is not proof of payment. It can only produce
-        # a non-paid status when the gateway has not confirmed success.
-        if callback_hint in {"cancel", "cancelled", "canceled"}:
-            return self._save_result(
-                payment.id,
-                DonationPaymentStatus.CANCELLED,
-                None,
-                provider_status,
-                "The bKash payment was cancelled.",
-            )
-
-        if callback_hint in {"failure", "failed"}:
-            return self._save_result(
-                payment.id,
-                DonationPaymentStatus.FAILED,
-                None,
-                provider_status,
-                "The bKash payment was not successful.",
-            )
-
         return self._save_result(
             payment.id,
             DonationPaymentStatus.PENDING,
@@ -270,7 +248,6 @@ class DonationPaymentService:
         return self._apply_gateway_result(
             payment,
             result,
-            callback_status,
         )
 
     def verify_payment(
