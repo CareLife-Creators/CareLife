@@ -1,4 +1,4 @@
-"""Add staff role requests after the existing consolidated migration head."""
+"""Add staff role requests after the current consolidated migration head."""
 
 from typing import Sequence, Union
 
@@ -7,7 +7,7 @@ import sqlalchemy as sa
 
 
 revision: str = "f84c2a1d7b90"
-down_revision: Union[str, Sequence[str], None] = "5de77978c822"
+down_revision: Union[str, Sequence[str], None] = "c6a91b3e5d20"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
