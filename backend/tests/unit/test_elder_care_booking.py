@@ -96,6 +96,20 @@ class ElderCareBookingServiceTests(unittest.TestCase):
 
         self.repository.create_booking.assert_not_called()
 
+    def test_parent_guardian_cannot_create_booking_without_supported_resident_consent(self):
+        parent = UserContext(
+            user_id="parent-1",
+            role=Role.PARENT_GUARDIAN,
+        )
+
+        with self.assertRaises(PermissionError):
+            self.service.create_booking(
+                parent,
+                self.request,
+            )
+
+        self.repository.create_booking.assert_not_called()
+
     def test_past_booking_is_rejected(self):
         past_start = (
             datetime.now(timezone.utc) - timedelta(days=1)
