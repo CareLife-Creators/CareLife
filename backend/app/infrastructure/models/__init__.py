@@ -22,6 +22,10 @@ from app.infrastructure.models.organization_document import (
 from app.infrastructure.models.password_reset_token import (
     PasswordResetTokenModel,
 )
+from app.infrastructure.models.messaging import (
+    ConversationModel,
+    MessageModel,
+)
 from app.infrastructure.models.revoked_token import RevokedTokenModel
 from app.infrastructure.models.role import RoleModel
 from app.infrastructure.models.user import UserModel
@@ -77,4 +81,6 @@ __all__ = [
     "ResidentFamilyConsentModel",
     "ResidentProfileModel",
     "AuditLogModel",
+    "ConversationModel",
+    "MessageModel",
 ]
