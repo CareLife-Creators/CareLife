@@ -8,9 +8,25 @@ from app.infrastructure.database.connection import get_connection
 
 
 _CAMPAIGN_SELECT = """
-    SELECT c.id, c.organization_id, o.name, o.organization_type,
-           c.title, c.description, c.target_amount, c.currency,
-           c.utilized_amount, c.is_active, c.created_at, c.updated_at
+    SELECT
+        c.id,
+        c.organization_id,
+        o.name,
+        o.organization_type,
+        c.title,
+        c.description,
+        c.target_amount,
+        c.currency,
+        (
+            SELECT COALESCE(SUM(dp.amount), 0)
+            FROM donation_payments dp
+            WHERE dp.campaign_id = c.id
+              AND dp.status = 'paid'
+        ) AS received_amount,
+        c.utilized_amount,
+        c.is_active,
+        c.created_at,
+        c.updated_at
     FROM donation_campaigns c
     JOIN organizations o ON o.id = c.organization_id
 """
@@ -223,14 +239,28 @@ class PostgresDonationRepository(DonationRepository):
     def _campaign_from_row(row) -> DonationCampaign | None:
         if row is None:
             return None
+
         target = Decimal(str(row[6]))
-        received = Decimal("0.00")  # No successful donation transaction model exists on dev yet.
+        received = Decimal(str(row[8]))
+
         return DonationCampaign(
-            id=row[0], organization_id=row[1], organization_name=row[2], organization_type=row[3],
-            title=row[4], description=row[5], target_amount=target, currency=row[7],
-            utilized_amount=Decimal(str(row[8])), received_amount=received,
-            remaining_amount=max(target - received, Decimal("0.00")), is_active=row[9],
-            created_at=row[10], updated_at=row[11],
+            id=row[0],
+            organization_id=row[1],
+            organization_name=row[2],
+            organization_type=row[3],
+            title=row[4],
+            description=row[5],
+            target_amount=target,
+            currency=row[7],
+            utilized_amount=Decimal(str(row[9])),
+            received_amount=received,
+            remaining_amount=max(
+                target - received,
+                Decimal("0.00"),
+            ),
+            is_active=row[10],
+            created_at=row[11],
+            updated_at=row[12],
         )
 
     @staticmethod

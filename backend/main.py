@@ -68,7 +68,9 @@ from app.presentation.api.routes.messaging import (
 from app.presentation.api.routes.notifications import (
     router as notifications_router,
 )
-
+from app.presentation.api.routes.donation_payments import (
+    router as donation_payments_router,
+)
 
 settings = get_settings()
 
@@ -109,6 +111,9 @@ app.include_router(audit_logs_router)
 app.include_router(messaging_router)
 app.include_router(notifications_router)
 app.include_router(caregiver_booking_router)
+app.include_router(donations_router)
+app.include_router(in_kind_donations_router)
+app.include_router(donation_payments_router)
 
 @app.get("/")
 def root():

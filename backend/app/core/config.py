@@ -30,16 +30,26 @@ class Settings(BaseSettings):
     license_expiry_reminder_days: int = Field(default=30, gt=0)
 
     reset_token_expire_minutes: int = Field(default=30, gt=0)
-
     reset_link_base_url: str = "http://localhost:3000/reset-password"
 
     email_mode: Literal["console", "smtp"] = "console"
-
     smtp_host: str | None = None
     smtp_port: int = 587
     smtp_username: str | None = None
     smtp_password: SecretStr | None = None
     email_from: str = "no-reply@carelife.local"
+
+    # bKash Checkout configuration. Credentials belong in backend/.env.
+    bkash_api_base_url: str = (
+        "https://tokenized.sandbox.bka.sh/v1.2.0-beta"
+    )
+    bkash_username: str | None = None
+    bkash_password: SecretStr | None = None
+    bkash_app_key: SecretStr | None = None
+    bkash_app_secret: SecretStr | None = None
+    bkash_callback_url: str = (
+        "http://localhost:8000/donations/bkash/callback"
+    )
 
     model_config = SettingsConfigDict(
         env_file=BACKEND_DIR / ".env",
