@@ -123,6 +123,27 @@ class ElderCareBookingRouteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 403)
         self.service.create_booking.assert_not_called()
 
+    def test_parent_guardian_cannot_create_booking(self):
+        self.current_user = UserContext(
+            user_id="parent-1",
+            role=Role.PARENT_GUARDIAN,
+        )
+
+        response = self.client.post(
+            "/elder-care/bookings",
+            json={
+                "resident_id": "resident-1",
+                "provider_type": "caregiver",
+                "provider_id": "caregiver-1",
+                "service_type": "Personal care",
+                "starts_at": self.booking.starts_at.isoformat(),
+                "ends_at": self.booking.ends_at.isoformat(),
+            },
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.service.create_booking.assert_not_called()
+
     def test_status_history_is_returned_in_sequence_order(self):
         self.service.get_status_history.return_value = [
             ElderCareBookingStatusHistory(
