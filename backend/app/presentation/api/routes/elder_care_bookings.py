@@ -51,7 +51,6 @@ def create_booking(
     current_user: UserContext = Depends(
         require_role(
             Role.FAMILY_REPRESENTATIVE,
-            Role.PARENT_GUARDIAN,
         )
     ),
     service: ElderCareBookingService = Depends(
@@ -77,7 +76,6 @@ def list_bookings(
     current_user: UserContext = Depends(
         require_role(
             Role.FAMILY_REPRESENTATIVE,
-            Role.PARENT_GUARDIAN,
             Role.INDEPENDENT_CAREGIVER,
             Role.CARE_HOME_STAFF,
             Role.CARELIFE_ADMIN,
@@ -108,7 +106,6 @@ def get_booking(
     current_user: UserContext = Depends(
         require_role(
             Role.FAMILY_REPRESENTATIVE,
-            Role.PARENT_GUARDIAN,
             Role.INDEPENDENT_CAREGIVER,
             Role.CARE_HOME_STAFF,
             Role.CARELIFE_ADMIN,
@@ -136,7 +133,6 @@ def get_booking_history(
     current_user: UserContext = Depends(
         require_role(
             Role.FAMILY_REPRESENTATIVE,
-            Role.PARENT_GUARDIAN,
             Role.INDEPENDENT_CAREGIVER,
             Role.CARE_HOME_STAFF,
             Role.CARELIFE_ADMIN,
@@ -201,7 +197,6 @@ def cancel_booking(
     current_user: UserContext = Depends(
         require_role(
             Role.FAMILY_REPRESENTATIVE,
-            Role.PARENT_GUARDIAN,
         )
     ),
     service: ElderCareBookingService = Depends(
