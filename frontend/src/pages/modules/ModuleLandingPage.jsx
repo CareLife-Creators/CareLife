@@ -1,21 +1,75 @@
 import SiteNav from '../../components/SiteNav'
+import { useSession } from '../../lib/session'
 import './ModuleLandingPage.css'
+
 const content = {
-  daycare:{number:'01',icon:'✳',kicker:'DAYCARE & CHILDCARE',tone:'mint',title:'A clearer start to your child’s care journey.',description:'Discover daycare centers and independent caregivers. The wider daycare workflow is designed around enrollment, attendance, daily updates, and child-safety records.',actions:[['Find a daycare center','Search public daycare listings by name and location.','#daycare-directory','Browse daycare directory'],['Find a caregiver','Explore public childcare and elderly-care caregiver profiles.','#caregivers','Browse caregiver directory']],next:[['Child profiles and enrollment','Maintain child details and follow enrollment requests.'],['Attendance and daily updates','Connect attendance, meals, activities and care notes to authorized families.'],['Child safety','Emergency contacts, authorized pickup persons and incident records.']],steps:['Explore public center and caregiver information.','Choose the service that fits your family’s needs.','Use member workflows as enrollment and care-management screens are connected.']},
-  orphanage:{number:'02',icon:'♡',kicker:'ORPHANAGE & COMMUNITY SUPPORT',tone:'peach',title:'Make support easier to understand and follow.',description:'Explore organization needs, fundraising goals, in-kind pledges, and published impact updates—while keeping children’s private records out of public view.',actions:[['Explore campaigns and needs','See published fundraising goals and current in-kind requests.','#orphanage-support','Explore support board']],next:[['Donation and allocation records','Support organization-managed contributions with traceable records.'],['Impact updates','Review published organization updates and supporting media.'],['Confidential child records','Private child and outcome records are reserved for authorized staff and permitted users.']],steps:['Browse public campaigns and current needs.','Review organization information and published updates.','Use available in-kind pledge workflows; monetary checkout requires a connected payment flow.']},
-  'elderly-care':{number:'03',icon:'☼',kicker:'ELDERLY CARE',tone:'lavender',title:'Help families find care with confidence.',description:'Explore elderly-care homes and caregiver services. CareLife supports consent-based access and wellbeing updates without becoming a clinical record system.',actions:[['Find an elderly-care home','Search public care-home listings and review published facilities, fees and capacity.','#elderly-care-directory','Browse care homes'],['Find a caregiver','Explore public caregiver profiles by service type or location.','#caregivers','Browse caregiver directory']],next:[['Resident access and consent','Family access must be explicitly authorized for the relevant resident.'],['Remote family check-ins','A family member requests an update and authorized staff respond through a recorded workflow.'],['Wellbeing updates','Share non-clinical observations and service-completion notes with permitted family members.']],steps:['Compare care-home and caregiver information.','Confirm service and access arrangements with the provider.','Use family check-in and resident workflows only with the correct role and consent.']},
+  daycare: {
+    tone: 'mint', name: 'Daycare',
+    title: 'Choose a daycare you can look into.',
+    lede: 'Search daycare centers by name and location, or find an independent caregiver. Once your child is enrolled, attendance and daily notes come from the staff who are with them.',
+    now: [['Daycare directory', 'Search centers and read their public details.', '#daycare-directory'], ['Caregiver directory', 'Find independent childcare caregivers.', '#caregivers']],
+    soon: [['Child profile and enrollment', 'Add your child and send an enrollment request.'], ['Attendance and daily notes', 'See arrivals and notes from the staff on duty.'], ['Emergency contacts and pickup', 'Name who may collect your child.']],
+    faq: [['Who can see my child’s details?', 'You, and the staff of the daycare your child is enrolled in. Public listings show centers, never children.'], ['Does “verified” mean government-licensed?', 'No. It means CareLife reviewed the organization’s submission. Check licensing with the authorities as well.']],
+  },
+  orphanage: {
+    tone: 'peach', name: 'Orphanage',
+    title: 'See what an orphanage needs before you give.',
+    lede: 'Each organization lists its fundraising goals and in-kind needs, then publishes updates on what the support did. Children’s private records are never shown here.',
+    now: [['Support board', 'Browse campaigns, current needs and impact updates. Signed-in members can pledge items.', '#orphanage-support']],
+    soon: [['Giving through bKash', 'Pay a campaign directly from the board.'], ['Impact update editor', 'Staff publish updates with photos for donors.']],
+    faq: [['Can I give money on the site today?', 'Not yet. Item pledges are open now; bKash checkout is the next piece.'], ['Will I see children’s names or photos?', 'No. Private child and outcome records are limited to authorized staff.']],
+  },
+  'elderly-care': {
+    tone: 'lavender', name: 'Elderly care',
+    title: 'Find care for a parent, and stay in the loop.',
+    lede: 'Compare care homes and caregivers by services, fees and capacity. A family member can be authorized for one resident, then request check-ins that staff answer.',
+    now: [['Care-home directory', 'Compare homes by fees, capacity and services.', '#elderly-care-directory'], ['Caregiver directory', 'Find caregivers for home visits.', '#caregivers']],
+    soon: [['Resident access and consent', 'The care home authorizes you for one resident.'], ['Family check-ins', 'Ask for an update and get a recorded answer.'], ['Wellbeing notes', 'Short non-clinical notes, like a walk or a visit.']],
+    faq: [['Is this a medical record?', 'No. CareLife shares everyday updates, not diagnoses or prescriptions.'], ['Who sees my relative’s updates?', 'Only family members the care home has authorized for that resident.']],
+  },
 }
-const shared=[['Common account','A familiar entry point across all three modules.'],['Verification','Administrative review for organizations and caregivers.'],['Notifications','Status changes and important events can share one pattern.']]
-function ModuleLandingPage({moduleKey}) {
-  const item=content[moduleKey]||content.daycare
-  return <><SiteNav/><main className={'module-landing '+item.tone}>
-    <div className="module-breadcrumb"><a href="#home">CareLife</a><span>/</span><span>{item.kicker}</span></div>
-    <section className="module-hero"><div className="module-hero-copy"><p className="module-eyebrow"><span>{item.number}</span>{item.kicker}</p><h1>{item.title}</h1><p>{item.description}</p><div className="module-hero-actions">{item.actions.map(([, ,href,label])=><a href={href} className="module-primary-link" key={href}>{label}<span aria-hidden="true">↗</span></a>)}</div></div><div className="module-hero-visual" aria-hidden="true"><div className="module-visual-circle module-visual-circle-one"/><div className="module-visual-circle module-visual-circle-two"/><div className="module-visual-symbol">{item.icon}</div><span className="module-visual-label module-visual-label-top">A CARELIFE MODULE</span><span className="module-visual-label module-visual-label-bottom">SHARED PLATFORM · DISTINCT WORKFLOWS</span></div></section>
-    <section className="module-action-grid" aria-label="Available pages">{item.actions.map(([title,desc,href,label])=><article key={href} className="module-action-card"><span className="module-action-status">AVAILABLE</span><h2>{title}</h2><p>{desc}</p><a href={href}>{label}<span aria-hidden="true"> →</span></a></article>)}<article className="module-action-card"><span className="module-action-status neutral">SHARED SERVICE</span><h2>Organization verification</h2><p>Authorized members can check review status. CareLife review is not a replacement for government licensing.</p><a href="#verification">Open verification status <span aria-hidden="true">→</span></a></article></section>
-    <section className="module-roadmap" aria-labelledby="module-roadmap-title"><div className="module-section-title"><div><p className="module-eyebrow">DESIGNED FOR THIS MODULE</p><h2 id="module-roadmap-title">The complete care journey</h2></div><p>Documented workflows are listed here. A workflow is labelled as next UI work until its connected screen is available.</p></div><div className="module-feature-list">{item.next.map(([title,desc],i)=><article key={title}><span>{String(i+1).padStart(2,'0')}</span><div><h3>{title}</h3><p>{desc}</p></div><em>NEXT UI WORKFLOW</em></article>)}</div></section>
-    <section className="module-shared-foundation"><div><p className="module-eyebrow">THE SAME FOUNDATION</p><h2>Consistent tools behind every care module.</h2><p>CareLife uses a modular-monolith design: care workflows stay separate while common services support the whole platform.</p></div><div className="module-shared-points">{shared.map(([title,desc])=><article key={title}><span aria-hidden="true">✓</span><div><strong>{title}</strong><p>{desc}</p></div></article>)}</div></section>
-    <section className="module-steps" aria-labelledby="module-steps-title"><div><p className="module-eyebrow">HOW TO START</p><h2 id="module-steps-title">Your path through this module</h2></div><ol>{item.steps.map(step=><li key={step}>{step}</li>)}</ol></section>
-    <footer className="module-footer"><a href="#home">← Back to all modules</a><a href="#dashboard">Open my workspace ↗</a></footer>
-  </main></>
+
+function ModuleLandingPage({ moduleKey }) {
+  const { signedIn } = useSession()
+  const m = content[moduleKey] || content.daycare
+  return (
+    <>
+      <SiteNav />
+      <main className={'ml ' + m.tone}>
+        <header className="ml-hero">
+          <a className="ml-back" href={signedIn ? '#dashboard' : '#home'}>← {signedIn ? 'My workspace' : 'CareLife'}</a>
+          <h1>{m.title}</h1>
+          <p>{m.lede}</p>
+        </header>
+
+        <section className="ml-block" aria-labelledby="ml-now">
+          <h2 id="ml-now">Open now</h2>
+          <div className="ml-cards">
+            {m.now.map(([t, d, href]) => (
+              <a className="ml-card" href={href} key={href}><strong>{t}</strong><span>{d}</span><em>Open</em></a>
+            ))}
+          </div>
+        </section>
+
+        <section className="ml-block" aria-labelledby="ml-soon">
+          <h2 id="ml-soon">Being built</h2>
+          <ul className="ml-soon">
+            {m.soon.map(([t, d]) => <li key={t}><strong>{t}</strong><span>{d}</span></li>)}
+          </ul>
+        </section>
+
+        <section className="ml-block" aria-labelledby="ml-faq">
+          <h2 id="ml-faq">Questions people ask</h2>
+          {m.faq.map(([q, a]) => <details key={q}><summary>{q}</summary><p>{a}</p></details>)}
+        </section>
+
+        <footer className="ml-foot">
+          {signedIn ? <a className="ml-btn" href="#dashboard">Open my workspace</a> : <a className="ml-btn" href="#signup">Create an account</a>}
+          <a href={signedIn ? '#dashboard' : '#home'}>Back to {signedIn ? 'my workspace' : 'the overview'}</a>
+        </footer>
+      </main>
+    </>
+  )
 }
+
 export default ModuleLandingPage

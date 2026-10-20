@@ -11,19 +11,26 @@ import ElderCareDirectoryPage from './pages/elder-care/ElderCareDirectoryPage'
 import CaregiverDirectoryPage from './pages/caregivers/CaregiverDirectoryPage'
 import OrphanageSupportPage from './pages/orphanage/OrphanageSupportPage'
 import ModuleLandingPage from './pages/modules/ModuleLandingPage'
+import StaffAccessPage from './pages/staff-access/StaffAccessPage'
+import AdminRoleRequestsPage from './pages/admin/AdminRoleRequestsPage'
 import SiteNav from './components/SiteNav'
+import { refreshSession } from './api/auth'
+import { canAccessRoute, isProtectedRoute } from './lib/roles'
+import { useSession } from './lib/session'
 
 const knownRoutes = new Set([
   '#home', '#dashboard', '#login', '#signup', '#daycare', '#orphanage',
   '#elderly-care', '#daycare-directory', '#elderly-care-directory',
   '#caregivers', '#orphanage-support', '#organization-approval', '#verification',
+  '#staff-access', '#admin-role-requests',
 ])
-const protectedRoutes = new Set(['#dashboard', '#organization-approval', '#verification'])
+
 function readRoute() {
   const hash = window.location.hash.trim()
   if (!hash || hash === '#') return '#home'
   return knownRoutes.has(hash) ? hash : '#not-found'
 }
+
 function NotFoundPage() {
   return <><SiteNav /><main className="route-not-found">
     <span className="route-not-found-icon" aria-hidden="true">?</span>
@@ -32,17 +39,47 @@ function NotFoundPage() {
     <div className="route-not-found-actions"><a className="route-primary-action" href="#home">Return home</a><a className="route-secondary-action" href="#daycare">Explore care modules</a></div>
   </main></>
 }
+
 function App() {
   const [route, setRoute] = useState(readRoute)
+  const [checkedToken, setCheckedToken] = useState('')
+  const { token, signedIn, role } = useSession()
+
   useEffect(() => {
     const onHashChange = () => setRoute(readRoute())
     window.addEventListener('hashchange', onHashChange)
     return () => window.removeEventListener('hashchange', onHashChange)
   }, [])
-  const signedIn = Boolean(localStorage.getItem('carelife_access_token'))
-  const needsSignIn = protectedRoutes.has(route)
-  useEffect(() => { if (needsSignIn && !signedIn) window.location.hash = '#login' }, [needsSignIn, signedIn])
+
+  // Load the real role from the backend after sign-in, and again whenever the window regains focus.
+  useEffect(() => {
+    if (!token) return undefined
+    let cancelled = false
+    refreshSession().finally(() => { if (!cancelled) setCheckedToken(token) })
+    const onFocus = () => { void refreshSession() }
+    window.addEventListener('focus', onFocus)
+    return () => {
+      cancelled = true
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [token])
+
+  const needsSignIn = isProtectedRoute(route)
+  const roleReady = !signedIn || checkedToken === token
+
+  useEffect(() => {
+    if (needsSignIn && !signedIn) window.location.hash = '#login'
+  }, [needsSignIn, signedIn])
+
+  useEffect(() => {
+    if (signedIn && (route === '#login' || route === '#signup' || route === '#home')) window.location.hash = '#dashboard'
+  }, [signedIn, route])
+
   if (needsSignIn && !signedIn) return <main className="route-redirect" aria-live="polite"><div className="route-redirect-mark">C</div><p>Taking you to sign in…</p><a href="#login">Continue to sign in</a></main>
+  if (needsSignIn && !roleReady) return <main className="route-redirect" aria-live="polite"><div className="route-redirect-mark">C</div><p>Checking your access…</p></main>
+  // A page the user's role cannot use looks the same as a page that does not exist.
+  if (needsSignIn && !canAccessRoute(route, role)) return <NotFoundPage />
+
   if (route === '#home') return <HomePage />
   if (route === '#dashboard') return <DashboardPage />
   if (route === '#daycare') return <ModuleLandingPage moduleKey="daycare" />
@@ -54,8 +91,11 @@ function App() {
   if (route === '#orphanage-support') return <OrphanageSupportPage />
   if (route === '#organization-approval') return <OrganizationApprovalDashboard />
   if (route === '#verification') return <VerificationStatusPage />
+  if (route === '#staff-access') return <StaffAccessPage />
+  if (route === '#admin-role-requests') return <AdminRoleRequestsPage />
   if (route === '#login') return <LoginPage onSignup={() => { window.location.hash = '#signup' }} />
   if (route === '#signup') return <SignupPage onLogin={() => { window.location.hash = '#login' }} />
   return <NotFoundPage />
 }
+
 export default App

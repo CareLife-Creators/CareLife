@@ -15,14 +15,8 @@ function LoginPage({ onSignup }) {
     setIsSubmitting(true)
 
     try {
-      const data = await login({ email: email.trim(), password })
-
-      if (!data || !data.access_token) {
-        throw new Error('Sign in succeeded but no access token was returned. Please contact the project administrator.')
-      }
-
-      localStorage.setItem('carelife_user', email.trim())
-      localStorage.setItem('carelife_access_token', data.access_token)
+      // login() saves the token, email and role for the whole app.
+      await login({ email: email.trim(), password })
       window.location.hash = '#dashboard'
     } catch (err) {
       setError(
