@@ -117,3 +117,10 @@ export const uploadImpactMedia = (organizationId, updateId, file) => {
     body,
   })
 }
+
+// In-kind donation pledge tracking for donors and organization staff
+export const getMyInKindPledges = () => apiRequest('/my/in-kind-pledges')
+export const getOrganizationInKindPledges = (organizationId) =>
+  apiRequest('/organizations/' + safe(organizationId) + '/in-kind-pledges')
+export const updateInKindPledgeStatus = (organizationId, pledgeId, status) =>
+  apiRequest('/organizations/' + safe(organizationId) + '/in-kind-pledges/' + safe(pledgeId) + '/status', json('PATCH', { status }))

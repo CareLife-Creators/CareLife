@@ -6,8 +6,9 @@ import {
   getOrganizationCampaigns, createOrganizationCampaign, getOrganizationNeeds,
   createOrganizationNeed, getOrganizationImpactUpdates, createOrganizationImpactUpdate,
   getOrganizationResidents, createResidentProfile, setResidentConsent, getResidentCheckIns,
-  createResidentCheckIn, getOrganizationOrphanageChildren, createOrphanageChild,
+  getOrganizationOrphanageChildren, createOrphanageChild,
   getChildOutcomes, createChildOutcome, uploadImpactMedia,
+  getOrganizationInKindPledges, updateInKindPledgeStatus,
 } from '../api/workspace'
 import './Workspace.css'
 
@@ -39,6 +40,7 @@ export default function OrganizationWorkspacePage() {
   const [campaigns, setCampaigns] = useState([])
   const [needs, setNeeds] = useState([])
   const [updates, setUpdates] = useState([])
+  const [pledges, setPledges] = useState([])
   const [residents, setResidents] = useState([])
   const [selectedResidentId, setSelectedResidentId] = useState('')
   const [checkIns, setCheckIns] = useState([])
@@ -66,7 +68,7 @@ export default function OrganizationWorkspacePage() {
 
   async function loadOrganization() {
     if (!organizationId.trim()) {
-      setProfile(null); setCampaigns([]); setNeeds([]); setUpdates([]); setResidents([]); setLoading(false)
+      setProfile(null); setCampaigns([]); setNeeds([]); setUpdates([]); setResidents([]); setPledges([]); setLoading(false)
       return
     }
     setLoading(true)
@@ -74,11 +76,12 @@ export default function OrganizationWorkspacePage() {
     try { localStorage.setItem(ORG_KEY, organizationId.trim()) } catch { /* Keep the typed ID usable for this session. */ }
     const results = await Promise.allSettled([
       getOrganizationProfile(organizationId.trim()),
-      getOrganizationCampaigns(organizationId.trim()),
-      getOrganizationNeeds(organizationId.trim()),
-      getOrganizationImpactUpdates(organizationId.trim()),
-      getOrganizationResidents(organizationId.trim()),
-      getOrganizationOrphanageChildren(organizationId.trim()),
+      role === 'orphanage_staff' ? getOrganizationCampaigns(organizationId.trim()) : Promise.resolve([]),
+      role === 'orphanage_staff' ? getOrganizationNeeds(organizationId.trim()) : Promise.resolve([]),
+      role === 'orphanage_staff' ? getOrganizationImpactUpdates(organizationId.trim()) : Promise.resolve([]),
+      role === 'care_home_staff' ? getOrganizationResidents(organizationId.trim()) : Promise.resolve([]),
+      role === 'orphanage_staff' ? getOrganizationOrphanageChildren(organizationId.trim()) : Promise.resolve([]),
+      role === 'orphanage_staff' ? getOrganizationInKindPledges(organizationId.trim()) : Promise.resolve([]),
     ])
     if (results[0].status === 'fulfilled') {
       setProfile(results[0].value)
@@ -102,11 +105,12 @@ export default function OrganizationWorkspacePage() {
       setResidents(rows)
       setSelectedResidentId((current) => current && rows.some((item) => item.id === current) ? current : (rows[0]?.id || ''))
     }
-    if (isOrphanage && results[5].status === 'fulfilled') {
+    if (role === 'orphanage_staff' && results[5].status === 'fulfilled') {
       const rows = Array.isArray(results[5].value) ? results[5].value : []
       setOrphanageChildren(rows)
       setSelectedOrphanageChildId((current) => current && rows.some((item) => item.id === current) ? current : (rows[0]?.id || ''))
     }
+    if (role === 'orphanage_staff' && results[6].status === 'fulfilled') setPledges(Array.isArray(results[6].value) ? results[6].value : [])
     setLoading(false)
   }
 
@@ -130,6 +134,16 @@ export default function OrganizationWorkspacePage() {
     return () => { cancelled = true }
   }, [selectedOrphanageChildId, refreshKey, role])
 
+
+  async function updatePledge(pledge, status) {
+    setBusy(pledge.id); setError(''); setNotice('')
+    try {
+      const updated = await updateInKindPledgeStatus(organizationId.trim(), pledge.id, status)
+      setPledges((current) => current.map((item) => item.id === updated.id ? updated : item))
+      setNotice('Pledge marked ' + status + '.')
+    } catch (err) { setError(err instanceof Error ? err.message : 'Pledge status could not be updated.') }
+    finally { setBusy('') }
+  }
 
   async function submitOrphanageChild(event) {
     event.preventDefault()
@@ -292,7 +306,7 @@ export default function OrganizationWorkspacePage() {
   const tabs = [
     ['profile', 'Organization profile'],
     ...(isCareHome ? [['residents', 'Residents & check-ins']] : []),
-    ...(isOrphanage ? [['children', 'Children & outcomes'], ['support', 'Campaigns & impact']] : []),
+    ...(isOrphanage ? [['children', 'Children & outcomes'], ['support', 'Campaigns & impact'], ['pledges', 'Item pledges']] : []),
   ]
 
   return (
@@ -394,6 +408,24 @@ export default function OrganizationWorkspacePage() {
               <div className="cw-record-list cw-spaced">{outcomes.map((item) => <article className="cw-mini-record" key={item.id}><strong>{String(item.outcome_type || '').replaceAll('_', ' ')} · {String(item.outcome_status || '').replaceAll('_', ' ')}</strong><span>{item.notes || 'No case note recorded.'}</span><small>{dateTime(item.outcome_date)} · Outcome ID: {item.id}</small></article>)}{!outcomes.length && <p className="cw-muted">No outcome history returned for this child.</p>}</div>
             </> : <p className="cw-muted">Choose a child record to view or add outcomes.</p>}</section>
           </div>
+        </section>}
+        {organizationId && !loading && isOrphanage && tab === 'pledges' && <section className="cw-panel">
+          <div className="cw-panel-heading"><div><p className="cw-kicker">DONOR COMMITMENTS</p><h2>In-kind item pledges</h2></div><span className="cw-status">{pledges.length} pledges</span></div>
+          <p className="cw-help">Track pledges made against your organization’s published item needs. Mark a pledge as received when the items arrive; then mark it allocated when they have been distributed to their intended need. The backend records who changed the status and when.</p>
+          {!pledges.length ? <div className="cw-empty"><strong>No item pledges have been returned.</strong><p>When someone pledges items against your public needs, the organization’s record appears here.</p></div> :
+            <div className="cw-record-list">{pledges.map((item) => <article className="cw-record" key={item.id}>
+              <div className="cw-record-main"><div className="cw-record-title-row"><h3>{item.need_title}</h3><span className={'cw-pill ' + (item.status === 'allocated' ? 'mint' : item.status === 'received' ? 'warning' : 'neutral')}>{item.status}</span></div>
+                <p><strong>{item.quantity} {item.unit}</strong> · Donor ID {item.donor_id}</p>
+                {item.notes && <p>{item.notes}</p>}
+                <small>Submitted {dateTime(item.created_at)} · Pledge ID: {item.id}</small>
+                {item.received_at && <small>Received {dateTime(item.received_at)}</small>}
+                {item.allocated_at && <small>Allocated {dateTime(item.allocated_at)}</small>}
+              </div>
+              <div className="cw-record-actions">
+                {item.status === 'pledged' && <button type="button" className="cw-button primary" disabled={busy === item.id} onClick={() => void updatePledge(item, 'received')}>{busy === item.id ? 'Saving…' : 'Mark received'}</button>}
+                {item.status === 'received' && <button type="button" className="cw-button primary" disabled={busy === item.id} onClick={() => void updatePledge(item, 'allocated')}>{busy === item.id ? 'Saving…' : 'Mark allocated'}</button>}
+              </div>
+            </article>)}</div>}
         </section>}
         {organizationId && !loading && isOrphanage && tab === 'support' && <section className="cw-panel">
           <div className="cw-panel-heading"><div><p className="cw-kicker">DONATION CAMPAIGNS</p><h2>Publish a fundraising campaign</h2></div><span className="cw-status">{campaigns.length} campaigns</span></div>

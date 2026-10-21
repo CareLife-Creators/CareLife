@@ -3,7 +3,7 @@ import SiteNav from '../../components/SiteNav'
 import { useSession } from '../../lib/session'
 import { API_BASE_URL } from '../../api/client'
 import { createInKindPledge, getDonationCampaigns, getDonationNeeds, getPublicImpactUpdates, getPublicOrphanageProfile } from '../../api/discovery'
-import { startBkashPayment, getMyDonationPayments, verifyDonationPayment } from '../../api/workspace'
+import { startBkashPayment, getMyDonationPayments, verifyDonationPayment, getMyInKindPledges } from '../../api/workspace'
 import '../DirectoryPages.css'
 import '../Workspace.css'
 
@@ -28,6 +28,8 @@ export default function OrphanageSupportPage() {
   const [needs, setNeeds] = useState([])
   const [updates, setUpdates] = useState([])
   const [payments, setPayments] = useState([])
+  const [myPledges, setMyPledges] = useState([])
+  const [pledgesLoading, setPledgesLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [amounts, setAmounts] = useState({})
@@ -61,6 +63,18 @@ export default function OrphanageSupportPage() {
   }
 
   useEffect(() => { void load() }, [isDonor])
+  useEffect(() => {
+    if (tab !== 'pledges' || !signedIn) return
+    let cancelled = false
+    setPledgesLoading(true)
+    setMessages((current) => ({ ...current, pledges: '' }))
+    getMyInKindPledges()
+      .then((data) => { if (!cancelled) setMyPledges(Array.isArray(data) ? data : []) })
+      .catch((err) => { if (!cancelled) setMessages((current) => ({ ...current, pledges: err instanceof Error ? err.message : 'Pledge history could not be loaded.' })) })
+      .finally(() => { if (!cancelled) setPledgesLoading(false) })
+    return () => { cancelled = true }
+  }, [tab, signedIn])
+
 
   async function pledge(event, need) {
     event.preventDefault()
@@ -130,7 +144,7 @@ export default function OrphanageSupportPage() {
   const activeCampaigns = campaigns.filter((item) => item.is_active !== false)
   const activeNeeds = needs.filter((item) => item.is_active !== false)
   const publicUpdates = updates.filter((item) => !item.status || String(item.status).toLowerCase() === 'published')
-  const tabs = [['campaigns', 'Campaigns'], ['needs', 'In-kind needs'], ['impact', 'Impact updates'], ...(isDonor ? [['payments', 'My payments']] : [])]
+  const tabs = [['campaigns', 'Campaigns'], ['needs', 'In-kind needs'], ['impact', 'Impact updates'], ...(signedIn ? [['pledges', 'My item pledges']] : []), ...(isDonor ? [['payments', 'My payments']] : [])]
 
   return (
     <>
@@ -223,6 +237,23 @@ export default function OrphanageSupportPage() {
             </div>
             {['pending', 'created', 'failed'].includes(String(payment.status).toLowerCase()) && <button type="button" className="cw-button" disabled={busy === 'verify:' + payment.id} onClick={() => void verifyPayment(payment)}>{busy === 'verify:' + payment.id ? 'Verifying…' : 'Verify payment status'}</button>}
           </article>)}</div>
+        </>}
+
+        {!loading && !error && tab === 'pledges' && signedIn && <>
+          <div className="directory-section-title"><h2>Your in-kind pledges</h2><span>{myPledges.length} records</span></div>
+          {messages.pledges && <div className="cw-alert error" role="alert">{messages.pledges}</div>}
+          {pledgesLoading && <div className="directory-state" role="status">Loading your pledge history…</div>}
+          {!pledgesLoading && !messages.pledges && !myPledges.length && <div className="directory-state">No item pledges have been submitted from this account yet.</div>}
+          {!pledgesLoading && <div className="cw-record-list">{myPledges.map((pledge) => <article className="cw-record" key={pledge.id}>
+            <div className="cw-record-main"><div className="cw-record-title-row"><h3>{pledge.need_title}</h3><span className={'cw-pill ' + statusClass(pledge.status)}>{String(pledge.status).replaceAll('_', ' ')}</span></div>
+              <p>{pledge.quantity} {pledge.unit} · {pledge.organization_name}</p>
+              {pledge.notes && <p>{pledge.notes}</p>}
+              <small>Submitted {dateTime(pledge.created_at)} · Pledge ID: {pledge.id}</small>
+              {pledge.received_at && <small>Received {dateTime(pledge.received_at)}</small>}
+              {pledge.allocated_at && <small>Allocated {dateTime(pledge.allocated_at)}</small>}
+            </div>
+          </article>)}</div>}
+          <p className="directory-note">The status shown here is the organization’s returned record: pledged, received, or allocated. Contact the organization if a status needs clarification.</p>
         </>}
 
         {profile && <section className="organization-public-panel"><button type="button" onClick={() => setProfile(null)}>Close details ×</button><p className="directory-kicker">PUBLIC ORGANIZATION PROFILE</p><h2>{profile.organization_name}</h2>{profile.description && <p>{profile.description}</p>}<p>{[profile.location, profile.contact].filter(Boolean).join(' · ')}</p><p>{[profile.capacity != null ? 'Capacity ' + profile.capacity : '', profile.age_range, profile.opening_hours, profile.facilities, profile.fees].filter(Boolean).join(' · ')}</p><span>{String(profile.verification_status || '').replaceAll('_', ' ')}</span></section>}
