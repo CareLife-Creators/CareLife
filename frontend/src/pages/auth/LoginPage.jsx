@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import CareLifeLogo from '../../components/CareLifeLogo'
 import { login } from '../../api/auth'
 import './Auth.css'
 
@@ -31,7 +32,7 @@ function LoginPage({ onSignup }) {
     <main className="auth-page">
       <section className="auth-card">
         <a className="auth-brand" href="#home" aria-label="CareLife home">
-          <span className="auth-brand-icon">C</span>
+          <CareLifeLogo size={36} />
           <span>CareLife</span>
         </a>
 

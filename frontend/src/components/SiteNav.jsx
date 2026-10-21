@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import CareLifeLogo from './CareLifeLogo'
 import { logout } from '../api/auth'
 import { memberLinks, roleLabel } from '../lib/roles'
 import { useSession } from '../lib/session'
@@ -37,7 +38,7 @@ function SiteNav() {
     <header className="site-nav">
       <div className="site-nav-inner">
         <a className="site-nav-brand" href={signedIn ? '#dashboard' : '#home'} aria-label="CareLife home">
-          <span className="site-nav-logo" aria-hidden="true">C</span>
+          <CareLifeLogo size={32} />
           <span>CareLife</span>
         </a>
 

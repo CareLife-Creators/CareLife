@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import PageLoader from './components/PageLoader'
+import { shouldShowLoader } from './lib/loader'
 import './App.css'
 import LoginPage from './pages/auth/LoginPage'
 import SignupPage from './pages/auth/SignupPage'
@@ -40,7 +42,7 @@ function NotFoundPage() {
   </main></>
 }
 
-function App() {
+function AppRoutes() {
   const [route, setRoute] = useState(readRoute)
   const [checkedToken, setCheckedToken] = useState('')
   const { token, signedIn, role } = useSession()
@@ -96,6 +98,12 @@ function App() {
   if (route === '#login') return <LoginPage onSignup={() => { window.location.hash = '#signup' }} />
   if (route === '#signup') return <SignupPage onLogin={() => { window.location.hash = '#login' }} />
   return <NotFoundPage />
+}
+
+function App() {
+  const [showLoader, setShowLoader] = useState(shouldShowLoader)
+  const hideLoader = useCallback(() => setShowLoader(false), [])
+  return <>{showLoader && <PageLoader onDone={hideLoader} />}<AppRoutes /></>
 }
 
 export default App

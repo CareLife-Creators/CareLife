@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import CareLifeLogo from '../components/CareLifeLogo'
 import './Landing.css'
 
 const go = (hash) => { window.location.hash = hash }
@@ -138,7 +139,7 @@ function HomePage() {
   return (
     <div className="lp" data-ch={chapter}>
       <header className="lp-nav">
-        <a className="lp-brand" href="#home" aria-label="CareLife home"><span aria-hidden="true">C</span>CareLife</a>
+        <a className="lp-brand" href="#home" aria-label="CareLife home"><CareLifeLogo size={34} />CareLife</a>
         <nav aria-label="Page sections">
           <button onClick={() => scrollToId('daycare')}>Daycare</button>
           <button onClick={() => scrollToId('orphanage')}>Orphanage</button>
