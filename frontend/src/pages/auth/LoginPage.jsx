@@ -110,7 +110,7 @@ function LoginPage({ onSignup }) {
                   <button
                     type="button"
                     className="forgot-password"
-                    onClick={() => setError('Password reset is not available yet. Contact your CareLife administrator for help.')}
+                    onClick={() => { window.location.hash = '#password-reset' }}
                   >
                     Forgot password?
                   </button>

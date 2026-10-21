@@ -14,31 +14,64 @@ function toolsFor(role) {
   if (isAdmin(role)) {
     return {
       title: 'Administration',
-      intro: 'Review organizations and staff access requests.',
+      intro: 'Review organizations, caregiver verification and staff access.',
       links: [
-        { href: '#organization-approval', icon: '◇', title: 'Organization approvals', text: 'Review organization submissions.' },
-        { href: '#admin-role-requests', icon: '✓', title: 'Staff access requests', text: 'Approve or reject requests for staff roles.' },
+        { href: '#organization-approval', icon: '◇', title: 'Organization approvals', text: 'Review submitted organization verification records.' },
+        { href: '#admin-role-requests', icon: '✓', title: 'Staff access requests', text: 'Approve or reject staff-role requests.' },
+        { href: '#admin-operations', icon: '⌁', title: 'Caregiver review & audit', text: 'Review caregiver submissions and inspect audit events.' },
       ],
     }
   }
   if (isStaff(role)) {
     return {
       title: 'Your organization',
-      intro: 'Tools for your organization’s staff.',
+      intro: 'Maintain your organization profile and open the tools for your staff role.',
       links: [
-        { href: '#verification', icon: '✓', title: 'Organization verification', text: 'Check your organization’s review status.' },
+        { href: '#organization-workspace', icon: '⌂', title: 'Organization workspace', text: 'Edit public details and open role-specific organization tools.' },
+        { href: '#verification', icon: '✓', title: 'Organization verification', text: 'Check the status of your organization submission.' },
+        ...(role === 'daycare_staff' ? [{ href: '#my-children', icon: '✳', title: 'Children & attendance', text: 'Review enrollments, pickup permissions and attendance.' }] : []),
+        ...(role === 'orphanage_staff' ? [{ href: '#orphanage-support', icon: '♡', title: 'Support board', text: 'See the published campaigns and impact updates.' }] : []),
+        ...(role === 'care_home_staff' ? [{ href: '#care-bookings', icon: '◷', title: 'Care bookings', text: 'Review service requests and booking statuses.' }] : []),
+      ],
+    }
+  }
+  if (role === 'independent_caregiver') {
+    return {
+      title: 'Caregiver workspace',
+      intro: 'Keep your profile and availability current, then respond to appointment requests.',
+      links: [
+        { href: '#caregiver-workspace', icon: '✳', title: 'Caregiver profile & schedule', text: 'Manage your profile, document references and availability.' },
+        { href: '#care-bookings', icon: '◷', title: 'Appointments', text: 'Review caregiver appointment requests.' },
+      ],
+    }
+  }
+  if (role === 'parent_guardian') {
+    return {
+      title: 'Family workspace',
+      intro: 'Manage child details and follow requests for care.',
+      links: [
+        { href: '#my-children', icon: '✳', title: 'Children & enrollment', text: 'Manage child profiles, contacts and daycare applications.' },
+        { href: '#care-bookings', icon: '◷', title: 'Care bookings', text: 'Request care and follow booking decisions.' },
+      ],
+    }
+  }
+  if (role === 'family_representative') {
+    return {
+      title: 'Family care',
+      intro: 'Keep care coordination and booking requests in one place.',
+      links: [
+        { href: '#care-bookings', icon: '◷', title: 'Care bookings', text: 'Request a service and follow booking status.' },
       ],
     }
   }
   return {
-    title: 'Staff access',
-    intro: 'Work at a daycare, orphanage or care home?',
-    links: [
-      { href: '#staff-access', icon: '✓', title: 'Request staff access', text: 'Ask a CareLife administrator for a staff role.' },
-    ],
+    title: role === 'donor_supporter' ? 'Giving & support' : 'Staff access',
+    intro: role === 'donor_supporter' ? 'Review active needs and follow campaign payment records.' : 'Work at a daycare, orphanage or care home?',
+    links: role === 'donor_supporter'
+      ? [{ href: '#orphanage-support', icon: '♡', title: 'Support board', text: 'Pledge practical items or start bKash checkout for a campaign.' }]
+      : [{ href: '#staff-access', icon: '✓', title: 'Request staff access', text: 'Ask a CareLife administrator for a staff role.' }],
   }
 }
-
 function DashboardPage() {
   const { email: storedEmail, role } = useSession()
   const email = storedEmail || 'CareLife member'
