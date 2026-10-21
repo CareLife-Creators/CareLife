@@ -19,6 +19,7 @@ import SiteNav from './components/SiteNav'
 import { refreshSession } from './api/auth'
 import { canAccessRoute, isProtectedRoute } from './lib/roles'
 import { useSession } from './lib/session'
+import { ToastStack } from './components/ui'
 
 const knownRoutes = new Set([
   '#home', '#dashboard', '#login', '#signup', '#daycare', '#orphanage',
@@ -103,7 +104,12 @@ function AppRoutes() {
 function App() {
   const [showLoader, setShowLoader] = useState(shouldShowLoader)
   const hideLoader = useCallback(() => setShowLoader(false), [])
-  return <>{showLoader && <PageLoader onDone={hideLoader} />}<AppRoutes /></>
-}
+return (
+  <>
+    {showLoader && <PageLoader onDone={hideLoader} />}
+    <AppRoutes />
+    <ToastStack />
+  </>
+)}
 
 export default App
