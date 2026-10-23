@@ -1,8 +1,90 @@
 from app.domain.entities.user import User
 from app.infrastructure.database.connection import get_connection
+from app.infrastructure.repositories.audit_log_repository import PostgresAuditLogRepository
 
 
 class PostgresUserRepository:
+    audit_logs = PostgresAuditLogRepository()
+
+    def list_users(self) -> list[dict]:
+        """Return safe account summaries for the administrator directory."""
+        with get_connection() as connection:
+            rows = connection.execute(
+                """
+                SELECT u.id, u.email, u.full_name, r.name, u.is_active,
+                       u.created_at,
+                       ARRAY(
+                           SELECT uo.organization_id
+                           FROM user_organizations uo
+                           WHERE uo.user_id = u.id
+                           ORDER BY uo.organization_id
+                       ) AS organization_ids
+                FROM users u
+                JOIN roles r ON r.id = u.role_id
+                ORDER BY u.created_at DESC, LOWER(u.email)
+                """
+            ).fetchall()
+        return [
+            {
+                "user_id": row[0],
+                "email": row[1],
+                "full_name": row[2],
+                "role": row[3],
+                "is_active": row[4],
+                "created_at": row[5],
+                "organization_ids": row[6] or [],
+            }
+            for row in rows
+        ]
+
+    def create_admin(self, user: User, actor_user_id: str) -> User:
+        with get_connection() as connection:
+            with connection.transaction():
+                connection.execute("SELECT pg_advisory_xact_lock(81420371)")
+                connection.execute(
+                    """INSERT INTO users (id, role_id, email, password_hash,
+                       full_name, is_active, updated_by)
+                       VALUES (%s, (SELECT id FROM roles WHERE name = %s),
+                               %s, %s, %s, TRUE, %s)""",
+                    (user.id, "carelife_admin", user.email, user.password_hash,
+                     user.full_name, actor_user_id),
+                )
+                self.audit_logs.record_on_connection(
+                    connection, actor_user_id=actor_user_id,
+                    actor_role="carelife_admin", action="admin_account_created",
+                    target_type="user", target_id=user.id,
+                )
+        return user
+
+    def set_active(self, user_id: str, is_active: bool, actor_user_id: str) -> bool:
+        with get_connection() as connection:
+            with connection.transaction():
+                connection.execute("SELECT pg_advisory_xact_lock(81420371)")
+                target = connection.execute(
+                    "SELECT u.is_active, r.name FROM users u JOIN roles r ON r.id=u.role_id WHERE u.id=%s FOR UPDATE",
+                    (user_id,),
+                ).fetchone()
+                if target is None:
+                    return False
+                if bool(target[0]) == is_active:
+                    return True
+                if not is_active and target[1] == "carelife_admin":
+                    active_admins = connection.execute(
+                        "SELECT COUNT(*) FROM users u JOIN roles r ON r.id=u.role_id WHERE r.name='carelife_admin' AND u.is_active=TRUE"
+                    ).fetchone()[0]
+                    if active_admins <= 1:
+                        raise ValueError("The last active CareLife admin cannot be deactivated.")
+                connection.execute(
+                    "UPDATE users SET is_active=%s, updated_at=CURRENT_TIMESTAMP, updated_by=%s WHERE id=%s",
+                    (is_active, actor_user_id, user_id),
+                )
+                self.audit_logs.record_on_connection(
+                    connection, actor_user_id=actor_user_id,
+                    actor_role="carelife_admin",
+                    action="user_deactivated" if not is_active else "user_reactivated",
+                    target_type="user", target_id=user_id,
+                )
+        return True
 
     def get_by_email(
         self,

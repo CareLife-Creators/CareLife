@@ -20,6 +20,14 @@ export async function getPendingOrganizations() {
   }
 }
 
+export async function getAdminOrganizationTracking() {
+  try {
+    return await apiRequest('/organizations/verification/tracking')
+  } catch (error) {
+    throw explainApprovalError(error, 'Unable to load organization tracking')
+  }
+}
+
 export async function approveOrganization(organizationId) {
   try {
     return await apiRequest(

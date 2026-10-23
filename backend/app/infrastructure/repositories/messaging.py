@@ -28,6 +28,8 @@ class PostgresMessagingRepository(MessagingRepository):
             participant_two_id=row[2],
             created_at=row[3],
             last_message_at=row[4],
+            other_user_name=row[5] if len(row) > 5 else None,
+            other_user_role=row[6] if len(row) > 6 else None,
         )
 
     @staticmethod
@@ -146,19 +148,27 @@ class PostgresMessagingRepository(MessagingRepository):
             rows = connection.execute(
                 """
                 SELECT
-                    id,
-                    participant_one_id,
-                    participant_two_id,
-                    created_at,
-                    last_message_at
-                FROM conversations
-                WHERE participant_one_id = %s
-                   OR participant_two_id = %s
+                    c.id,
+                    c.participant_one_id,
+                    c.participant_two_id,
+                    c.created_at,
+                    c.last_message_at,
+                    other_user.full_name,
+                    other_role.name
+                FROM conversations c
+                JOIN users other_user
+                  ON other_user.id = CASE
+                    WHEN c.participant_one_id = %s THEN c.participant_two_id
+                    ELSE c.participant_one_id
+                  END
+                LEFT JOIN roles other_role ON other_role.id = other_user.role_id
+                WHERE c.participant_one_id = %s
+                   OR c.participant_two_id = %s
                 ORDER BY
-                    COALESCE(last_message_at, created_at) DESC,
-                    id DESC
+                    COALESCE(c.last_message_at, c.created_at) DESC,
+                    c.id DESC
                 """,
-                (user_id, user_id),
+                (user_id, user_id, user_id),
             ).fetchall()
 
         return [

@@ -10,6 +10,9 @@ class UserRepository(Protocol):
     def get_by_id(self, user_id: str) -> User | None:
         ...
 
+    def list_users(self) -> list[dict]:
+        ...
+
     def create(self, user: User) -> User:
         ...
 

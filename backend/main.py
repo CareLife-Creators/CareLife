@@ -77,6 +77,7 @@ from app.presentation.api.routes.donation_payments import (
 from app.presentation.api.routes.elder_care_bookings import (
     router as elder_care_bookings_router,
 )
+from app.presentation.api.routes.admin_users import router as admin_users_router
 
 settings = get_settings()
 
@@ -88,6 +89,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5180",
+        "http://127.0.0.1:5180",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -122,6 +126,7 @@ app.include_router(caregiver_booking_router)
 app.include_router(donations_router)
 app.include_router(in_kind_donations_router)
 app.include_router(donation_payments_router)
+app.include_router(admin_users_router)
 
 @app.get("/")
 def root():

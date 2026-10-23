@@ -5,7 +5,8 @@ import {
   rejectOrganization,
 } from '../../api/organizationApproval'
 import './OrganizationApprovalDashboard.css'
-import SiteNav from '../../components/SiteNav'
+import AdminNav from '../../components/AdminNav'
+import '../AdminConsolePages.css'
 
 function OrganizationApprovalDashboard() {
   const [organizations, setOrganizations] = useState([])
@@ -135,8 +136,8 @@ function OrganizationApprovalDashboard() {
 
   return (
     <>
-    <SiteNav />
-    <main className="approval-dashboard">
+      <AdminNav />
+    <main className="approval-dashboard admin-console-page">
       <div className="approval-dashboard-container">
         <header className="approval-header">
           <div>

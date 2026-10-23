@@ -1,84 +1,84 @@
 :root {
-  font-family: "Plus Jakarta Sans", Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  color: #173f35;
-  background: #f7faf8;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  --cl-primary: #176b5b;
-  --cl-primary-dark: #104e43;
-  --cl-primary-soft: #e7f5ef;
-  --cl-ink: #173f35;
-  --cl-text: #344c45;
-  --cl-muted: #687d75;
-  --cl-background: #f7faf8;
-  --cl-surface: #ffffff;
-  --cl-border: #dfe9e4;
-  --cl-border-strong: #cfddd6;
-  --cl-success: #16794b;
-  --cl-warning: #a15c08;
-  --cl-danger: #b42318;
-  --cl-radius-sm: 8px;
-  --cl-radius-md: 14px;
-  --cl-radius-lg: 20px;
-  --cl-shadow-sm: 0 2px 8px rgba(23, 63, 53, 0.04);
-  --cl-shadow-md: 0 10px 30px rgba(23, 63, 53, 0.07);
-  --cl-shadow-lg: 0 20px 55px rgba(23, 63, 53, 0.10);
-  --cl-transition: 180ms ease;
+    font-family: "Plus Jakarta Sans", Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #173f35;
+    background: #f7faf8;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    --cl-primary: #176b5b;
+    --cl-primary-dark: #104e43;
+    --cl-primary-soft: #e7f5ef;
+    --cl-ink: #173f35;
+    --cl-text: #344c45;
+    --cl-muted: #687d75;
+    --cl-background: #f7faf8;
+    --cl-surface: #ffffff;
+    --cl-border: #dfe9e4;
+    --cl-border-strong: #cfddd6;
+    --cl-success: #16794b;
+    --cl-warning: #a15c08;
+    --cl-danger: #b42318;
+    --cl-radius-sm: 8px;
+    --cl-radius-md: 14px;
+    --cl-radius-lg: 20px;
+    --cl-shadow-sm: 0 2px 8px rgba(23, 63, 53, 0.04);
+    --cl-shadow-md: 0 10px 30px rgba(23, 63, 53, 0.07);
+    --cl-shadow-lg: 0 20px 55px rgba(23, 63, 53, 0.10);
+    --cl-transition: 180ms ease;
 }
 
 * {
-  box-sizing: border-box;
+    box-sizing: border-box;
 }
 
 html {
-  min-width: 320px;
-  min-height: 100%;
-  scroll-behavior: smooth;
-  -webkit-text-size-adjust: 100%;
+    min-width: 320px;
+    min-height: 100%;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
 }
 
 body {
-  min-width: 320px;
-  min-height: 100vh;
-  margin: 0;
-  line-height: 1.5;
+    min-width: 320px;
+    min-height: 100vh;
+    margin: 0;
+    line-height: 1.5;
 }
 
 #root {
-  min-height: 100vh;
+    min-height: 100vh;
 }
 
 button,
 input,
 textarea,
 select {
-  font: inherit;
+    font: inherit;
 }
 
 button {
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
 button:disabled {
-  cursor: not-allowed;
+    cursor: not-allowed;
 }
 
 a {
-  color: inherit;
+    color: inherit;
 }
 
 img,
 svg,
 video,
 canvas {
-  max-width: 100%;
+    max-width: 100%;
 }
 
 img {
-  height: auto;
+    height: auto;
 }
 
 h1,
@@ -87,11 +87,11 @@ h3,
 h4,
 h5,
 h6 {
-  overflow-wrap: anywhere;
+    overflow-wrap: anywhere;
 }
 
 p {
-  overflow-wrap: anywhere;
+    overflow-wrap: anywhere;
 }
 
 button:focus-visible,
@@ -99,26 +99,57 @@ a:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-  outline: 3px solid rgba(35, 134, 107, 0.65);
-  outline-offset: 3px;
+    outline: 3px solid rgba(35, 134, 107, 0.65);
+    outline-offset: 3px;
 }
 
 ::selection {
-  color: #104e43;
-  background: #cceee0;
+    color: #104e43;
+    background: #cceee0;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
+    html {
+        scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
 
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
+
+/* ============================================================
+   CareLife Design Tokens — cinematic extension
+   Paste at the END of src/index.css (keeps every existing token)
+   ============================================================ */
+
+:root {
+    /* extended palette */
+    --cl-primary-deep: #0b3d33;
+    --cl-accent: #e8a94c;
+    /* warm amber — sparing highlights only */
+    --cl-accent-soft: #fdf3e3;
+    --cl-glass: rgba(255, 255, 255, 0.72);
+    --cl-glass-border: rgba(255, 255, 255, 0.65);
+    /* type scale */
+    --cl-text-xs: 0.75rem;
+    --cl-text-sm: 0.875rem;
+    --cl-text-base: 1rem;
+    --cl-text-lg: 1.125rem;
+    --cl-text-xl: 1.375rem;
+    --cl-text-2xl: clamp(1.6rem, 3.2vw, 2.2rem);
+    --cl-text-hero: clamp(2.4rem, 6vw, 4.2rem);
+    /* cinematic motion */
+    --cl-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --cl-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --cl-d-fast: 160ms;
+    --cl-d-med: 320ms;
+    --cl-d-slow: 640ms;
+    /* surfaces */
+    --cl-gradient-hero: radial-gradient(1100px 500px at 85% -10%, rgba(35, 134, 107, 0.14), transparent 60%), radial-gradient(800px 420px at -10% 20%, rgba(232, 169, 76, 0.10), transparent 55%), linear-gradient(180deg, #fbfdfc 0%, var(--cl-background) 100%);
 }

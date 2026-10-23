@@ -57,3 +57,4 @@ class CaregiverPublicProfile(BaseModel):
     bio: str | None = None
     experience_years: int
     location: str | None = None
+    is_verified: bool = False

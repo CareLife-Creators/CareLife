@@ -142,6 +142,16 @@ class CaregiverService:
 
         return self.repository.list_pending_profiles()
 
+    def get_profile_for_admin(
+        self,
+        user: UserContext,
+        caregiver_id: str,
+    ) -> CaregiverProfile:
+        self._require_admin(user)
+        profile = self.repository.get_profile(caregiver_id)
+        if profile is None:
+            raise LookupError("Caregiver profile not found")
+        return profile
     def review_profile(
         self,
         user: UserContext,
@@ -212,6 +222,6 @@ class CaregiverService:
         profile = self.repository.get_public_profile(caregiver_id)
 
         if profile is None:
-            raise LookupError("Approved caregiver not found")
+            raise LookupError("Caregiver profile not found")
 
         return profile

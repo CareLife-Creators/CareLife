@@ -1,0 +1,214 @@
+.rr-page {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 40px 20px 72px;
+    color: var(--cl-text, #344c45);
+}
+
+.rr-hero h1 {
+    margin: 0 0 10px;
+    color: var(--cl-ink, #173f35);
+    font-size: clamp(1.8rem, 4vw, 2.4rem);
+    line-height: 1.15;
+}
+
+.rr-hero p {
+    max-width: 64ch;
+    margin: 0 0 28px;
+    line-height: 1.6;
+}
+
+.rr-panel {
+    margin: 0 0 22px;
+    padding: 22px;
+    border: 1px solid var(--cl-border, #dfe9e4);
+    border-radius: var(--cl-radius-md, 14px);
+    background: var(--cl-surface, #fff);
+}
+
+.rr-panel h2 {
+    margin: 0 0 14px;
+    color: var(--cl-ink, #173f35);
+    font-size: 1.15rem;
+}
+
+.rr-panel p {
+    margin: 0 0 10px;
+}
+
+.rr-form {
+    display: grid;
+    gap: 16px;
+}
+
+.rr-field {
+    display: grid;
+    gap: 6px;
+}
+
+.rr-field label {
+    color: var(--cl-ink, #173f35);
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+.rr-field select,
+.rr-field textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #d2e0d7;
+    border-radius: 11px;
+    background: #fff;
+    color: var(--cl-ink, #173f35);
+    font: inherit;
+}
+
+.rr-field textarea {
+    resize: vertical;
+}
+
+.rr-field select:focus,
+.rr-field textarea:focus {
+    outline: none;
+    border-color: #23866b;
+    box-shadow: 0 0 0 3px rgba(35, 134, 107, 0.13);
+}
+
+.rr-btn {
+    justify-self: start;
+    min-height: 44px;
+    padding: 0 20px;
+    border: 0;
+    border-radius: 11px;
+    background: var(--cl-primary, #176b5b);
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.rr-btn:hover:not(:disabled) {
+    background: var(--cl-primary-dark, #104e43);
+}
+
+.rr-btn:disabled {
+    opacity: 0.6;
+}
+
+.rr-btn.secondary {
+    border: 1px solid var(--cl-border-strong, #cfddd6);
+    background: #fff;
+    color: var(--cl-danger, #b42318);
+}
+
+.rr-btn.secondary:hover:not(:disabled) {
+    background: #fff4f2;
+}
+
+.rr-message {
+    margin: 14px 0 0;
+    padding: 12px 14px;
+    border-radius: 11px;
+    font-size: 0.92rem;
+}
+
+.rr-message.success {
+    background: #e7f5ef;
+    color: var(--cl-success, #16794b);
+}
+
+.rr-message.error {
+    background: #fff4f2;
+    color: var(--cl-danger, #b42318);
+}
+
+.rr-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 20px;
+}
+
+.rr-tabs button {
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid var(--cl-border-strong, #cfddd6);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--cl-text, #344c45);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.rr-tabs button.active {
+    border-color: var(--cl-primary, #176b5b);
+    background: var(--cl-primary, #176b5b);
+    color: #fff;
+}
+
+.rr-list {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.rr-panel.rr-list {
+    padding: 16px;
+}
+
+.rr-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px 16px;
+    border: 1px solid var(--cl-border, #dfe9e4);
+    border-radius: 12px;
+    background: #fff;
+}
+
+.rr-item strong {
+    display: block;
+    color: var(--cl-ink, #173f35);
+}
+
+.rr-item small {
+    display: block;
+    margin-top: 2px;
+    color: var(--cl-muted, #687d75);
+}
+
+.rr-item p {
+    margin: 8px 0 0;
+    max-width: 56ch;
+}
+
+.rr-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.rr-status {
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.rr-status.pending {
+    background: #fff6e5;
+    color: var(--cl-warning, #a15c08);
+}
+
+.rr-status.approved {
+    background: #e7f5ef;
+    color: var(--cl-success, #16794b);
+}
+
+.rr-status.rejected {
+    background: #fff4f2;
+    color: var(--cl-danger, #b42318);
+}

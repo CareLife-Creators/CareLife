@@ -33,6 +33,9 @@ class OrganizationProfileUpdateRequest(BaseModel):
         max_length=255,
     )
 
+    latitude: float | None = Field(default=None, ge=20.5, le=26.8)
+    longitude: float | None = Field(default=None, ge=88.0, le=92.8)
+
     contact: str | None = Field(
         default=None,
         max_length=100,
@@ -111,6 +114,12 @@ class OrganizationProfileUpdateRequest(BaseModel):
                 "Capacity cannot be null."
             )
 
+        if ("latitude" in self.model_fields_set or "longitude" in self.model_fields_set):
+            if not {"latitude", "longitude"}.issubset(self.model_fields_set):
+                raise ValueError("Provide both map coordinates, or clear both.")
+            if (self.latitude is None) != (self.longitude is None):
+                raise ValueError("Provide both map coordinates, or clear both.")
+
         return self
 
 
@@ -121,6 +130,8 @@ class OrganizationProfileResponse(BaseModel):
 
     description: str | None = None
     location: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
     contact: str | None = None
 
     capacity: int
@@ -143,6 +154,8 @@ class OrganizationProfileResponse(BaseModel):
             organization_type=profile.organization_type,
             description=profile.description,
             location=profile.location,
+            latitude=profile.latitude,
+            longitude=profile.longitude,
             contact=profile.contact,
             capacity=profile.capacity,
             age_range=profile.age_range,
@@ -163,6 +176,8 @@ class PublicOrganizationProfileResponse(BaseModel):
 
     description: str | None = None
     location: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
     contact: str | None = None
 
     capacity: int
@@ -182,6 +197,8 @@ class PublicOrganizationProfileResponse(BaseModel):
             organization_type=profile.organization_type,
             description=profile.description,
             location=profile.location,
+            latitude=profile.latitude,
+            longitude=profile.longitude,
             contact=profile.contact,
             capacity=profile.capacity,
             age_range=profile.age_range,

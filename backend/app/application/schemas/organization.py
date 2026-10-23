@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.domain.entities.organization import (
     ElderCareDirectoryEntry,
@@ -23,6 +23,8 @@ class OrganizationRegistrationRequest(BaseModel):
 
     description: str | None = Field(default=None, max_length=5000)
     location: str | None = Field(default=None, max_length=255)
+    latitude: float | None = Field(default=None, ge=20.5, le=26.8)
+    longitude: float | None = Field(default=None, ge=88.0, le=92.8)
     contact: str | None = Field(default=None, max_length=100)
 
     license_number: str = Field(
@@ -31,6 +33,12 @@ class OrganizationRegistrationRequest(BaseModel):
     )
 
     license_expiry_date: date
+
+    @model_validator(mode="after")
+    def coordinates_are_a_pair(self):
+        if (self.latitude is None) != (self.longitude is None):
+            raise ValueError("Provide both map coordinates, or leave both empty.")
+        return self
 
     @field_validator(
         "organization_name",
@@ -99,6 +107,35 @@ class OrganizationVerificationResponse(BaseModel):
 
 class OrganizationVerificationDecisionRequest(BaseModel):
     message: str | None = None
+
+
+class OrganizationReviewEventResponse(BaseModel):
+    status: OrganizationStatus
+    reviewer_name: str | None = None
+    notes: str | None = None
+    reviewed_at: datetime
+
+
+class OrganizationTrackingResponse(BaseModel):
+    organization_id: str
+    organization_name: str
+    organization_type: str
+    location: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    status: OrganizationStatus
+    submitted_at: datetime
+    updated_at: datetime
+    review_history: list[OrganizationReviewEventResponse] = Field(default_factory=list)
+
+
+class OrganizationMapEntryResponse(BaseModel):
+    organization_id: str
+    organization_name: str
+    organization_type: str
+    location: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
 
 
 class DaycareDirectoryResponse(BaseModel):
