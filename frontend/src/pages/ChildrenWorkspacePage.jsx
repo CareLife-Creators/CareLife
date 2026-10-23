@@ -65,8 +65,10 @@ export default function ChildrenWorkspacePage() {
     setLoading(false)
   }
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- Fetch remote child/enrollment data and update its loading state.
   useEffect(() => { void load() }, [refreshKey])
 
+  /* eslint-disable react-hooks/set-state-in-effect -- Clear child-specific records when selection changes and load the selected child's data. */
   useEffect(() => {
     if (!selectedChildId) {
       setEmergencyContacts([])
@@ -91,6 +93,7 @@ export default function ChildrenWorkspacePage() {
     }).finally(() => { if (!cancelled) setDetailLoading(false) })
     return () => { cancelled = true }
   }, [selectedChildId, refreshKey])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   async function submitChild(event) {
     event.preventDefault()
