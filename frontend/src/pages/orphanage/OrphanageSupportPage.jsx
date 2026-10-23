@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import SiteNav from '../../components/SiteNav'
 import { useSession } from '../../lib/session'
+import { publicActivityText, publicContentLabel, publicOrganizationDescription, publicOrganizationName } from '../../lib/publicDisplay'
 import { API_BASE_URL } from '../../api/client'
 import { createInKindPledge, getDonationCampaigns, getDonationNeeds, getPublicImpactUpdates, getPublicOrphanageProfile } from '../../api/discovery'
 import { startBkashPayment, getMyDonationPayments, verifyDonationPayment, getMyInKindPledges } from '../../api/workspace'
@@ -173,9 +174,9 @@ export default function OrphanageSupportPage() {
               return <article className="directory-card" key={campaign.id}>
                 <span className="directory-icon">↗</span>
                 <span className="directory-card-label">FUNDRAISING CAMPAIGN</span>
-                <h3>{campaign.title}</h3>
-                <p className="support-org-name">{campaign.organization_name}</p>
-                {campaign.description && <p>{campaign.description}</p>}
+                <h3>{publicContentLabel(campaign.title)}</h3>
+                <p className="support-org-name">{publicOrganizationName(campaign.organization_name)}</p>
+                {campaign.description && <p>{publicOrganizationDescription(campaign.description, 'orphanage')}</p>}
                 <div className="campaign-money">
                   <div><small>RECEIVED</small><strong>{money(received, campaign.currency || 'BDT')}</strong></div>
                   <div><small>TARGET</small><strong>{money(target, campaign.currency || 'BDT')}</strong></div>
@@ -202,8 +203,8 @@ export default function OrphanageSupportPage() {
             const form = pledgeForms[need.id] || {}
             return <article className="directory-card" key={need.id}>
               <span className="directory-icon">{inKind ? '＋' : '৳'}</span><span className="directory-card-label">{need.category}</span>
-              <h3>{need.title}</h3><p className="support-org-name">{need.organization_name}</p>
-              {need.description && <p>{need.description}</p>}
+              <h3>{publicContentLabel(need.title)}</h3><p className="support-org-name">{publicOrganizationName(need.organization_name)}</p>
+              {need.description && <p>{publicOrganizationDescription(need.description, 'orphanage')}</p>}
               <div className="campaign-money"><div><small>{inKind ? 'TARGET QUANTITY' : 'TARGET AMOUNT'}</small><strong>{inKind ? [need.target_quantity, need.unit].filter(Boolean).join(' ') : money(need.target_amount, 'BDT')}</strong></div><div><small>NEED TYPE</small><strong>{inKind ? 'Items' : 'Money'}</strong></div></div>
               {inKind ? <form className="pledge-form" onSubmit={(event) => void pledge(event, need)}>
                 <label>Quantity to pledge<input type="number" min="0.001" step="0.001" value={form.quantity || ''} onChange={(event) => setPledgeForms((current) => ({ ...current, [need.id]: { ...(current[need.id] || {}), quantity: event.target.value } }))} required /></label>
@@ -220,7 +221,7 @@ export default function OrphanageSupportPage() {
           <div className="directory-section-title"><h2>Published impact updates</h2><span>{publicUpdates.length} updates</span></div>
           {!publicUpdates.length && <div className="directory-state">No impact updates have been published for public viewing yet.</div>}
           <div className="impact-list">{publicUpdates.map((update) => <article className="impact-card" key={update.id}>
-            <small>{date(update.published_at || update.created_at)} · {update.organization_name}</small><h3>{update.title}</h3><p>{update.content}</p>
+            <small>{date(update.published_at || update.created_at)} · {publicOrganizationName(update.organization_name)}</small><h3>{publicContentLabel(update.title)}</h3><p>{publicActivityText(update.content) || 'The organization shared a progress update. Contact them for current details.'}</p>
             {update.media?.length > 0 && <div className="cw-document-list"><strong>Attached media</strong>{update.media.map((media) => <a href={API_BASE_URL + media.url} key={media.id} target="_blank" rel="noreferrer">{media.media_type} · {media.content_type}</a>)}</div>}
           </article>)}</div>
         </>}
@@ -256,7 +257,7 @@ export default function OrphanageSupportPage() {
           <p className="directory-note">The status shown here is the organization’s returned record: pledged, received, or allocated. Contact the organization if a status needs clarification.</p>
         </>}
 
-        {profile && <section className="organization-public-panel"><button type="button" onClick={() => setProfile(null)}>Close details ×</button><p className="directory-kicker">PUBLIC ORGANIZATION PROFILE</p><h2>{profile.organization_name}</h2>{profile.description && <p>{profile.description}</p>}<p>{[profile.location, profile.contact].filter(Boolean).join(' · ')}</p><p>{[profile.capacity != null ? 'Capacity ' + profile.capacity : '', profile.age_range, profile.opening_hours, profile.facilities, profile.fees].filter(Boolean).join(' · ')}</p><span>{String(profile.verification_status || '').replaceAll('_', ' ')}</span></section>}
+        {profile && <section className="organization-public-panel"><button type="button" onClick={() => setProfile(null)}>Close details ×</button><p className="directory-kicker">PUBLIC ORGANIZATION PROFILE</p><h2>{publicOrganizationName(profile.organization_name)}</h2><p>{publicOrganizationDescription(profile.description, 'orphanage')}</p><p>{[profile.location, profile.contact].filter(Boolean).join(' · ')}</p><p>{[profile.capacity != null ? 'Capacity ' + profile.capacity : '', profile.age_range, profile.opening_hours, profile.facilities, profile.fees].filter(Boolean).join(' · ')}</p><span>{String(profile.verification_status || '').replaceAll('_', ' ')}</span></section>}
         {messages.profile && <div className="directory-state error" role="alert">{messages.profile}</div>}
         <aside className="directory-privacy"><strong>Public transparency, private records.</strong> The public board exposes campaign and impact information returned by the backend. Private child details do not belong in public fundraising records.</aside>
       </main>

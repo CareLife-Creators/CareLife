@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import SiteNav from '../../components/SiteNav'
+import AdminNav from '../../components/AdminNav'
 import { approveRoleRequest, getAdminRoleRequests, rejectRoleRequest } from '../../api/roleRequests'
 import { roleLabel } from '../../lib/roles'
 import '../RoleRequests.css'
+import '../AdminConsolePages.css'
 
 const TABS = [['pending', 'Pending'], ['approved', 'Approved'], ['rejected', 'Rejected']]
 
@@ -19,6 +20,7 @@ function requesterName(item) {
 export default function AdminRoleRequestsPage() {
   const [status, setStatus] = useState('pending')
   const [items, setItems] = useState([])
+  const [counts, setCounts] = useState({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -41,6 +43,19 @@ export default function AdminRoleRequestsPage() {
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
   }, [status, reloadKey])
+
+  useEffect(() => {
+    let cancelled = false
+    Promise.allSettled(TABS.map(([value]) => getAdminRoleRequests(value))).then((results) => {
+      if (cancelled) return
+      const next = {}
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') next[TABS[index][0]] = Array.isArray(result.value) ? result.value.length : 0
+      })
+      setCounts(next)
+    })
+    return () => { cancelled = true }
+  }, [reloadKey])
 
   function changeStatus(next) {
     if (next === status) return
@@ -75,8 +90,8 @@ export default function AdminRoleRequestsPage() {
 
   return (
     <>
-      <SiteNav />
-      <main className="rr-page">
+      <AdminNav />
+      <main className="rr-page admin-console-page">
         <header className="rr-hero">
           <h1>Staff access requests</h1>
           <p>Approve or reject requests for daycare, orphanage and care-home staff roles. Each decision is recorded in the audit log.</p>
@@ -92,7 +107,7 @@ export default function AdminRoleRequestsPage() {
               className={status === value ? 'active' : ''}
               onClick={() => changeStatus(value)}
             >
-              {label}
+              {label}{counts[value] !== undefined ? ` · ${counts[value]}` : ''}
             </button>
           ))}
         </div>

@@ -1,104 +1,125 @@
 import SiteNav from '../../components/SiteNav'
 import { useSession } from '../../lib/session'
-import { isStaff } from '../../lib/roles'
 import './ModuleLandingPage.css'
 
 const content = {
   daycare: {
     tone: 'mint',
-    title: 'Choose a daycare you can look into.',
-    lede: 'Compare verified daycare listings, then manage your child’s enrollment, emergency contacts, pickup permissions and attendance from the private workspace.',
+    index: '01',
+    label: 'Daycare',
+    note: 'A steadier day for your family',
+    title: 'Find the right daycare for your family.',
+    lede: 'Explore daycare centers by name or location, review the details they share and find caregivers who can support your family at home.',
     now: [
-      ['Daycare directory', 'Search centers by name or location and inspect their published details.', '#daycare-directory'],
-      ['Caregiver directory', 'Browse approved independent caregivers.', '#caregivers'],
+      ['Daycare directory', 'Search by center name or location and review what each place shares.', '#daycare-directory'],
+      ['Caregiver directory', 'Browse independent caregivers and the services they offer.', '#caregivers'],
     ],
     tools: [
-      ['Child profiles & enrollment', 'Register a child, select a listed daycare, and follow enrollment decisions.', '#my-children'],
-      ['Attendance & daily updates', 'Review attendance history and the day notes recorded by authorized staff.', '#my-children'],
-      ['Emergency contacts & pickup', 'Keep emergency numbers and authorized pickup people attached to the child profile.', '#my-children'],
+      ['A child’s profile', 'Keep your child’s details, emergency contacts and pickup people together.', '#my-children'],
+      ['Everyday updates', 'Follow attendance and notes about your child’s day.', '#my-children'],
+      ['Enrollment', 'Start a request and keep up with its progress.', '#my-children'],
     ],
     faq: [
-      ['Who can see my child’s details?', 'Child profiles and their contacts are served through authenticated endpoints rather than the public daycare directory.'],
-      ['What does a verified listing mean?', 'CareLife has reviewed the organization submission. A platform review is not a substitute for checking legal licensing with the relevant authority.'],
+      ['Who can see my child’s details?', 'Your child’s private details stay within your CareLife account and do not appear in the public daycare directory.'],
+      ['What does a reviewed listing mean?', 'CareLife has reviewed the details submitted for a listing. Families should also check licensing and visit a center before choosing.'],
     ],
   },
   orphanage: {
     tone: 'peach',
-    title: 'See what an orphanage needs before you give.',
-    lede: 'Compare published fundraising targets and item needs, make an in-kind pledge, complete supported bKash campaign checkout, and read impact updates from organizations.',
+    index: '02',
+    label: 'Orphanage support',
+    note: 'Give support where it matters',
+    title: 'Give support that meets a real need.',
+    lede: 'See current campaigns and requested items from children’s homes. Make a pledge and follow updates about the difference your support makes.',
     now: [
-      ['Support board', 'View campaigns, in-kind needs and published impact updates; eligible donor accounts can start bKash checkout.', '#orphanage-support'],
+      ['Children’s home support board', 'Browse campaigns, requested items and updates from children’s homes.', '#orphanage-support'],
     ],
     tools: [
-      ['Campaigns & needs', 'Orphanage staff can publish fundraising campaigns and item or monetary needs.', '#organization-workspace'],
-      ['Impact updates', 'Submit a written update to the backend’s review and publication workflow.', '#organization-workspace'],
+      ['Campaigns and requested items', 'See what children’s homes are raising and pledge useful items.', '#orphanage-support'],
+      ['Progress updates', 'Follow the updates shared by children’s homes.', '#orphanage-support'],
     ],
     faq: [
-      ['Can I donate with bKash?', 'The backend exposes a bKash checkout flow for accounts with the Donor / Supporter role. Checkout redirects to the payment URL returned by the payment gateway.'],
-      ['Are child records visible to donors?', 'No. The public support board displays campaigns, needs and published updates, not private child or outcome records.'],
+      ['Can I donate with bKash?', 'When bKash is available for a campaign, you’ll see it as an option before completing your donation.'],
+      ['What will I see on the support board?', 'You can browse campaigns, requested items and updates shared by children’s homes. Private child details are not shown.'],
     ],
   },
   'elderly-care': {
     tone: 'lavender',
-    title: 'Find care for a parent, and stay in the loop.',
-    lede: 'Compare care homes and caregivers, request a scheduled service, and use the protected care-home workspace for resident profiles and consent-controlled wellbeing check-ins.',
+    index: '03',
+    label: 'Elderly care',
+    note: 'Thoughtful care, closer to home',
+    title: 'Find thoughtful care for someone you love.',
+    lede: 'Explore care homes and independent caregivers, review the details they share and choose a next step that suits your family.',
     now: [
-      ['Care-home directory', 'Review public details such as location, capacity, facilities and published fees.', '#elderly-care-directory'],
-      ['Caregiver directory', 'Find approved caregivers by service type and location.', '#caregivers'],
+      ['Care-home directory', 'Explore locations, facilities, capacity and published fees.', '#elderly-care-directory'],
+      ['Caregiver directory', 'Find independent caregivers by service and location.', '#caregivers'],
     ],
     tools: [
-      ['Care bookings', 'Request caregiver appointments or an elder-care booking and follow the returned status.', '#care-bookings'],
-      ['Family wellbeing check-ins', 'Family representatives can submit and review updates for a resident they are authorized to access.', '#family-checkins'],
-      ['Residents & family consent', 'Care-home staff can maintain resident profiles and record family consent before check-ins.', '#organization-workspace'],
+      ['Care requests', 'Ask about a care service and follow the request.', '#care-bookings'],
+      ['Family check-ins', 'Keep up with wellbeing notes shared with your family.', '#family-checkins'],
+      ['Care-home information', 'Learn about the services and facilities a care home provides.', '#elderly-care-directory'],
     ],
     faq: [
-      ['Are the check-ins medical records?', 'The wellbeing check-in workflow stores a wellbeing status and optional note; it is not a diagnosis or prescription service.'],
-      ['Who can receive a family check-in?', 'The backend requires a consent record for the named family representative before allowing the related check-in workflow.'],
+      ['Are check-ins medical advice?', 'No. Check-ins are updates about wellbeing and are not a diagnosis or a prescription.'],
+      ['Can my family stay informed?', 'Family check-ins help relatives follow updates shared about a loved one’s wellbeing.'],
     ],
   },
 }
 
 function ModuleLandingPage({ moduleKey }) {
-  const { signedIn, role } = useSession()
+  const { signedIn } = useSession()
   const m = content[moduleKey] || content.daycare
-  const staffTools = isStaff(role)
-  const tools = m.tools.filter(([title]) => {
-    if (title === 'Campaigns & needs' || title === 'Impact updates') return role === 'orphanage_staff' || role === 'carelife_admin'
-    if (title === 'Residents & family consent') return role === 'care_home_staff' || role === 'carelife_admin'
-    return true
+  const tools = m.tools
+  const scrollToStart = () => document.getElementById('ml-start')?.scrollIntoView({
+    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+    block: 'start',
   })
   return (
     <>
       <SiteNav />
       <main className={'ml ' + m.tone}>
         <header className="ml-hero">
-          <a className="ml-back" href={signedIn ? '#dashboard' : '#home'}>← {signedIn ? 'My workspace' : 'CareLife'}</a>
-          <h1>{m.title}</h1>
-          <p>{m.lede}</p>
+          <div className="ml-hero-copy">
+            <a className="ml-back" href={signedIn ? '#dashboard' : '#home'}><span aria-hidden="true">←</span> {signedIn ? 'My workspace' : 'CareLife home'}</a>
+            <span className="ml-eyebrow"><i /> {m.label} <span>·</span> {m.index}</span>
+            <h1>{m.title}</h1>
+            <p>{m.lede}</p>
+            <div className="ml-hero-actions">
+              <a className="ml-btn" href={m.now[0][2]}>{m.now[0][0]} <span aria-hidden="true">→</span></a>
+              <button className="ml-text-link" type="button" onClick={scrollToStart}>See what you can do <span aria-hidden="true">↓</span></button>
+            </div>
+          </div>
+          <div className="ml-hero-art" role="img" aria-label={`${m.label}: ${m.note}`}>
+            <span className="ml-art-orbit ml-art-orbit-one" />
+            <span className="ml-art-orbit ml-art-orbit-two" />
+            <span className="ml-art-index">{m.index}</span>
+            <div className="ml-art-note"><i /><span>{m.note}</span></div>
+            <div className="ml-art-stamp">Care<br />lives<br />here<span aria-hidden="true">♡</span></div>
+          </div>
         </header>
-        <section className="ml-block" aria-labelledby="ml-now">
-          <h2 id="ml-now">Explore the directory</h2>
+        <section className="ml-block ml-start" id="ml-start" aria-labelledby="ml-now">
+          <div className="ml-section-heading"><div><span className="ml-section-kicker">START HERE</span><h2 id="ml-now">Find the right place to begin.</h2></div><p>Choose a directory to explore the options available through CareLife.</p></div>
           <div className="ml-cards">
             {m.now.map(([title, description, href]) => (
-              <a className="ml-card" href={href} key={href}><strong>{title}</strong><span>{description}</span><em>Open directory →</em></a>
+              <a className="ml-card ml-directory-card" href={href} key={href}><span className="ml-card-icon" aria-hidden="true">↗</span><span className="ml-card-body"><strong>{title}</strong><span>{description}</span><em>{signedIn ? 'Explore directory' : 'Sign in to explore'} <span aria-hidden="true">→</span></em></span></a>
             ))}
           </div>
         </section>
         <section className="ml-block" aria-labelledby="ml-tools">
-          <h2 id="ml-tools">{staffTools ? 'Workflows for your account' : 'What you can do on CareLife'}</h2>
-          <div className="ml-cards">
+          <div className="ml-section-heading"><div><span className="ml-section-kicker">CARE THAT CONNECTS</span><h2 id="ml-tools">More ways CareLife can help.</h2></div><p>Each option supports a practical part of caring, giving or staying connected.</p></div>
+          <div className="ml-cards ml-feature-grid">
             {tools.map(([title, description, href]) => (
-              <a className="ml-card" href={href} key={title}><strong>{title}</strong><span>{description}</span><em>Open workflow →</em></a>
+              <a className="ml-card ml-feature-card" href={href} key={title}><span className="ml-feature-mark" aria-hidden="true">✳</span><strong>{title}</strong><span>{description}</span><em>{signedIn ? 'Open this feature' : 'Sign in to continue'} <span aria-hidden="true">→</span></em></a>
             ))}
           </div>
         </section>
         <section className="ml-block" aria-labelledby="ml-faq">
-          <h2 id="ml-faq">Questions about this module</h2>
+          <div className="ml-section-heading"><div><span className="ml-section-kicker">GOOD TO KNOW</span><h2 id="ml-faq">A few helpful answers.</h2></div></div>
           {m.faq.map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}
         </section>
         <footer className="ml-foot">
-          {signedIn ? <a className="ml-btn" href="#dashboard">Open my workspace</a> : <a className="ml-btn" href="#signup">Create an account</a>}
-          <a href={signedIn ? '#dashboard' : '#home'}>Back to {signedIn ? 'my workspace' : 'the overview'}</a>
+          <div><span className="ml-section-kicker">A LITTLE CLOSER, EVERY DAY</span><h2>Start with what matters to you.</h2><p>Take the next step with CareLife.</p></div>
+          {signedIn ? <a className="ml-btn" href="#dashboard">Open my workspace <span aria-hidden="true">→</span></a> : <a className="ml-btn" href="#signup">Create an account <span aria-hidden="true">→</span></a>}
         </footer>
       </main>
     </>

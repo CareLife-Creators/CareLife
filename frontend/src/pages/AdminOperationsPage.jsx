@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
-import SiteNav from '../components/SiteNav'
-import { getPendingCaregivers, reviewCaregiver, getAdminAuditLogs, getPendingImpactUpdates, reviewImpactUpdate } from '../api/workspace'
+import { useCallback, useEffect, useState } from 'react'
+import AdminNav from '../components/AdminNav'
+import { getPendingCaregivers, reviewCaregiver, getAdminAuditLogs, getPendingImpactUpdates, reviewImpactUpdate, downloadCaregiverDocument } from '../api/workspace'
 import { API_BASE_URL } from '../api/client'
 import { getToken } from '../lib/session'
 import './Workspace.css'
+import './AdminConsolePages.css'
 
 const dateTime = (value) => {
   const date = new Date(value)
@@ -44,7 +45,10 @@ function ProtectedImpactMedia({ media }) {
 }
 
 export default function AdminOperationsPage() {
-  const [tab, setTab] = useState('caregivers')
+  const [tab, setTab] = useState(() => {
+    const requestedTab = new URLSearchParams(window.location.hash.split('?')[1] || '').get('tab')
+    return ['caregivers', 'impact', 'audit'].includes(requestedTab) ? requestedTab : 'caregivers'
+  })
   const [caregivers, setCaregivers] = useState([])
   const [logs, setLogs] = useState([])
   const [pendingUpdates, setPendingUpdates] = useState([])
@@ -56,7 +60,7 @@ export default function AdminOperationsPage() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true)
     setError('')
     const [caregiverResult, logResult, impactResult] = await Promise.allSettled([getPendingCaregivers(), getAdminAuditLogs(), getPendingImpactUpdates()])
@@ -73,9 +77,21 @@ export default function AdminOperationsPage() {
       setError(impactResult.reason instanceof Error ? impactResult.reason.message : 'Impact review queue is unavailable.')
     }
     setLoading(false)
-  }
+  }, [tab])
 
-  useEffect(() => { void load() }, [])
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void load() }, 0)
+    return () => window.clearTimeout(timer)
+  }, [load])
+
+  useEffect(() => {
+    function syncTabFromHash() {
+      const requestedTab = new URLSearchParams(window.location.hash.split('?')[1] || '').get('tab')
+      if (['caregivers', 'impact', 'audit'].includes(requestedTab)) setTab(requestedTab)
+    }
+    window.addEventListener('hashchange', syncTabFromHash)
+    return () => window.removeEventListener('hashchange', syncTabFromHash)
+  }, [])
 
   async function decideImpact(update, decision) {
     if (decision === 'approved' && !privacyConfirmed[update.id]) {
@@ -109,10 +125,19 @@ export default function AdminOperationsPage() {
     }
   }
 
+  async function downloadDocument(caregiver, doc) {
+    setError('')
+    try {
+      await downloadCaregiverDocument(caregiver.user_id, doc.id, doc.file_name || doc.document_reference)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'The verification file could not be downloaded.')
+    }
+  }
+
   return (
     <>
-      <SiteNav />
-      <main className="cw-page">
+      <AdminNav />
+      <main className="cw-page admin-console-page">
         <header className="cw-hero admin">
           <span className="cw-kicker">CARELIFE ADMINISTRATION</span>
           <h1>Review access. Keep a clear record.</h1>
@@ -129,13 +154,13 @@ export default function AdminOperationsPage() {
         {notice && <div className="cw-alert success" role="status">{notice}</div>}
         {loading ? <div className="cw-state">Loading admin records…</div> : tab === 'caregivers' ? <section className="cw-panel">
           <div className="cw-panel-heading"><div><p className="cw-kicker">PENDING REVIEW</p><h2>Caregiver profiles</h2></div><span className="cw-status">{caregivers.length} pending</span></div>
-          {!caregivers.length ? <div className="cw-empty"><strong>No caregiver profiles are awaiting review.</strong><p>When a caregiver submits their profile and supporting document references, it will appear in this queue.</p></div> :
+          {!caregivers.length ? <div className="cw-empty"><strong>No caregiver profiles are awaiting review.</strong><p>When a caregiver submits their profile and supporting documents, it will appear in this queue.</p></div> :
             <div className="cw-record-list">{caregivers.map((item) => <article className="cw-record stacked" key={item.user_id}>
               <div className="cw-record-main"><div className="cw-record-title-row"><h3>{item.full_name || 'Caregiver profile'}</h3><span className="cw-pill warning">{item.verification_status || 'pending'}</span></div>
                 <p>{String(item.service_type || '').replaceAll('_', ' ')} · {item.experience_years ?? 0} years of experience</p>
                 <p>{item.bio || 'No biography submitted.'}</p>
                 <small>{item.location || 'Location not supplied'} · User ID: {item.user_id}</small>
-                {!!item.documents?.length && <div className="cw-document-list"><strong>Submitted document references</strong>{item.documents.map((doc) => <span key={doc.id}>{doc.document_type.replaceAll('_', ' ')} · {doc.document_reference}</span>)}</div>}
+                {!!item.documents?.length && <div className="cw-document-list"><strong>Submitted documents</strong>{item.documents.map((doc) => <span key={doc.id}>{doc.document_type.replaceAll('_', ' ')} · {doc.file_name || doc.document_reference}{doc.file_name && <button type="button" className="cw-button" onClick={() => void downloadDocument(item, doc)}>View file</button>}</span>)}</div>}
               </div>
               <label className="cw-full-field">Reviewer note (optional)<textarea rows={2} maxLength={2000} value={decisionMessages[item.user_id] || ''} onChange={(event) => setDecisionMessages((current) => ({ ...current, [item.user_id]: event.target.value }))} placeholder="Record a specific reason if you reject the submission." /></label>
               <div className="cw-form-actions"><button type="button" className="cw-button primary" disabled={busyId === item.user_id} onClick={() => void decide(item, 'approved')}>{busyId === item.user_id ? 'Saving…' : 'Approve profile'}</button><button type="button" className="cw-button danger" disabled={busyId === item.user_id} onClick={() => void decide(item, 'rejected')}>Reject profile</button></div>

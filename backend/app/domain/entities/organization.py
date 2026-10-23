@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from enum import Enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class OrganizationStatus(str, Enum):
@@ -20,6 +20,8 @@ class Organization(BaseModel):
     organization_type: str
     description: str | None = None
     location: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
     contact: str | None = None
 
     license_number: str
@@ -33,6 +35,35 @@ class Organization(BaseModel):
     updated_at: datetime
 
     message: str | None = None
+
+
+class OrganizationReviewEvent(BaseModel):
+    status: OrganizationStatus
+    reviewer_name: str | None = None
+    notes: str | None = None
+    reviewed_at: datetime
+
+
+class OrganizationTrackingRecord(BaseModel):
+    organization_id: str
+    organization_name: str
+    organization_type: str
+    location: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    status: OrganizationStatus
+    submitted_at: datetime
+    updated_at: datetime
+    review_history: list[OrganizationReviewEvent] = Field(default_factory=list)
+
+
+class OrganizationMapEntry(BaseModel):
+    organization_id: str
+    organization_name: str
+    organization_type: str
+    location: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
 
 
 class DaycareDirectoryEntry(BaseModel):

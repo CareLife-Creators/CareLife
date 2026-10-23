@@ -1,0 +1,760 @@
+/* Shared visual language for every CareLife screen outside the approved home page. */
+
+:root {
+  --cl-page-width: 1200px;
+  --cl-page-gutter: clamp(16px, 4vw, 48px);
+  --cl-card-radius: 22px;
+  --cl-card-shadow: 0 12px 32px rgba(23, 63, 53, 0.055);
+}
+
+body {
+  background: #f7faf8;
+}
+
+/* Public directories and the orphanage support board */
+.directory-page {
+  width: min(var(--cl-page-width), calc(100% - var(--cl-page-gutter) * 2));
+  padding: 28px 0 76px;
+}
+
+.directory-breadcrumb {
+  font-size: 12px;
+}
+
+.directory-hero {
+  margin-top: 22px;
+  padding: clamp(30px, 5vw, 54px);
+  border-radius: 28px;
+  box-shadow: 0 12px 34px rgba(23, 63, 53, 0.045);
+}
+
+.directory-kicker {
+  padding: 8px 11px;
+  border-radius: 999px;
+  font-size: 10px;
+}
+
+.directory-hero h1 {
+  max-width: 780px;
+  margin: 18px 0 14px;
+  font-size: clamp(38px, 5vw, 62px);
+  letter-spacing: -0.06em;
+}
+
+.directory-hero p {
+  max-width: 680px;
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.directory-filters {
+  gap: 14px;
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(23, 63, 53, 0.035);
+}
+
+.directory-filters label,
+.pledge-form label {
+  gap: 8px;
+  font-size: 13px;
+}
+
+.directory-filters input,
+.directory-filters select,
+.pledge-form input {
+  min-height: 48px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.directory-filters button,
+.directory-state button,
+.pledge-form button,
+.pledge-sign-in {
+  min-height: 46px;
+  padding: 11px 17px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+.directory-section-title {
+  align-items: center;
+  margin: 42px 0 18px;
+}
+
+.directory-section-title h2 {
+  font-size: clamp(24px, 3vw, 34px);
+  letter-spacing: -0.045em;
+}
+
+.directory-section-title > span {
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+.directory-grid {
+  gap: 18px;
+}
+
+.directory-card {
+  padding: clamp(20px, 3vw, 28px);
+  border-radius: 22px;
+  box-shadow: var(--cl-card-shadow);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.directory-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 38px rgba(23, 63, 53, 0.085);
+}
+
+.directory-card-label {
+  margin-top: 14px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+}
+
+.directory-card h3 {
+  margin: 14px 0 8px;
+  font-size: 23px;
+  letter-spacing: -0.04em;
+}
+
+.directory-card > p,
+.impact-card p {
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.directory-facts {
+  gap: 14px;
+  padding: 16px;
+  border-radius: 15px;
+}
+
+.directory-facts small,
+.campaign-money small {
+  font-size: 10px;
+}
+
+.directory-facts strong {
+  font-size: 13px;
+}
+
+.directory-meta,
+.directory-id,
+.directory-privacy,
+.directory-note,
+.impact-card > small {
+  font-size: 12px;
+}
+
+.directory-contact,
+.directory-inline-action {
+  font-size: 13px;
+}
+
+.directory-state {
+  min-height: 190px;
+  padding: 30px;
+  border-radius: 20px;
+  font-size: 15px;
+}
+
+.directory-state p {
+  font-size: 14px;
+}
+
+.directory-privacy,
+.directory-note {
+  padding: 18px 20px;
+  border-radius: 16px;
+  line-height: 1.8;
+}
+
+.support-tabs {
+  gap: 8px;
+  margin-top: 24px;
+  padding: 8px;
+  border-radius: 17px;
+  box-shadow: 0 8px 24px rgba(23, 63, 53, 0.035);
+}
+
+.support-tabs button {
+  min-height: 44px;
+  padding: 11px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+.campaign-money {
+  padding: 16px;
+  border-radius: 15px;
+}
+
+.campaign-money strong {
+  font-size: 16px;
+}
+
+.pledge-form {
+  gap: 12px;
+  margin-top: 18px;
+  padding-top: 17px;
+}
+
+.pledge-form p,
+.pledge-form small {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.impact-list {
+  gap: 16px;
+}
+
+.impact-card {
+  padding: 24px;
+  border-radius: 20px;
+  box-shadow: var(--cl-card-shadow);
+}
+
+.impact-card h3 {
+  font-size: 22px;
+}
+
+.organization-public-panel {
+  padding: 26px;
+  border-radius: 20px;
+}
+
+.organization-public-panel p {
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+/* Module pages use the same warm, airy canvas and card language as home. */
+.ml {
+  --bg: #f7faf8;
+  --accent: #176b5b;
+  --soft: #e7f5ef;
+  --ink: #143d35;
+  width: min(var(--cl-page-width), calc(100% - var(--cl-page-gutter) * 2));
+  margin-inline: auto;
+  padding: 0 0 72px;
+  background: radial-gradient(ellipse at 88% 4%, rgba(222, 241, 230, 0.72), transparent 31%), #f7faf8;
+}
+
+.ml.peach {
+  --accent: #a35d45;
+  --soft: #fff0e8;
+}
+
+.ml.lavender {
+  --accent: #5e64a4;
+  --soft: #eeeeff;
+}
+
+.ml-hero {
+  max-width: 100%;
+  margin-top: 26px;
+  padding: clamp(30px, 6vw, 62px);
+  border: 1px solid #dce9e3;
+  border-radius: 28px;
+  background: radial-gradient(ellipse at 90% 0%, var(--soft), transparent 45%), #fff;
+  box-shadow: 0 12px 34px rgba(23, 63, 53, 0.045);
+}
+
+.ml-back {
+  display: inline-flex;
+  margin-bottom: 24px;
+  color: var(--accent);
+}
+
+.ml-hero h1 {
+  max-width: 780px;
+  font-size: clamp(38px, 5.6vw, 62px);
+  letter-spacing: -0.06em;
+}
+
+.ml-hero p {
+  max-width: 680px;
+  color: #61776f;
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.ml-block {
+  max-width: 100%;
+  padding: 38px 0 8px;
+}
+
+.ml-block h2 {
+  margin-bottom: 19px;
+  color: #173f35;
+  font-size: clamp(25px, 3vw, 34px);
+  letter-spacing: -0.045em;
+}
+
+.ml-cards {
+  gap: 17px;
+}
+
+.ml-card {
+  min-height: 190px;
+  padding: 25px;
+  border: 1px solid #dce9e3;
+  border-radius: 22px;
+  box-shadow: 0 8px 24px rgba(23, 63, 53, 0.04);
+}
+
+.ml-card strong {
+  color: #183f35;
+  font-size: 20px;
+  letter-spacing: -0.025em;
+}
+
+.ml-card span {
+  color: #61776f;
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.ml-card em {
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.ml details {
+  margin-bottom: 10px;
+  padding: 17px 20px;
+  border: 1px solid #e0eae4;
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(23, 63, 53, 0.025);
+}
+
+.ml summary {
+  color: #244b3e;
+  font-size: 15px;
+}
+
+.ml details p {
+  color: #61776f;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.ml-foot {
+  max-width: 100%;
+  margin-top: 36px;
+  padding: 26px;
+  border: 1px solid #dce9e3;
+  border-radius: 20px;
+  background: #edf7f1;
+}
+
+.ml-btn {
+  padding: 13px 22px;
+  border-radius: 13px;
+  background: #176b5b;
+  font-weight: 750;
+}
+
+.ml-foot a:not(.ml-btn) {
+  color: #176b5b;
+  font-weight: 700;
+}
+
+/* Signed-in workspaces keep their role-based tools, with clearer hierarchy. */
+.cw-page {
+  width: min(var(--cl-page-width), calc(100% - var(--cl-page-gutter) * 2));
+  padding: 32px 0 80px;
+}
+
+.cw-hero {
+  border-radius: 28px;
+  box-shadow: 0 16px 42px rgba(23, 63, 53, 0.07);
+}
+
+.cw-kicker {
+  font-size: 0.76rem;
+}
+
+.cw-hero h1 {
+  font-size: clamp(2.35rem, 4.5vw, 3.6rem);
+}
+
+.cw-hero > p,
+.cw-help,
+.cw-empty p,
+.cw-record p {
+  font-size: 0.98rem;
+}
+
+.cw-panel {
+  border-radius: 22px;
+  box-shadow: var(--cl-card-shadow);
+}
+
+.cw-panel-heading h2 {
+  font-size: clamp(1.35rem, 2.3vw, 1.8rem);
+}
+
+.cw-form label,
+.cw-inline-form label,
+.cw-full-field {
+  font-size: 0.92rem;
+}
+
+.cw-form label input,
+.cw-form label select,
+.cw-form label textarea,
+.cw-inline-form input,
+.cw-inline-form select,
+.cw-inline-form textarea,
+.cw-full-field textarea,
+.cw-field input,
+.cw-field select,
+.cw-field textarea {
+  min-height: 46px;
+  padding: 12px 14px;
+  border-radius: 13px;
+  font-size: 0.96rem;
+}
+
+.cw-button {
+  min-height: 44px;
+  padding: 10px 17px;
+  font-size: 0.9rem;
+}
+
+.cw-tabs button {
+  min-height: 43px;
+  padding: 10px 15px;
+  font-size: 0.92rem;
+}
+
+.cw-record {
+  border-radius: 18px;
+}
+
+.cw-record h3 {
+  font-size: 1.05rem;
+}
+
+.cw-record p,
+.cw-record small,
+.cw-muted {
+  line-height: 1.7;
+}
+
+/* Make small dashboard labels and links readable at a glance. */
+.member-dashboard {
+  width: min(var(--cl-page-width), calc(100% - var(--cl-page-gutter) * 2));
+}
+
+.member-dashboard-header {
+  border-radius: 28px;
+  box-shadow: 0 12px 34px rgba(23, 63, 53, 0.045);
+}
+
+.member-dashboard-intro,
+.member-dashboard-card p,
+.member-tools-section > div:first-child > p:last-child {
+  font-size: 14px;
+}
+
+.member-dashboard-grid {
+  gap: 18px;
+}
+
+.member-dashboard-card {
+  border-radius: 22px;
+  box-shadow: 0 8px 24px rgba(23, 63, 53, 0.035);
+}
+
+.member-dashboard-card h3 {
+  font-size: 21px;
+}
+
+.member-dashboard-card > a,
+.member-tool-links strong {
+  font-size: 13px;
+}
+
+.member-tool-links small,
+.member-dashboard-note p {
+  font-size: 12px;
+}
+
+/* Older directory and review screens are brought into the same card system. */
+.daycare-directory {
+  padding: 32px var(--cl-page-gutter) 76px;
+  background: radial-gradient(ellipse at 85% 0%, rgba(222, 241, 230, 0.72), transparent 31%), #f7faf8;
+}
+
+.daycare-directory-container {
+  width: min(var(--cl-page-width), 100%);
+}
+
+.daycare-directory-header h1 {
+  color: #123e35;
+  font-size: clamp(40px, 5vw, 62px);
+  font-weight: 800;
+  letter-spacing: -0.06em;
+}
+
+.daycare-directory-header p {
+  color: #61776f;
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.daycare-search-card,
+.daycare-detail-card {
+  padding: clamp(20px, 3vw, 28px);
+  border: 1px solid #dce9e3;
+  border-radius: 22px;
+  box-shadow: var(--cl-card-shadow);
+}
+
+.daycare-field label {
+  color: #31574a;
+  font-size: 14px;
+}
+
+.daycare-field input {
+  min-height: 48px;
+  border-color: #d7e4dd;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.daycare-field input:focus {
+  outline: none;
+  border-color: #45a18a;
+  box-shadow: 0 0 0 3px rgba(60, 154, 128, 0.12);
+}
+
+.daycare-search-button,
+.daycare-details-button {
+  min-height: 46px;
+  border-radius: 12px;
+  background: #176b5b;
+  font-size: 14px;
+}
+
+.daycare-clear-button {
+  min-height: 46px;
+  border: 1px solid #dce9e3;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.daycare-results-heading h2 {
+  color: #173f35;
+  font-size: clamp(24px, 3vw, 34px);
+  letter-spacing: -0.045em;
+}
+
+.daycare-results-grid {
+  gap: 18px;
+}
+
+.daycare-card {
+  border-color: #dce9e3;
+  border-radius: 22px;
+  box-shadow: var(--cl-card-shadow);
+}
+
+.daycare-card h2,
+.daycare-card h3 {
+  color: #183f35;
+  letter-spacing: -0.035em;
+}
+
+.daycare-description,
+.daycare-card p,
+.daycare-detail-card p {
+  color: #61776f;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.approval-dashboard {
+  padding: 34px var(--cl-page-gutter) 76px;
+  background: radial-gradient(ellipse at 85% 0%, rgba(222, 241, 230, 0.72), transparent 31%), #f7faf8;
+}
+
+.approval-dashboard-container {
+  max-width: var(--cl-page-width);
+}
+
+.approval-header h1 {
+  color: #123e35;
+  font-size: clamp(38px, 5vw, 58px);
+  font-weight: 800;
+  letter-spacing: -0.06em;
+}
+
+.approval-description {
+  color: #61776f;
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.approval-summary-card,
+.approval-card,
+.approval-empty-state {
+  border-color: #dce9e3;
+  border-radius: 21px;
+  box-shadow: var(--cl-card-shadow);
+}
+
+.approval-refresh-button,
+.approval-approve-button,
+.approval-reject-confirm-button {
+  border-radius: 12px;
+}
+
+.rr-page {
+  width: min(1000px, calc(100% - var(--cl-page-gutter) * 2));
+  max-width: none;
+  padding: 34px 0 76px;
+}
+
+.rr-hero {
+  margin-bottom: 24px;
+  padding: clamp(26px, 5vw, 48px);
+  border: 1px solid #dce9e3;
+  border-radius: 26px;
+  background: radial-gradient(ellipse at 90% 0%, #e6f4eb, transparent 48%), #fff;
+  box-shadow: var(--cl-card-shadow);
+}
+
+.rr-hero h1 {
+  font-size: clamp(36px, 4.5vw, 54px);
+  letter-spacing: -0.055em;
+}
+
+.rr-hero p,
+.rr-panel p,
+.rr-item p {
+  color: #61776f;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.rr-panel {
+  padding: clamp(20px, 3vw, 28px);
+  border-radius: 21px;
+  box-shadow: var(--cl-card-shadow);
+}
+
+.rr-panel h2 {
+  font-size: 1.35rem;
+  letter-spacing: -0.03em;
+}
+
+.rr-field label {
+  font-size: 0.98rem;
+}
+
+.rr-field select,
+.rr-field textarea {
+  min-height: 46px;
+  border-color: #d7e4dd;
+  border-radius: 13px;
+  font-size: 0.96rem;
+}
+
+.rr-btn {
+  min-height: 46px;
+  padding-inline: 18px;
+  border-radius: 12px;
+}
+
+.app-layout {
+  background: #f7faf8;
+}
+
+.sidebar {
+  background: radial-gradient(circle at 0 0, rgba(91, 178, 143, 0.17), transparent 40%), #123d34;
+}
+
+.verification-intro h3 {
+  font-size: clamp(32px, 4.5vw, 50px);
+  letter-spacing: -0.06em;
+}
+
+.verification-intro p {
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.verification-page-content .card {
+  border-radius: 21px;
+  box-shadow: var(--cl-card-shadow);
+}
+
+/* Shared focused states and motion stay consistent across all page families. */
+.directory-page a:focus-visible,
+.directory-page button:focus-visible,
+.ml a:focus-visible,
+.ml button:focus-visible,
+.cw-page a:focus-visible,
+.cw-page button:focus-visible,
+.member-dashboard a:focus-visible {
+  outline: 3px solid rgba(35, 134, 107, 0.65);
+  outline-offset: 3px;
+}
+
+@media (max-width: 720px) {
+  .directory-page,
+  .cw-page,
+  .member-dashboard,
+  .ml {
+    width: calc(100% - 32px);
+  }
+
+  .directory-page,
+  .cw-page {
+    padding-top: 18px;
+  }
+
+  .directory-hero,
+  .ml-hero {
+    border-radius: 22px;
+  }
+
+  .directory-hero h1,
+  .ml-hero h1 {
+    font-size: clamp(34px, 10vw, 48px);
+  }
+
+  .directory-hero p,
+  .ml-hero p {
+    font-size: 15px;
+  }
+
+  .ml-block {
+    padding-top: 30px;
+  }
+
+  .ml-card {
+    min-height: 0;
+  }
+
+  .member-dashboard-header {
+    border-radius: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .directory-card {
+    transition: none;
+  }
+}

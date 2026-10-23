@@ -3,6 +3,9 @@ from app.domain.entities.organization import (
     ElderCareDirectoryEntry,
     Organization,
     OrganizationStatus,
+    OrganizationReviewEvent,
+    OrganizationTrackingRecord,
+    OrganizationMapEntry,
 )
 from app.infrastructure.database.connection import get_connection
 from app.infrastructure.repositories.audit_log_repository import (
@@ -28,6 +31,8 @@ class PostgresOrganizationRepository:
                         submitted_by,
                         description,
                         location,
+                        latitude,
+                        longitude,
                         contact,
                         created_at,
                         updated_at,
@@ -48,6 +53,8 @@ class PostgresOrganizationRepository:
                         %s,
                         %s,
                         %s,
+                        %s,
+                        %s,
                         %s
                     )
                     """,
@@ -59,6 +66,8 @@ class PostgresOrganizationRepository:
                         organization.submitted_by,
                         organization.description,
                         organization.location,
+                        organization.latitude,
+                        organization.longitude,
                         organization.contact,
                         organization.submitted_at,
                         organization.updated_at,
@@ -214,7 +223,10 @@ class PostgresOrganizationRepository:
                     status.name,
                     o.created_at,
                     o.updated_at,
-                    latest_review.notes
+                    latest_review.notes,
+                    o.description,
+                    o.location,
+                    o.contact
                 FROM organizations o
                 JOIN verification_statuses status
                     ON status.id = o.status_id
@@ -248,6 +260,93 @@ class PostgresOrganizationRepository:
             for row in rows
             if row is not None
         ]
+
+    def get_tracking_records(self) -> list[OrganizationTrackingRecord]:
+        with get_connection() as connection:
+            rows = connection.execute(
+                """
+                SELECT
+                    o.id,
+                    o.name,
+                    o.organization_type,
+                    o.location,
+                    o.latitude,
+                    o.longitude,
+                    current_status.name,
+                    o.created_at,
+                    o.updated_at,
+                    review_status.name,
+                    COALESCE(reviewer.full_name, reviewer.email),
+                    review.notes,
+                    review.reviewed_at
+                FROM organizations o
+                JOIN verification_statuses current_status
+                    ON current_status.id = o.status_id
+                LEFT JOIN verification_reviews review
+                    ON review.organization_id = o.id
+                LEFT JOIN verification_statuses review_status
+                    ON review_status.id = review.status_id
+                LEFT JOIN users reviewer
+                    ON reviewer.id = review.reviewer_id
+                ORDER BY o.updated_at DESC, o.name ASC,
+                    review.reviewed_at DESC NULLS LAST, review.id DESC
+                """
+            ).fetchall()
+
+        records: dict[str, dict] = {}
+        for row in rows:
+            record = records.setdefault(row[0], {
+                "organization_id": row[0],
+                "organization_name": row[1],
+                "organization_type": row[2],
+                "location": row[3],
+                "latitude": row[4],
+                "longitude": row[5],
+                "status": OrganizationStatus(row[6]),
+                "submitted_at": row[7],
+                "updated_at": row[8],
+                "review_history": [],
+            })
+            if row[12] is not None and row[9] is not None:
+                record["review_history"].append(OrganizationReviewEvent(
+                    status=OrganizationStatus(row[9]),
+                    reviewer_name=row[10],
+                    notes=row[11],
+                    reviewed_at=row[12],
+                ))
+
+        return [OrganizationTrackingRecord(**record) for record in records.values()]
+
+    def get_public_map_entries(self) -> list[OrganizationMapEntry]:
+        with get_connection() as connection:
+            rows = connection.execute(
+                """
+                SELECT o.id, o.name, o.organization_type, o.location, o.latitude, o.longitude
+                FROM organizations o
+                JOIN verification_statuses status ON status.id = o.status_id
+                JOIN LATERAL (
+                    SELECT od.expires_at
+                    FROM organization_documents od
+                    WHERE od.organization_id = o.id
+                      AND od.document_type = 'license'
+                    ORDER BY od.created_at DESC, od.id DESC
+                    LIMIT 1
+                ) license ON TRUE
+                WHERE status.name = %s
+                  AND license.expires_at >= CURRENT_DATE
+                ORDER BY o.name ASC
+                """,
+                (OrganizationStatus.VERIFIED.value,),
+            ).fetchall()
+
+        return [OrganizationMapEntry(
+            organization_id=row[0],
+            organization_name=row[1],
+            organization_type=row[2],
+            location=row[3],
+            latitude=row[4],
+            longitude=row[5],
+        ) for row in rows]
 
     def approve(
         self,
@@ -459,13 +558,13 @@ class PostgresOrganizationRepository:
                   AND status.name = %s
                   AND license.expires_at >= CURRENT_DATE
                   AND (
-                      %s IS NULL
+                      %s::text IS NULL
                       OR o.name ILIKE %s
                       OR COALESCE(o.location, '') ILIKE %s
                       OR COALESCE(o.description, '') ILIKE %s
                   )
                   AND (
-                      %s IS NULL
+                      %s::text IS NULL
                       OR COALESCE(o.location, '') ILIKE %s
                   )
                 ORDER BY o.name ASC
@@ -552,7 +651,7 @@ class PostgresOrganizationRepository:
                   AND status.name = %s
                   AND license.expires_at >= CURRENT_DATE
                   AND (
-                      %s IS NULL
+                      %s::text IS NULL
                       OR o.name ILIKE %s
                       OR COALESCE(o.location, '') ILIKE %s
                       OR COALESCE(o.description, '') ILIKE %s
@@ -563,19 +662,19 @@ class PostgresOrganizationRepository:
                       OR COALESCE(o.fees, '') ILIKE %s
                   )
                   AND (
-                      %s IS NULL
+                      %s::text IS NULL
                       OR COALESCE(o.location, '') ILIKE %s
                   )
                   AND (
-                      %s IS NULL
+                      %s::integer IS NULL
                       OR o.capacity >= %s
                   )
                   AND (
-                      %s IS NULL
+                      %s::integer IS NULL
                       OR o.capacity <= %s
                   )
                   AND (
-                      %s IS NULL
+                      %s::text IS NULL
                       OR COALESCE(o.facilities, '') ILIKE %s
                   )
                 ORDER BY o.name ASC

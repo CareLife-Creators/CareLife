@@ -50,19 +50,20 @@ export function isStaff(role) {
 
 export function canAccessRoute(route, role) {
   const key = String(role || '').toLowerCase()
-  if (['#organization-approval', '#admin-role-requests', '#admin-operations'].includes(route)) return isAdmin(key)
+  if (['#organization-approval', '#admin-role-requests', '#admin-operations', '#admin-users'].includes(route)) return isAdmin(key)
   if (route === '#verification') return isStaff(key) || isAdmin(key)
   if (route === '#organization-workspace') return isStaff(key)
   if (route === '#caregiver-workspace') return key === ROLE.INDEPENDENT_CAREGIVER || isAdmin(key)
   if (route === '#my-children') return [ROLE.PARENT_GUARDIAN, ROLE.DAYCARE_STAFF, ROLE.ADMIN].includes(key)
-  if (route === '#family-checkins') return [ROLE.FAMILY_REPRESENTATIVE, ROLE.ADMIN].includes(key)
+  if (route === '#family-checkins') return [ROLE.FAMILY_REPRESENTATIVE, ROLE.PARENT_GUARDIAN, ROLE.ADMIN].includes(key)
   return true
 }
 
 const PRIVATE_ROUTES = new Set([
   '#dashboard', '#my-children', '#care-bookings', '#caregiver-workspace',
-  '#account', '#organization-workspace', '#admin-operations',
+  '#account', '#notifications', '#messages', '#organization-workspace', '#admin-operations', '#admin-users',
   '#organization-approval', '#verification', '#staff-access', '#admin-role-requests', '#family-checkins',
+  '#daycare-directory', '#elderly-care-directory', '#caregivers', '#organization-profile', '#orphanage-support',
 ])
 
 export function isProtectedRoute(route) {
@@ -74,6 +75,7 @@ export function memberLinks(role) {
   const links = [{ href: '#dashboard', label: 'Workspace' }]
 
   if (key === ROLE.PARENT_GUARDIAN) {
+    links[0] = { href: '#dashboard', label: 'Find care' }
     links.push(
       { href: '#my-children', label: 'My children' },
       { href: '#care-bookings', label: 'Care bookings' },
@@ -83,7 +85,7 @@ export function memberLinks(role) {
     links.push({ href: '#orphanage-support', label: 'Support board' })
   } else if (key === ROLE.INDEPENDENT_CAREGIVER) {
     links.push(
-      { href: '#caregiver-workspace', label: 'Caregiver workspace' },
+      { href: '#caregiver-workspace', label: 'My care practice' },
       { href: '#care-bookings', label: 'Appointments' },
     )
   } else if (key === ROLE.FAMILY_REPRESENTATIVE) {
@@ -113,6 +115,7 @@ export function memberLinks(role) {
     links.push({ href: '#staff-access', label: 'Request staff access' })
   }
 
-  links.push({ href: '#account', label: 'Account & inbox' })
+  if (!isStaff(key) && !isAdmin(key)) links.push({ href: '#for-organizations', label: 'For organizations' })
+
   return links
 }

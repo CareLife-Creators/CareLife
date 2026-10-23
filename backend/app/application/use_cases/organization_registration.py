@@ -35,6 +35,8 @@ class OrganizationRegistrationService:
             organization_type=request.organization_type,
             description=request.description,
             location=request.location,
+            latitude=request.latitude,
+            longitude=request.longitude,
             contact=request.contact,
             license_number=request.license_number,
             license_expiry_date=request.license_expiry_date,

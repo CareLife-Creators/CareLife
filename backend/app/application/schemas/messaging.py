@@ -33,6 +33,8 @@ class ConversationResponse(BaseModel):
     participant_two_id: str
     created_at: datetime
     last_message_at: datetime | None = None
+    other_user_name: str | None = None
+    other_user_role: str | None = None
 
 
 class MessageCreateRequest(BaseModel):

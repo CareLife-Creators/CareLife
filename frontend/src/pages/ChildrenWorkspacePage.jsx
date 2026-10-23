@@ -9,6 +9,7 @@ import {
   addChildDailyUpdate, checkInEnrollment,
 } from '../api/workspace'
 import './Workspace.css'
+import './FamilyActivityFeed.css'
 
 const dateTimeLabel = (value) => {
   const date = new Date(value)
@@ -236,15 +237,38 @@ export default function ChildrenWorkspacePage() {
 
   const selectedChild = children.find((item) => item.id === selectedChildId)
   const staffCanRecord = role === 'daycare_staff'
+  const familyView = role === 'parent_guardian'
+  const scrollToSection = (id) => {
+    const section = document.getElementById(id)
+    if (!section) return
+    section.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })
+    section.focus({ preventScroll: true })
+  }
+  const openChildDetails = (childId) => {
+    setSelectedChildId(childId)
+    window.requestAnimationFrame(() => scrollToSection('child-care-details'))
+  }
+
+  const familyActivity = [
+    ...attendance.map((item) => ({
+      id: `attendance-${item.id}`, attendanceId: item.id, needsCheckout: !item.check_out_at, kind: 'Attendance', at: item.check_in_at || item.attendance_date,
+      title: 'Daycare arrival', note: `Checked in ${dateTimeLabel(item.check_in_at)}${item.check_out_at ? ` · checked out ${dateTimeLabel(item.check_out_at)}` : ' · checkout not recorded yet'}`,
+    })),
+    ...dailyUpdates.map((item) => ({
+      id: `update-${item.id}`, kind: 'Daily update', at: item.update_date,
+      title: 'Care team update', note: item.notes || 'A daily update was shared by the care team.',
+    })),
+  ].sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0))
 
   return (
     <>
       <SiteNav />
-      <main className="cw-page">
-        <header className="cw-hero">
-          <span className="cw-kicker">DAYCARE · CHILD SAFETY</span>
-          <h1>Every child, with the right people around them.</h1>
-          <p>Keep child details private, send enrollment requests to a daycare, and maintain the emergency contacts and pickup permissions that staff need.</p>
+      <main className={'cw-page ' + (familyView ? 'cw-family-children-page' : '')}>
+        <header className={'cw-hero ' + (familyView ? 'cw-family-child-hero' : '')}>
+          <span className="cw-kicker">{familyView ? 'YOUR CHILD’S CARE' : 'DAYCARE · CHILD SAFETY'}</span>
+          <h1>{familyView ? 'Your child’s care, all in one place.' : 'Every child, with the right people around them.'}</h1>
+          <p>{familyView ? 'Create a child profile, find a daycare, and keep enrollment, attendance, and safety contacts together.' : 'Keep child details private, send enrollment requests to a daycare, and maintain the emergency contacts and pickup permissions that staff need.'}</p>
+          {familyView && <div className="cw-carebooking-shortcuts"><a href="#daycare-directory">Find daycares <span aria-hidden="true">→</span></a><a href="#messages">Messages <span aria-hidden="true">→</span></a></div>}
           <div className="cw-hero-meta"><span>{children.length} child profiles</span><span>{enrollments.length} enrollment records</span><span>Private to authorized accounts</span></div>
         </header>
         {error && <div className="cw-alert error" role="alert">{error}</div>}
@@ -252,10 +276,10 @@ export default function ChildrenWorkspacePage() {
         {loading ? <div className="cw-state">Loading child and enrollment records…</div> : <>
           <section className="cw-panel">
             <div className="cw-panel-heading"><div><p className="cw-kicker">CHILD PROFILES</p><h2>Children in your care</h2></div><button type="button" className="cw-button" onClick={() => setRefreshKey((value) => value + 1)}>Refresh</button></div>
-            {!children.length ? <div className="cw-empty"><strong>No child profiles available yet.</strong><p>Create a profile for a child you are authorized to manage. Child details are not shown in public directories.</p></div> :
-              <div className="cw-child-grid">{children.map((child) => <button type="button" key={child.id} className={'cw-child-card ' + (selectedChildId === child.id ? 'selected' : '')} onClick={() => setSelectedChildId(child.id)}><span className="cw-child-avatar" aria-hidden="true">{(child.full_name || '?').trim().charAt(0).toUpperCase()}</span><span><strong>{child.full_name}</strong><small>Born {dateLabel(child.date_of_birth)}</small><small>{child.gender || 'Gender not specified'}</small></span><span className="cw-child-arrow">→</span></button>)}</div>}
+            {!children.length ? <div className="cw-empty"><strong>No child profiles yet.</strong><p>Add your child’s details to manage daycare enrollment, attendance, emergency contacts, and pickup permissions in one place.</p><div className="cw-carebooking-empty-links"><button type="button" onClick={() => scrollToSection('add-child-profile')} className="cw-button primary">Add child details <span aria-hidden="true">↓</span></button><a href="#daycare-directory" className="cw-button">Find a daycare</a></div></div> :
+              <div className="cw-child-grid">{children.map((child) => <button type="button" key={child.id} aria-pressed={selectedChildId === child.id} className={'cw-child-card ' + (selectedChildId === child.id ? 'selected' : '')} onClick={() => openChildDetails(child.id)}><span className="cw-child-avatar" aria-hidden="true">{(child.full_name || '?').trim().charAt(0).toUpperCase()}</span><span><strong>{child.full_name}</strong><small>Born {dateLabel(child.date_of_birth)}</small><small>{child.gender || 'Gender not specified'}</small><small className="cw-child-open-label">View care details</small></span><span className="cw-child-arrow" aria-hidden="true">→</span></button>)}</div>}
           </section>
-          <section className="cw-panel">
+          <section className="cw-panel cw-family-child-form" id="add-child-profile" tabIndex="-1">
             <div className="cw-panel-heading"><div><p className="cw-kicker">ADD A PROFILE</p><h2>Register a child</h2></div></div>
             <form className="cw-form" onSubmit={submitChild}>
               <label>Child’s full name<input value={childForm.full_name} onChange={(event) => setChildForm((s) => ({ ...s, full_name: event.target.value }))} minLength={2} maxLength={200} required /></label>
@@ -268,7 +292,7 @@ export default function ChildrenWorkspacePage() {
           </section>
           <section className="cw-panel">
             <div className="cw-panel-heading"><div><p className="cw-kicker">DAYCARE APPLICATION</p><h2>Request enrollment</h2></div><span className="cw-status">{daycares.length} daycares listed</span></div>
-            {!daycares.length ? <div className="cw-empty"><strong>No daycare listings returned.</strong><p>The enrollment form needs a daycare from the verified public directory. Open the daycare directory again when an organization is published.</p><a className="cw-button" href="#daycare-directory">Open daycare directory</a></div> :
+            {!daycares.length ? <div className="cw-empty"><strong>No daycare centers are listed right now.</strong><p>You can still search by name or area in the daycare directory. Enrollment options appear when a center publishes its listing.</p><a className="cw-button" href="#daycare-directory">Search daycare centers</a></div> :
               <form className="cw-form" onSubmit={submitEnrollment}>
                 <label>Child<select value={enrollmentForm.child_id} onChange={(event) => setEnrollmentForm((s) => ({ ...s, child_id: event.target.value }))} required><option value="">Choose a child</option>{children.map((child) => <option value={child.id} key={child.id}>{child.full_name}</option>)}</select></label>
                 <label>Daycare center<select value={enrollmentForm.daycare_organization_id} onChange={(event) => setEnrollmentForm((s) => ({ ...s, daycare_organization_id: event.target.value }))} required><option value="">Choose a daycare</option>{daycares.map((daycare) => <option value={daycare.organization_id} key={daycare.organization_id}>{daycare.organization_name}{daycare.location ? ' — ' + daycare.location : ''}</option>)}</select></label>
@@ -280,7 +304,7 @@ export default function ChildrenWorkspacePage() {
               {pendingEnrollments.length > 0 && staffCanRecord && <div className="cw-staff-alert"><strong>Daycare review queue</strong><span>{pendingEnrollments.length} enrollment requests are waiting for a decision.</span>{pendingEnrollments.map((item) => <article className="cw-mini-record" key={item.id}><strong>{children.find((child) => child.id === item.child_id)?.full_name || 'Enrollment request'}</strong><span>Daycare {item.daycare_organization_id} · Requested {dateLabel(item.requested_at)}</span><small>Request ID: {item.id}</small><div className="cw-record-actions"><button type="button" className="cw-button primary" disabled={busy === item.id} onClick={() => void decideEnrollment(item.id, 'approved')}>Approve</button><button type="button" className="cw-button danger" disabled={busy === item.id} onClick={() => void decideEnrollment(item.id, 'rejected')}>Reject</button><button type="button" className="cw-button" disabled={busy === item.id} onClick={() => void decideEnrollment(item.id, 'waitlisted')}>Waitlist</button></div></article>)}</div>}
             </div>
           </section>
-          {selectedChild && <section className="cw-panel">
+          {selectedChild && <section className="cw-panel cw-family-child-details" id="child-care-details" tabIndex="-1" aria-live="polite">
             <div className="cw-panel-heading"><div><p className="cw-kicker">SELECTED CHILD</p><h2>{selectedChild.full_name}</h2></div><span className="cw-status">Born {dateLabel(selectedChild.date_of_birth)}</span></div>
             <div className="cw-detail-grid">
               <section className="cw-subpanel"><h3>Emergency contacts</h3>{emergencyContacts.map((item) => <article className="cw-mini-record" key={item.id}><strong>{item.full_name}</strong><span>{item.relationship_to_child} · {item.phone}</span><small>{item.email || 'No email provided'}</small></article>)}{!emergencyContacts.length && <p className="cw-muted">No emergency contacts recorded.</p>}</section>
@@ -295,7 +319,8 @@ export default function ChildrenWorkspacePage() {
               <label>Address (optional)<input value={contactForm.address} onChange={(event) => setContactForm((s) => ({ ...s, address: event.target.value }))} maxLength={500} /></label>
               <div className="cw-form-actions"><button className="cw-button primary" disabled={busy === 'contact'}>{busy === 'contact' ? 'Saving…' : contactType === 'emergency' ? 'Add emergency contact' : 'Add pickup person'}</button></div>
             </form>
-            <div className="cw-detail-grid cw-spaced">
+            <section className="cw-subpanel cw-family-activity-feed cw-spaced"><div className="cw-family-feed-heading"><div><p className="cw-kicker">YOUR FAMILY FEED</p><h3>Updates from the care team</h3></div><span>{familyActivity.length} updates</span></div>{detailLoading ? <p>Loading the latest activity…</p> : familyActivity.map((event) => <article className="cw-family-feed-item" key={event.id}><span className="cw-family-feed-mark" aria-hidden="true">{event.kind === 'Attendance' ? '↗' : '•'}</span><div><div className="cw-family-feed-meta"><span>{event.kind}</span><time>{dateLabel(event.at)}</time></div><strong>{event.title}</strong><p>{event.note}</p>{staffCanRecord && event.needsCheckout && <button type="button" className="cw-button" disabled={busy === 'checkout:' + event.attendanceId} onClick={() => void handleCheckOut(event.attendanceId)}>{busy === 'checkout:' + event.attendanceId ? 'Recording…' : 'Check out'}</button>}</div></article>)}{!detailLoading && !familyActivity.length && <p className="cw-muted">Attendance and daily notes will appear here as the care team records updates.</p>}</section>
+            <div className="cw-detail-grid cw-spaced cw-family-activity-legacy">
               <section className="cw-subpanel"><h3>Attendance history</h3>{detailLoading ? <p>Loading attendance…</p> : attendance.map((item) => <article className="cw-mini-record" key={item.id}><strong>{dateLabel(item.attendance_date)}</strong><span>Checked in {dateTimeLabel(item.check_in_at)}{item.check_out_at ? ' · checked out ' + dateTimeLabel(item.check_out_at) : ' · not checked out'}</span>{staffCanRecord && !item.check_out_at && <button type="button" className="cw-button" disabled={busy === 'checkout:' + item.id} onClick={() => void handleCheckOut(item.id)}>{busy === 'checkout:' + item.id ? 'Recording…' : 'Check out'}</button>}</article>)}{!detailLoading && !attendance.length && <p className="cw-muted">No attendance records available for this child.</p>}</section>
               <section className="cw-subpanel"><h3>Daily updates</h3>{detailLoading ? <p>Loading daily notes…</p> : dailyUpdates.map((item) => <article className="cw-mini-record" key={item.id}><strong>{dateLabel(item.update_date)}</strong><span>{item.notes}</span></article>)}{!detailLoading && !dailyUpdates.length && <p className="cw-muted">No daily updates have been recorded.</p>}</section>
             </div>

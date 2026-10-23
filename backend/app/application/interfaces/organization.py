@@ -4,6 +4,8 @@ from app.domain.entities.organization import (
     DaycareDirectoryEntry,
     ElderCareDirectoryEntry,
     Organization,
+    OrganizationTrackingRecord,
+    OrganizationMapEntry,
 )
 
 
@@ -24,6 +26,12 @@ class OrganizationRepository(Protocol):
     def get_pending(
         self,
     ) -> list[Organization]:
+        ...
+
+    def get_tracking_records(self) -> list[OrganizationTrackingRecord]:
+        ...
+
+    def get_public_map_entries(self) -> list[OrganizationMapEntry]:
         ...
 
     def approve(

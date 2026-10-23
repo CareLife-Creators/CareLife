@@ -58,6 +58,9 @@ class OrganizationModel(Base):
         nullable=True,
     )
 
+    latitude: Mapped[float | None] = mapped_column(nullable=True)
+    longitude: Mapped[float | None] = mapped_column(nullable=True)
+
     contact: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,

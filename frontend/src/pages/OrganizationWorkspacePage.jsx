@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import SiteNav from '../components/SiteNav'
+import OrganizationSatelliteMap from '../components/OrganizationSatelliteMap'
 import { useSession } from '../lib/session'
+import { publicOrganizationDescription, publicOrganizationName, publicOrganizationValue } from '../lib/publicDisplay'
 import {
   registerOrganization, getOrganizationProfile, updateOrganizationProfile,
   getOrganizationCampaigns, createOrganizationCampaign, getOrganizationNeeds,
@@ -27,13 +29,15 @@ function roleOrganizationType(role) {
 
 export default function OrganizationWorkspacePage() {
   const { role } = useSession()
+  const organizationStorageKey = `${ORG_KEY}:${role || 'staff'}`
   const [tab, setTab] = useState('profile')
   const [organizationId, setOrganizationId] = useState(() => {
-    try { return localStorage.getItem(ORG_KEY) || '' } catch { return '' }
+    try { return localStorage.getItem(`${ORG_KEY}:${role || 'staff'}`) || '' } catch { return '' }
   })
   const [registration, setRegistration] = useState({
     organization_name: '', organization_type: roleOrganizationType(role), description: '',
     location: '', contact: '', license_number: '', license_expiry_date: '',
+    latitude: '', longitude: '',
   })
   const [profile, setProfile] = useState(null)
   const [profileForm, setProfileForm] = useState({})
@@ -64,16 +68,19 @@ export default function OrganizationWorkspacePage() {
 
   useEffect(() => {
     setRegistration((current) => ({ ...current, organization_type: roleOrganizationType(role) }))
+    try { setOrganizationId(localStorage.getItem(`${ORG_KEY}:${role || 'staff'}`) || '') }
+    catch { setOrganizationId('') }
+    setTab('profile')
   }, [role])
 
   async function loadOrganization() {
     if (!organizationId.trim()) {
-      setProfile(null); setCampaigns([]); setNeeds([]); setUpdates([]); setResidents([]); setPledges([]); setLoading(false)
+      setProfile(null); setCampaigns([]); setNeeds([]); setUpdates([]); setResidents([]); setPledges([]); setOrphanageChildren([]); setOutcomes([]); setLoading(false)
       return
     }
     setLoading(true)
     setError('')
-    try { localStorage.setItem(ORG_KEY, organizationId.trim()) } catch { /* Keep the typed ID usable for this session. */ }
+    try { localStorage.setItem(organizationStorageKey, organizationId.trim()) } catch { /* Keep the typed ID usable for this session. */ }
     const results = await Promise.allSettled([
       getOrganizationProfile(organizationId.trim()),
       role === 'orphanage_staff' ? getOrganizationCampaigns(organizationId.trim()) : Promise.resolve([]),
@@ -86,15 +93,16 @@ export default function OrganizationWorkspacePage() {
     if (results[0].status === 'fulfilled') {
       setProfile(results[0].value)
       setProfileForm({
-        organization_name: results[0].value.organization_name || '',
-        description: results[0].value.description || '',
+        organization_name: publicOrganizationName(results[0].value.organization_name),
+        description: publicOrganizationDescription(results[0].value.description, results[0].value.organization_type),
         location: results[0].value.location || '',
+        latitude: results[0].value.latitude ?? '', longitude: results[0].value.longitude ?? '',
         contact: results[0].value.contact || '',
         capacity: results[0].value.capacity ?? 0,
         age_range: results[0].value.age_range || '',
         opening_hours: results[0].value.opening_hours || '',
-        facilities: results[0].value.facilities || '',
-        fees: results[0].value.fees || '',
+        facilities: publicOrganizationValue(results[0].value.facilities, ''),
+        fees: publicOrganizationValue(results[0].value.fees, ''),
       })
     } else setError(results[0].reason instanceof Error ? results[0].reason.message : 'The organization profile could not be loaded.')
     if (results[1].status === 'fulfilled') setCampaigns(Array.isArray(results[1].value) ? results[1].value : [])
@@ -114,7 +122,7 @@ export default function OrganizationWorkspacePage() {
     setLoading(false)
   }
 
-  useEffect(() => { void loadOrganization() }, [refreshKey])
+  useEffect(() => { void loadOrganization() }, [refreshKey, role, organizationId])
 
   useEffect(() => {
     if (!selectedResidentId) { setCheckIns([]); return }
@@ -206,11 +214,11 @@ export default function OrganizationWorkspacePage() {
     event.preventDefault()
     setBusy('registration'); setError(''); setNotice('')
     try {
-      const result = await registerOrganization({ ...registration, organization_name: registration.organization_name.trim(), license_expiry_date: registration.license_expiry_date })
+      const result = await registerOrganization({ ...registration, organization_name: registration.organization_name.trim(), license_expiry_date: registration.license_expiry_date, latitude: registration.latitude === '' ? null : Number(registration.latitude), longitude: registration.longitude === '' ? null : Number(registration.longitude) })
       const id = result.organization_id || result.id || ''
       if (id) {
         setOrganizationId(id)
-        try { localStorage.setItem(ORG_KEY, id) } catch { /* The displayed ID remains available. */ }
+        try { localStorage.setItem(organizationStorageKey, id) } catch { /* The displayed ID remains available. */ }
       }
       setNotice(id ? 'Registration submitted. Organization ID saved for this workspace.' : 'Registration submitted. Copy the organization ID from the response if one was returned.')
       setRefreshKey((value) => value + 1)
@@ -224,6 +232,8 @@ export default function OrganizationWorkspacePage() {
     setBusy('profile'); setError(''); setNotice('')
     const body = {}
     for (const field of ['organization_name', 'description', 'location', 'contact', 'age_range', 'opening_hours', 'facilities', 'fees']) body[field] = String(profileForm[field] || '').trim() || null
+    body.latitude = profileForm.latitude === '' ? null : Number(profileForm.latitude)
+    body.longitude = profileForm.longitude === '' ? null : Number(profileForm.longitude)
     body.capacity = Number(profileForm.capacity)
     try {
       const result = await updateOrganizationProfile(organizationId.trim(), body)
@@ -303,8 +313,15 @@ export default function OrganizationWorkspacePage() {
   const isOrphanage = role === 'orphanage_staff'
   const isCareHome = role === 'care_home_staff'
   const isDaycare = role === 'daycare_staff'
+  const workspaceTitle = isDaycare ? 'Daycare operations' : isOrphanage ? 'Children’s home operations' : 'Care-home operations'
+  const workspaceDescription = isDaycare
+    ? 'Manage your daycare’s public information, enrollment requests, attendance, daily updates and pickup permissions.'
+    : isOrphanage
+      ? 'Manage children’s home information, private child records, fundraising, item pledges and published impact updates.'
+      : 'Manage your care home’s public information, resident records, family consent and wellbeing check-ins.'
   const tabs = [
     ['profile', 'Organization profile'],
+    ...(isDaycare ? [['children', 'Children & attendance']] : []),
     ...(isCareHome ? [['residents', 'Residents & check-ins']] : []),
     ...(isOrphanage ? [['children', 'Children & outcomes'], ['support', 'Campaigns & impact'], ['pledges', 'Item pledges']] : []),
   ]
@@ -314,10 +331,10 @@ export default function OrganizationWorkspacePage() {
       <SiteNav />
       <main className="cw-page">
         <header className="cw-hero">
-          <span className="cw-kicker">ORGANIZATION WORKSPACE</span>
-          <h1>Keep your organization information current.</h1>
-          <p>Register the organization, edit its public profile, and use the tools available to your staff role. Private resident records and family check-ins remain within the care-home workflow.</p>
-          <div className="cw-hero-meta"><span>{role ? role.replaceAll('_', ' ') : 'Staff'}</span><span>{organizationId ? 'Organization ID saved' : 'Organization not selected'}</span></div>
+          <span className="cw-kicker">{workspaceTitle.toUpperCase()}</span>
+          <h1>{workspaceTitle}</h1>
+          <p>{workspaceDescription}</p>
+          <div className="cw-hero-meta"><span>{organizationId ? 'Organization connected' : 'Setup required'}</span><span>{role ? role.replaceAll('_', ' ') : 'Staff'}</span></div>
         </header>
         {!organizationId && <section className="cw-panel">
           <div className="cw-panel-heading"><div><p className="cw-kicker">REGISTER AN ORGANIZATION</p><h2>Submit organization details</h2></div></div>
@@ -326,6 +343,9 @@ export default function OrganizationWorkspacePage() {
             <label>Organization name<input value={registration.organization_name} maxLength={200} onChange={(event) => setRegistration((s) => ({ ...s, organization_name: event.target.value }))} required /></label>
             <label>Organization type<input value={registration.organization_type.replaceAll('_', ' ')} disabled /></label>
             <label>Location<input value={registration.location} maxLength={255} onChange={(event) => setRegistration((s) => ({ ...s, location: event.target.value }))} /></label>
+            <label>Map latitude<input type="number" step="any" min="20.5" max="26.8" placeholder="e.g. 23.8103" value={registration.latitude} onChange={(event) => setRegistration((s) => ({ ...s, latitude: event.target.value }))} /></label>
+            <label>Map longitude<input type="number" step="any" min="88" max="92.8" placeholder="e.g. 90.4125" value={registration.longitude} onChange={(event) => setRegistration((s) => ({ ...s, longitude: event.target.value }))} /></label>
+            <div className="cw-full-field"><strong>Pin your organization on the satellite map</strong><span className="cw-help">Zoom in and click the exact entrance or building location. Your address remains visible in directory listings.</span><OrganizationSatelliteMap value={{ latitude: registration.latitude || null, longitude: registration.longitude || null }} onPick={({ latitude, longitude }) => setRegistration((s) => ({ ...s, latitude: String(latitude), longitude: String(longitude) }))} />{registration.latitude && <small>Selected coordinates: {Number(registration.latitude).toFixed(6)}, {Number(registration.longitude).toFixed(6)}</small>}</div>
             <label>Contact details<input value={registration.contact} maxLength={100} onChange={(event) => setRegistration((s) => ({ ...s, contact: event.target.value }))} /></label>
             <label>License number<input value={registration.license_number} maxLength={100} onChange={(event) => setRegistration((s) => ({ ...s, license_number: event.target.value }))} required /></label>
             <label>License expiry date<input type="date" min={new Date().toISOString().slice(0, 10)} value={registration.license_expiry_date} onChange={(event) => setRegistration((s) => ({ ...s, license_expiry_date: event.target.value }))} required /></label>
@@ -335,10 +355,10 @@ export default function OrganizationWorkspacePage() {
         </section>}
         <section className="cw-panel">
           <div className="cw-panel-heading"><div><p className="cw-kicker">WORKSPACE TARGET</p><h2>{organizationId ? 'Load your organization' : 'Have an existing organization ID?'}</h2></div></div>
-          <form className="cw-inline-form" onSubmit={(event) => { event.preventDefault(); try { localStorage.setItem(ORG_KEY, organizationId.trim()) } catch { /* Use current field value. */ } setRefreshKey((value) => value + 1) }}>
+          <form className="cw-inline-form" onSubmit={(event) => { event.preventDefault(); try { localStorage.setItem(organizationStorageKey, organizationId.trim()) } catch { /* Use current field value. */ } setRefreshKey((value) => value + 1) }}>
             <label>Organization ID<input value={organizationId} onChange={(event) => setOrganizationId(event.target.value)} placeholder="Enter the organization ID returned at registration" required /></label>
             <button className="cw-button primary" disabled={loading}>{loading ? 'Loading…' : 'Load organization'}</button>
-            {organizationId && <button type="button" className="cw-button" onClick={() => { setOrganizationId(''); setProfile(null); setCampaigns([]); setNeeds([]); setUpdates([]); setResidents([]); try { localStorage.removeItem(ORG_KEY) } catch { /* Ignore blocked storage. */ } }}>Clear ID</button>}
+            {organizationId && <button type="button" className="cw-button" onClick={() => { setOrganizationId(''); setProfile(null); setCampaigns([]); setNeeds([]); setUpdates([]); setResidents([]); setOrphanageChildren([]); setOutcomes([]); try { localStorage.removeItem(organizationStorageKey) } catch { /* Ignore blocked storage. */ } }}>Clear ID</button>}
           </form>
         </section>
         {error && <div className="cw-alert error" role="alert">{error}</div>}
@@ -349,6 +369,9 @@ export default function OrganizationWorkspacePage() {
           <form className="cw-form" onSubmit={submitProfile}>
             <label>Organization name<input value={profileForm.organization_name || ''} maxLength={200} onChange={(event) => setProfileForm((s) => ({ ...s, organization_name: event.target.value }))} required /></label>
             <label>Location<input value={profileForm.location || ''} maxLength={255} onChange={(event) => setProfileForm((s) => ({ ...s, location: event.target.value }))} /></label>
+            <label>Map latitude<input type="number" step="any" min="20.5" max="26.8" placeholder="e.g. 23.8103" value={profileForm.latitude ?? ''} onChange={(event) => setProfileForm((s) => ({ ...s, latitude: event.target.value }))} /></label>
+            <label>Map longitude<input type="number" step="any" min="88" max="92.8" placeholder="e.g. 90.4125" value={profileForm.longitude ?? ''} onChange={(event) => setProfileForm((s) => ({ ...s, longitude: event.target.value }))} /></label>
+            <div className="cw-full-field"><strong>Confirm the exact map location</strong><span className="cw-help">Zoom in and click the building or entrance. These coordinates are shared on public listings only after verification.</span><OrganizationSatelliteMap value={{ latitude: profileForm.latitude || null, longitude: profileForm.longitude || null }} onPick={({ latitude, longitude }) => setProfileForm((s) => ({ ...s, latitude: String(latitude), longitude: String(longitude) }))} />{profileForm.latitude && <small>Selected coordinates: {Number(profileForm.latitude).toFixed(6)}, {Number(profileForm.longitude).toFixed(6)}</small>}</div>
             <label>Public contact<input value={profileForm.contact || ''} maxLength={100} onChange={(event) => setProfileForm((s) => ({ ...s, contact: event.target.value }))} /></label>
             <label>Capacity<input type="number" min="0" value={profileForm.capacity ?? 0} onChange={(event) => setProfileForm((s) => ({ ...s, capacity: event.target.value }))} required /></label>
             <label>Age range<input value={profileForm.age_range || ''} maxLength={100} onChange={(event) => setProfileForm((s) => ({ ...s, age_range: event.target.value }))} /></label>
@@ -360,6 +383,11 @@ export default function OrganizationWorkspacePage() {
           </form>
         </section>}
         {organizationId && !loading && !profile && <div className="cw-alert error" role="status">No editable organization profile was returned for this ID. Confirm the ID and that your staff role has access to it.</div>}
+        {organizationId && !loading && isDaycare && tab === 'children' && <section className="cw-panel">
+          <div className="cw-panel-heading"><div><p className="cw-kicker">DAYCARE OPERATIONS</p><h2>Children, enrollment & attendance</h2></div></div>
+          <p className="cw-help">Review enrollment requests, manage attendance and daily updates, and maintain emergency contacts and authorized pickup permissions for children connected to your daycare.</p>
+          <a className="cw-button primary" href="#my-children">Open children & attendance <span aria-hidden="true">→</span></a>
+        </section>}
         {organizationId && !loading && isCareHome && tab === 'residents' && <section className="cw-panel">
           <div className="cw-panel-heading"><div><p className="cw-kicker">ELDER-CARE RESIDENTS</p><h2>Resident profiles & family check-ins</h2></div><span className="cw-status">{residents.length} profiles</span></div>
           <p className="cw-help">Use the organization ID for this care home. Create private resident records, record a named family representative’s consent, and then record wellbeing check-ins under the backend’s consent rules.</p>

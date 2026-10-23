@@ -479,6 +479,8 @@
     font-size: 0.88rem;
     line-height: 1.5;
 }
+.auth-staff-note a { color: #176b5b; font-weight: 750; text-underline-offset: 3px; }
+.auth-staff-note a:hover { color: #0c4f43; }
 
 
 /* ---------- Success panel (signup) ---------- */

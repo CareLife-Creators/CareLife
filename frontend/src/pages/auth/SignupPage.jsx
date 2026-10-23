@@ -207,8 +207,7 @@ function SignupPage({ onLogin }) {
                   </fieldset>
 
                   <p className="auth-staff-note">
-                    Work at a daycare, orphanage or care home? Create your account first, then
-                    request staff access after you sign in. A CareLife administrator reviews each request.
+                    Represent a daycare, children’s home or care home? <a href="#for-organizations">See how to register your organization</a> and get the right staff access.
                   </p>
 
                   <div className="form-field">

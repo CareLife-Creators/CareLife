@@ -228,7 +228,7 @@ class PostgresChildRepository(ChildRepository):
                     )
                     VALUES (
                         %s, %s, %s, %s, %s,
-                        %s, %s, %s, %s, %s
+                        %s, %s, %s, %s, %s, %s
                     )
                     """,
                     (
@@ -374,7 +374,7 @@ class PostgresChildRepository(ChildRepository):
                     )
                     VALUES (
                         %s, %s, %s, %s, %s,
-                        %s, %s, %s, %s, %s
+                        %s, %s, %s, %s, %s, %s
                     )
                     """,
                     (

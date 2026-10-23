@@ -1,4 +1,5 @@
-import { apiRequest } from './client'
+import { API_BASE_URL, apiRequest } from './client'
+import { getToken } from '../lib/session'
 
 const safe = (value) => encodeURIComponent(String(value ?? '').trim())
 const json = (method, body) => ({ method, body: JSON.stringify(body) })
@@ -36,7 +37,36 @@ export const checkOutAttendance = (attendanceId) => apiRequest('/daycare/attenda
 export const getMyCaregiverProfile = () => apiRequest('/caregivers/me/profile')
 export const createMyCaregiverProfile = (body) => apiRequest('/caregivers/me/profile', json('POST', body))
 export const updateMyCaregiverProfile = (body) => apiRequest('/caregivers/me/profile', json('PATCH', body))
-export const submitCaregiverDocument = (body) => apiRequest('/caregivers/me/profile/documents', json('POST', body))
+export const submitCaregiverDocument = ({ document_type, file }) => {
+  const body = new FormData()
+  body.append('document_type', document_type)
+  body.append('file', file)
+  return apiRequest('/caregivers/me/profile/documents', { method: 'POST', body })
+}
+export const uploadMyProfilePhoto = (file) => {
+  const body = new FormData()
+  body.append('file', file)
+  return apiRequest('/users/me/profile/photo', { method: 'PUT', body })
+}
+export const removeMyProfilePhoto = () => apiRequest('/users/me/profile/photo', { method: 'DELETE' })
+export async function downloadCaregiverDocument(caregiverId, documentId, fileName) {
+  const path = caregiverId
+    ? '/caregivers/' + safe(caregiverId) + '/documents/' + safe(documentId) + '/file'
+    : '/caregivers/me/profile/documents/' + safe(documentId) + '/file'
+  const response = await fetch(API_BASE_URL + path, {
+    headers: getToken() ? { Authorization: 'Bearer ' + getToken() } : {},
+    credentials: 'include',
+  })
+  if (!response.ok) throw new Error('The private document could not be downloaded (' + response.status + ').')
+  const url = URL.createObjectURL(await response.blob())
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName || 'caregiver-document'
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
 export const getMyAvailability = () => apiRequest('/caregivers/me/availability')
 export const createAvailability = (body) => apiRequest('/caregivers/me/availability', json('POST', body))
 export const getCaregiverAvailability = (id) => apiRequest('/caregivers/' + safe(id) + '/availability', { authenticated: false })
@@ -76,6 +106,9 @@ export const setResidentConsent = (organizationId, residentId, body) => apiReque
 export const getPendingCaregivers = () => apiRequest('/caregivers/verification/pending')
 export const reviewCaregiver = (id, status, message = '') => apiRequest('/caregivers/' + safe(id) + '/verification', json('POST', { status, message: message.trim() || null }))
 export const getAdminAuditLogs = (limit = 100) => apiRequest('/admin/audit-logs?limit=' + encodeURIComponent(limit))
+export const getAdminUsers = () => apiRequest('/admin/users')
+export const createAdminUser = (body) => apiRequest('/admin/users', json('POST', body))
+export const setAdminUserActive = (id, is_active) => apiRequest('/admin/users/' + safe(id) + '/status', json('PATCH', { is_active }))
 
 // bKash payment checkout and receipts
 export const startBkashPayment = (campaignId, amount) => apiRequest('/donation-campaigns/' + safe(campaignId) + '/bkash-payments', json('POST', { amount }))

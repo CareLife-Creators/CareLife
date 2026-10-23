@@ -1,26 +1,18 @@
 import { useEffect, useState } from 'react'
-import {
-  getDaycareDirectory,
-  getPublicDaycare,
-} from '../../api/daycareDirectory'
+import { getDaycareDirectory } from '../../api/daycareDirectory'
 import './DaycareDirectoryPage.css'
+import './DaycareDirectoryLinks.css'
 import SiteNav from '../../components/SiteNav'
+import { publicOrganizationDescription, publicOrganizationName } from '../../lib/publicDisplay'
 
 function DaycareDirectoryPage() {
   const [search, setSearch] = useState('')
   const [location, setLocation] = useState('')
 
   const [organizations, setOrganizations] = useState([])
-  const [selectedOrganization, setSelectedOrganization] =
-    useState(null)
-
   const [loading, setLoading] = useState(true)
-  const [detailsLoading, setDetailsLoading] =
-    useState(false)
 
   const [error, setError] = useState('')
-  const [detailsError, setDetailsError] =
-    useState('')
 
   async function loadDirectory(
     currentSearch = search,
@@ -28,8 +20,6 @@ function DaycareDirectoryPage() {
   ) {
     setLoading(true)
     setError('')
-    setDetailsError('')
-    setSelectedOrganization(null)
 
     try {
       const data = await getDaycareDirectory({
@@ -58,7 +48,6 @@ function DaycareDirectoryPage() {
         if (cancelled) return
         setOrganizations(Array.isArray(data) ? data : [])
         setError('')
-        setDetailsError('')
       })
       .catch((err) => {
         if (cancelled) return
@@ -70,31 +59,6 @@ function DaycareDirectoryPage() {
       })
     return () => { cancelled = true }
   }, [])
-
-  async function handleViewDetails(
-    organizationId
-  ) {
-    setDetailsLoading(true)
-    setDetailsError('')
-
-    try {
-      const data = await getPublicDaycare(
-        organizationId
-      )
-
-      setSelectedOrganization(data)
-    } catch (err) {
-      setDetailsError(
-        err instanceof Error
-          ? err.message
-          : 'Unable to load daycare details'
-      )
-
-      setSelectedOrganization(null)
-    } finally {
-      setDetailsLoading(false)
-    }
-  }
 
   function handleSubmit(event) {
     event.preventDefault()
@@ -200,18 +164,12 @@ function DaycareDirectoryPage() {
         )}
 
 
-        {detailsError && (
-          <div className="daycare-directory-message error">
-            {detailsError}
-          </div>
-        )}
-
 
         {loading ? (
           <div className="daycare-directory-empty">
             Loading daycare centers...
           </div>
-        ) : organizations.length === 0 ? (
+        ) : error ? null : organizations.length === 0 ? (
           <div className="daycare-directory-empty">
 
             <h2>
@@ -263,7 +221,7 @@ function DaycareDirectoryPage() {
 
                         <h3>
                           {
-                            organization.organization_name
+                            publicOrganizationName(organization.organization_name)
                           }
                         </h3>
 
@@ -302,22 +260,16 @@ function DaycareDirectoryPage() {
 
 
                     <p className="daycare-description">
-                      {organization.description ||
-                        'No public description available.'}
+                      {publicOrganizationDescription(organization.description, 'daycare')}
                     </p>
 
 
-                    <button
-                      type="button"
+                    <a
                       className="daycare-details-button"
-                      onClick={() =>
-                        handleViewDetails(
-                          organization.organization_id
-                        )
-                      }
+                      href={`#organization-profile?type=daycare&id=${encodeURIComponent(organization.organization_id)}`}
                     >
                       View Public Details
-                    </button>
+                    </a>
 
                   </article>
                 )
@@ -328,98 +280,6 @@ function DaycareDirectoryPage() {
           </section>
         )}
 
-
-        {detailsLoading && (
-          <div className="daycare-directory-message">
-            Loading daycare details...
-          </div>
-        )}
-
-
-        {selectedOrganization && (
-          <section className="daycare-detail-card">
-
-            <div className="daycare-detail-header">
-
-              <div>
-                <span>
-                  PUBLIC DAYCARE DETAILS
-                </span>
-
-                <h2>
-                  {
-                    selectedOrganization.organization_name
-                  }
-                </h2>
-              </div>
-
-
-              <button
-                type="button"
-                onClick={() =>
-                  setSelectedOrganization(null)
-                }
-              >
-                Close
-              </button>
-
-            </div>
-
-
-            <div className="daycare-detail-grid">
-
-              <div>
-                <span>
-                  Organization Type
-                </span>
-
-                <strong>
-                  {
-                    selectedOrganization.organization_type
-                  }
-                </strong>
-              </div>
-
-
-              <div>
-                <span>
-                  Location
-                </span>
-
-                <strong>
-                  {selectedOrganization.location ||
-                    'Not provided'}
-                </strong>
-              </div>
-
-
-              <div>
-                <span>
-                  Contact
-                </span>
-
-                <strong>
-                  {selectedOrganization.contact ||
-                    'Not provided'}
-                </strong>
-              </div>
-
-
-              <div className="daycare-detail-description">
-                <span>
-                  Description
-                </span>
-
-                <p>
-                  {selectedOrganization.description ||
-                    'No public description available.'}
-                </p>
-              </div>
-
-            </div>
-
-          </section>
-        )}
 
       </div>
     </main>

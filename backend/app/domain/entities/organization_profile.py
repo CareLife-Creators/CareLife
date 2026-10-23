@@ -12,6 +12,8 @@ class OrganizationProfile(BaseModel):
 
     description: str | None = None
     location: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
     contact: str | None = None
 
     capacity: int = 20
