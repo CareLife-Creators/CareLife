@@ -40,7 +40,7 @@ const FILTERS = [{ id: 'all', label: 'All previews' }, { id: 'daycare', label: '
 function BangladeshMap() {
   const [filter, setFilter] = useState('all')
   const [selected, setSelected] = useState(PLACES[0])
-  const dots = useMemo(createBangladeshDots, [])
+  const dots = useMemo(() => createBangladeshDots(), [])
   const visible = PLACES.filter((place) => filter === 'all' || place.type === filter)
   const chooseFilter = (id) => { setFilter(id); if (id !== 'all') setSelected(PLACES.find((place) => place.type === id)) }
   return <section className="lp-map-section" id="bangladesh" aria-labelledby="lp-map-title">
