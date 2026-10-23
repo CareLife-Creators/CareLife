@@ -34,11 +34,11 @@ export default function OrganizationWorkspacePage() {
   const [organizationId, setOrganizationId] = useState(() => {
     try { return localStorage.getItem(`${ORG_KEY}:${role || 'staff'}`) || '' } catch { return '' }
   })
-  const [registration, setRegistration] = useState({
+  const [registration, setRegistration] = useState(() => ({
     organization_name: '', organization_type: roleOrganizationType(role), description: '',
     location: '', contact: '', license_number: '', license_expiry_date: '',
     latitude: '', longitude: '',
-  })
+  }))
   const [profile, setProfile] = useState(null)
   const [profileForm, setProfileForm] = useState({})
   const [campaigns, setCampaigns] = useState([])
@@ -65,13 +65,6 @@ export default function OrganizationWorkspacePage() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [refreshKey, setRefreshKey] = useState(0)
-
-  useEffect(() => {
-    setRegistration((current) => ({ ...current, organization_type: roleOrganizationType(role) }))
-    try { setOrganizationId(localStorage.getItem(`${ORG_KEY}:${role || 'staff'}`) || '') }
-    catch { setOrganizationId('') }
-    setTab('profile')
-  }, [role])
 
   async function loadOrganization() {
     if (!organizationId.trim()) {
@@ -122,8 +115,10 @@ export default function OrganizationWorkspacePage() {
     setLoading(false)
   }
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- Load organization data when role, ID, or refresh token changes.
   useEffect(() => { void loadOrganization() }, [refreshKey, role, organizationId])
 
+  /* eslint-disable react-hooks/set-state-in-effect -- Clear previously selected resident data and fetch the new resident's check-ins. */
   useEffect(() => {
     if (!selectedResidentId) { setCheckIns([]); return }
     let cancelled = false
@@ -132,7 +127,9 @@ export default function OrganizationWorkspacePage() {
     }).catch(() => { if (!cancelled) setCheckIns([]) })
     return () => { cancelled = true }
   }, [selectedResidentId, refreshKey])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
+  /* eslint-disable react-hooks/set-state-in-effect -- Clear previous child outcomes when there is no eligible orphanage child selected. */
   useEffect(() => {
     if (!selectedOrphanageChildId || role !== 'orphanage_staff') { setOutcomes([]); return }
     let cancelled = false
@@ -141,6 +138,7 @@ export default function OrganizationWorkspacePage() {
     }).catch(() => { if (!cancelled) setOutcomes([]) })
     return () => { cancelled = true }
   }, [selectedOrphanageChildId, refreshKey, role])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
 
   async function updatePledge(pledge, status) {
