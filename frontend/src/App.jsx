@@ -86,6 +86,7 @@ function AppRoutes() {
 
   useEffect(() => {
     if (!token) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Reset the token validation marker when a session ends.
       setCheckedToken('')
       return undefined
     }
@@ -141,10 +142,10 @@ function AppRoutes() {
   if (route === '#staff-access') return <StaffAccessPage />
   if (route === '#admin-role-requests') return <AdminRoleRequestsPage />
   if (route === '#my-children') return <ChildrenWorkspacePage />
-  if (route === '#care-bookings' && role === 'independent_caregiver') return <CaregiverWorkspacePage initialSection="requests" />
+  if (route === '#care-bookings' && role === 'independent_caregiver') return <CaregiverWorkspacePage key="requests" initialSection="requests" />
   if (route === '#care-bookings') return <CareBookingsPage />
-  if (route === '#caregiver-workspace') return <CaregiverWorkspacePage />
-  if (route === '#organization-workspace') return <OrganizationWorkspacePage />
+  if (route === '#caregiver-workspace') return <CaregiverWorkspacePage key="profile" />
+  if (route === '#organization-workspace') return <OrganizationWorkspacePage key={role || 'staff'} />
   if (route === '#account') return <AccountPage />
   if (route === '#notifications') return <AccountPage initialTab="notifications" />
   if (route === '#messages') return <AccountPage initialTab="messages" />
