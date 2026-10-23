@@ -159,13 +159,11 @@ export default function AccountPage({ initialTab = 'profile' }) {
     setLoading(false)
   }
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- The initial request loads the profile and inbox into local UI state.
   useEffect(() => { void loadPage() }, [])
 
   useEffect(() => {
-    if (!selectedConversation) {
-      setMessages([])
-      return
-    }
+    if (!selectedConversation) return
     let cancelled = false
     getConversationMessages(selectedConversation)
       .then((data) => { if (!cancelled) setMessages(Array.isArray(data) ? data : []) })
