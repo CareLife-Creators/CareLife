@@ -25,6 +25,12 @@ class Settings(BaseSettings):
 
     database_url: SecretStr = Field(min_length=1)
     secret_key: SecretStr = Field(min_length=32)
+    cors_origins: list[str] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5180",
+        "http://127.0.0.1:5180",
+    ]
 
     access_token_expire_minutes: int = Field(default=30, gt=0)
     license_expiry_reminder_days: int = Field(default=30, gt=0)
