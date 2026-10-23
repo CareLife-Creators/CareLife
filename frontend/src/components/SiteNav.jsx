@@ -26,8 +26,10 @@ function SiteNav() {
 
   useEffect(() => {
     if (!signedIn) {
+      /* eslint-disable react-hooks/set-state-in-effect -- Clear user-specific navigation state on logout. */
       setUnreadCount(0)
       setDisplayName('')
+      /* eslint-enable react-hooks/set-state-in-effect */
       return undefined
     }
     let mounted = true

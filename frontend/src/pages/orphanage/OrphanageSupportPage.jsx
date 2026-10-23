@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import SiteNav from '../../components/SiteNav'
 import { useSession } from '../../lib/session'
 import { publicActivityText, publicContentLabel, publicOrganizationDescription, publicOrganizationName } from '../../lib/publicDisplay'
@@ -41,7 +41,7 @@ export default function OrphanageSupportPage() {
 
   const isDonor = signedIn && role === 'donor_supporter'
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true)
     setError('')
     const requests = [
@@ -61,9 +61,9 @@ export default function OrphanageSupportPage() {
       setMessages((current) => ({ ...current, payments: result[3].reason instanceof Error ? result[3].reason.message : 'Payment history could not be loaded.' }))
     }
     setLoading(false)
-  }
+  }, [isDonor])
 
-  useEffect(() => { void load() }, [isDonor])
+  useEffect(() => { void load() }, [load])
   useEffect(() => {
     if (tab !== 'pledges' || !signedIn) return
     let cancelled = false

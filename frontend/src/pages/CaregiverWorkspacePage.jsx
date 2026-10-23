@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import SiteNav from '../components/SiteNav'
+import { navigateToHash } from '../lib/navigation'
 import {
   getMyCaregiverProfile, createMyCaregiverProfile, updateMyCaregiverProfile,
   submitCaregiverDocument, getMyAvailability, createAvailability,
@@ -15,7 +16,6 @@ const showDate = (value) => {
 export default function CaregiverWorkspacePage({ initialSection = 'profile' }) {
   const [profile, setProfile] = useState(null)
   const [activeSection, setActiveSection] = useState(initialSection)
-  const initialSectionRef = useRef(initialSection)
   const [form, setForm] = useState({ service_type: 'nanny', bio: '', experience_years: '0', location: '' })
   const [document, setDocument] = useState({ document_type: 'identity', file: null })
   const documentInput = useRef(null)
@@ -50,14 +50,8 @@ export default function CaregiverWorkspacePage({ initialSection = 'profile' }) {
     setLoading(false)
   }
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- Fetch remote caregiver profile, availability, and appointment data.
   useEffect(() => { void load() }, [refreshKey])
-
-  useEffect(() => {
-    if (initialSectionRef.current !== initialSection) {
-      initialSectionRef.current = initialSection
-      setActiveSection(initialSection)
-    }
-  }, [initialSection])
 
   async function saveProfile(event) {
     event.preventDefault()
@@ -148,7 +142,7 @@ export default function CaregiverWorkspacePage({ initialSection = 'profile' }) {
     try {
       await startConversation(userId)
       window.sessionStorage.setItem('carelife_account_tab', 'messages')
-      window.location.hash = '#account'
+      navigateToHash('#account')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not open this conversation.')
     } finally {

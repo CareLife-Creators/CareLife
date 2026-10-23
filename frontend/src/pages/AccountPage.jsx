@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import SiteNav from '../components/SiteNav'
 import {
   getMyProfile, updateMyProfile, getMyNotifications, markNotificationRead,
@@ -112,18 +112,18 @@ export default function AccountPage({ initialTab = 'profile' }) {
     return !query || [contact.full_name, contact.service_type, contact.location].some((value) => String(value || '').toLowerCase().includes(query))
   }).slice(0, 5)
 
-  async function loadInbox() {
+  const loadInbox = useCallback(async () => {
     const [notificationResult, conversationResult] = await Promise.allSettled([getMyNotifications(), getMyConversations()])
     if (notificationResult.status === 'fulfilled') setNotifications(Array.isArray(notificationResult.value) ? notificationResult.value : [])
     if (conversationResult.status === 'fulfilled') {
       const list = Array.isArray(conversationResult.value) ? conversationResult.value : []
       setConversations(list)
-      if (!selectedConversation && list[0]?.id) setSelectedConversation(list[0].id)
+      setSelectedConversation((current) => current || list[0]?.id || '')
     }
     if (notificationResult.status === 'rejected' && conversationResult.status === 'rejected') {
       setError('Inbox data could not be loaded. Check your session and try again.')
     }
-  }
+  }, [])
 
   async function toggleContactSearch() {
     if (contactSearchOpen) {
@@ -145,7 +145,7 @@ export default function AccountPage({ initialTab = 'profile' }) {
     }
   }
 
-  async function loadPage() {
+  const loadPage = useCallback(async () => {
     setLoading(true)
     setError('')
     try {
@@ -157,15 +157,13 @@ export default function AccountPage({ initialTab = 'profile' }) {
     }
     await loadInbox()
     setLoading(false)
-  }
+  }, [loadInbox])
 
-  useEffect(() => { void loadPage() }, [])
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- The initial request loads the profile and inbox into local UI state.
+  useEffect(() => { void loadPage() }, [loadPage])
 
   useEffect(() => {
-    if (!selectedConversation) {
-      setMessages([])
-      return
-    }
+    if (!selectedConversation) return
     let cancelled = false
     getConversationMessages(selectedConversation)
       .then((data) => { if (!cancelled) setMessages(Array.isArray(data) ? data : []) })

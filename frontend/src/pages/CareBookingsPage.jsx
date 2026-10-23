@@ -53,6 +53,7 @@ export default function CareBookingsPage() {
     setLoading(false)
   }
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- Start the booking data request and synchronize its loading/result state.
   useEffect(() => { void load() }, [refreshKey])
 
   async function loadSlots(caregiverId) {
