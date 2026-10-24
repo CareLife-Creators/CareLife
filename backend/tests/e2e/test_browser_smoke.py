@@ -171,11 +171,20 @@ def test_signed_out_support_board_hides_personal_donation_history(
     browser.get(f"{base_url}/#orphanage-support")
     wait = WebDriverWait(browser, 40)
 
-    tabs = wait.until(
-        EC.presence_of_element_located(
-            (By.CSS_SELECTOR, "main.directory-page.orphanage .support-tabs")
+    tabs_or_login = wait.until(
+        lambda driver: driver.find_elements(
+            By.CSS_SELECTOR, "main.directory-page.orphanage .support-tabs"
         )
+        or "#login" in driver.current_url
     )
+    if "#login" in browser.current_url:
+        pytest.fail(
+            "The public support board redirected a signed-out visitor to login "
+            f"instead of rendering its tabs. Current URL: {browser.current_url}. "
+            f"Visible page text: {browser.find_element(By.TAG_NAME, 'body').text[:1200]}"
+        )
+
+    tabs = tabs_or_login[0] if isinstance(tabs_or_login, list) else tabs_or_login
     labels = [
         tab.text.strip()
         for tab in tabs.find_elements(By.CSS_SELECTOR, '[role="tab"]')
