@@ -5,7 +5,8 @@ import { useSession } from '../lib/session'
 import { getMyCaregiverProfile, getMyAvailability, getMyCaregiverAppointments } from '../api/workspace'
 import { getMyChildren, getMyEnrollments, getChildAttendance, getChildDailyUpdates } from '../api/workspace'
 import { getMyProfile } from '../api/workspace'
-import { getCaregiverDirectory, getPublicOrganizationMap } from '../api/discovery'
+import { getCaregiverDirectory, getElderCareDirectory, getPublicOrganizationMap } from '../api/discovery'
+import { getDaycareDirectory } from '../api/daycareDirectory'
 import { BANGLADESH_DIVISIONS } from '../data/bangladeshMap'
 import AdminWorkspacePage from './AdminWorkspacePage'
 import OrganizationSatelliteMap from '../components/OrganizationSatelliteMap'
@@ -156,24 +157,47 @@ function FamilyDashboard({ email }) {
 
     async function loadFamilyWorkspace() {
       setLoading(true)
-      const [profileResult, childrenResult, enrollmentResult, organizationMapResult, caregiverResult] = await Promise.allSettled([
-        getMyProfile(), getMyChildren(), getMyEnrollments(), getPublicOrganizationMap(), getCaregiverDirectory(),
+      const [profileResult, childrenResult, enrollmentResult, organizationMapResult, daycareResult, elderCareResult, caregiverResult] = await Promise.allSettled([
+        getMyProfile(), getMyChildren(), getMyEnrollments(), getPublicOrganizationMap(),
+        getDaycareDirectory(), getElderCareDirectory(), getCaregiverDirectory(),
       ])
       if (cancelled) return
 
       const familyChildren = childrenResult.status === 'fulfilled' && Array.isArray(childrenResult.value) ? childrenResult.value : []
       const familyEnrollments = enrollmentResult.status === 'fulfilled' && Array.isArray(enrollmentResult.value) ? enrollmentResult.value : []
       const organizationItems = organizationMapResult.status === 'fulfilled' && Array.isArray(organizationMapResult.value) ? organizationMapResult.value : []
+      const daycareItems = daycareResult.status === 'fulfilled' && Array.isArray(daycareResult.value) ? daycareResult.value : []
+      const elderCareItems = elderCareResult.status === 'fulfilled' && Array.isArray(elderCareResult.value) ? elderCareResult.value : []
       const caregiverItems = caregiverResult.status === 'fulfilled' && Array.isArray(caregiverResult.value) ? caregiverResult.value : []
 
       setProfile(profileResult.status === 'fulfilled' ? profileResult.value : null)
       setChildren(familyChildren)
       setEnrollments(familyEnrollments)
+      const publicOrganizations = new Map()
+      const addOrganization = (item, kind) => {
+        const id = item.organization_id || item.id
+        if (!id) return
+        const current = publicOrganizations.get(id) || {}
+        publicOrganizations.set(id, {
+          ...current,
+          ...item,
+          id,
+          name: item.organization_name || item.name || current.name,
+          kind: kind || current.kind || (item.organization_type === 'elderly_care' ? 'elderCare' : item.organization_type === 'orphanage' ? 'orphanage' : 'daycare'),
+          latitude: item.latitude ?? current.latitude,
+          longitude: item.longitude ?? current.longitude,
+          is_verified: true,
+        })
+      }
+      organizationItems.forEach((item) => addOrganization(item))
+      daycareItems.forEach((item) => addOrganization(item, 'daycare'))
+      elderCareItems.forEach((item) => addOrganization(item, 'elderCare'))
+
       setProviders([
-        ...organizationItems.map((item) => ({ ...item, id: item.organization_id, name: item.organization_name, kind: item.organization_type === 'elderly_care' ? 'elderCare' : item.organization_type === 'orphanage' ? 'orphanage' : 'daycare', description: item.organization_type.replaceAll('_', ' '), is_verified: true })),
+        ...publicOrganizations.values(),
         ...caregiverItems.map((item) => ({ ...item, id: item.caregiver_id, name: item.full_name || 'Independent caregiver', kind: 'caregiver', description: item.bio || item.service_type || '' })),
       ])
-      setDirectoryError([organizationMapResult, caregiverResult].every((result) => result.status === 'rejected')
+      setDirectoryError([organizationMapResult, daycareResult, elderCareResult, caregiverResult].every((result) => result.status === 'rejected')
         ? 'Care listings could not be loaded right now.' : '')
 
       if (familyChildren.length) {
