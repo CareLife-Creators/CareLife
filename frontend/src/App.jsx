@@ -10,13 +10,11 @@ import DashboardPage from './pages/DashboardPage'
 import DaycareDirectoryPage from './pages/daycare/DaycareDirectoryPage'
 import OrganizationApprovalDashboard from './pages/organization/OrganizationApprovalDashboard'
 import VerificationStatusPage from './pages/organization/VerificationStatusPage'
-import ElderCareDirectoryPage from './pages/elder-care/ElderCareDirectoryRoute'
+import ElderCareDirectoryPage from './pages/elder-care/ElderCareDirectoryPage'
 import PublicOrganizationProfilePage from './pages/organization/PublicOrganizationProfilePage'
 import CaregiverDirectoryPage from './pages/caregivers/CaregiverDirectoryPage'
 import OrphanageSupportPage from './pages/orphanage/OrphanageSupportPage'
 import ModuleLandingPage from './pages/modules/ModuleLandingPage'
-import StaffAccessPage from './pages/staff-access/StaffAccessPage'
-import AdminRoleRequestsPage from './pages/admin/AdminRoleRequestsPage'
 import ChildrenWorkspacePage from './pages/ChildrenWorkspacePage'
 import CareBookingsPage from './pages/CareBookingsPage'
 import AccountPage from './pages/AccountPage'
@@ -26,6 +24,7 @@ import AdminUsersPage from './pages/admin/AdminUsersPage'
 import CaregiverWorkspacePage from './pages/CaregiverWorkspacePage'
 import OrganizationWorkspacePage from './pages/OrganizationWorkspacePage'
 import OrganizationOnboardingPage from './pages/OrganizationOnboardingPage'
+import OrganizationApplicationPage from './pages/OrganizationApplicationPage'
 import SiteNav from './components/SiteNav'
 import { refreshSession } from './api/auth'
 import { canAccessRoute, isProtectedRoute } from './lib/roles'
@@ -34,11 +33,11 @@ import { ToastStack } from './components/ui'
 import './CareLifeExperience.css'
 
 const knownRoutes = new Set([
-  '#home', '#dashboard', '#login', '#signup', '#for-organizations', '#password-reset',
+  '#home', '#dashboard', '#login', '#signup', '#for-organizations', '#organization-apply', '#password-reset',
   '#password-reset-confirm', '#daycare', '#orphanage', '#elderly-care',
   '#daycare-directory', '#elderly-care-directory', '#caregivers',
   '#orphanage-support', '#organization-approval', '#verification',
-  '#staff-access', '#admin-role-requests', '#my-children', '#care-bookings', '#organization-profile',
+  '#staff-access', '#my-children', '#care-bookings', '#organization-profile',
   '#caregiver-workspace', '#account', '#notifications', '#messages', '#organization-workspace', '#admin-operations', '#admin-users', '#family-checkins',
 ])
 
@@ -60,11 +59,30 @@ function NotFoundPage() {
 
 function AccessRestrictedPage({ route, role }) {
   const childPage = route === '#my-children'
+  const organizationApplication = ['#organization-apply', '#staff-access'].includes(route)
+  const organizationPage = route === '#organization-workspace'
+  const subject = childPage ? 'Children & attendance'
+    : route === '#caregiver-workspace' ? 'Caregiver workspace'
+      : route === '#care-bookings' ? 'Care bookings'
+        : route === '#family-checkins' ? 'Family check-ins'
+          : organizationApplication ? 'Organization application'
+            : organizationPage ? 'Organization workspace' : 'This page'
   const destination = childPage && role === 'daycare_staff' ? '#organization-workspace' : '#dashboard'
-  const subject = childPage ? 'Children & attendance' : 'Organization workspace'
   const explanation = childPage
-    ? 'A parent or guardian account can manage child profiles. Daycare staff can manage enrollment and attendance from their organization workspace.'
-    : 'This area is for approved daycare, children’s home, or care-home staff. Sign in with an approved organization staff account to manage its records.'
+    ? role === 'daycare_staff'
+      ? 'Daycare staff review enrollment requests and manage attendance from an approved daycare workspace. Parents and guardians manage child profiles.'
+      : 'A parent or guardian account can manage child profiles, enrollment requests, and family care details.'
+    : route === '#caregiver-workspace'
+      ? 'Caregiver profiles and appointment tools are available to independent caregivers signed in to their CareLife account.'
+      : route === '#care-bookings'
+        ? 'Booking details are available to the family member or care provider associated with each request.'
+        : route === '#family-checkins'
+          ? 'Family check-ins are available to an authorized family representative or guardian after the care home grants consent for the resident.'
+          : organizationApplication
+            ? 'Organization applications are available to member accounts. Your approved organization access is managed separately from your personal account.'
+            : organizationPage
+            ? 'Organization tools are available after an administrator approves an organization application. Your member account stays separate from each organization workspace.'
+            : 'This page is not available to the current account.'
   return <><SiteNav /><main className="route-not-found">
     <span className="route-not-found-icon" aria-hidden="true">↗</span>
     <p className="route-eyebrow">ACCOUNT ACCESS</p><h1>{subject} is not available for this account.</h1>
@@ -76,7 +94,7 @@ function AccessRestrictedPage({ route, role }) {
 function AppRoutes() {
   const [route, setRoute] = useState(readRoute)
   const [checkedToken, setCheckedToken] = useState('')
-  const { token, signedIn, role } = useSession()
+  const { token, signedIn, role, organizationRoles } = useSession()
 
   useEffect(() => {
     const onHashChange = () => setRoute(readRoute())
@@ -123,11 +141,12 @@ function AppRoutes() {
 
   if (needsSignIn && !signedIn) return <main className="route-redirect" aria-live="polite"><div className="route-redirect-mark">C</div><p>Taking you to sign in…</p><a href="#login">Continue to sign in</a></main>
   if (needsSignIn && !roleReady) return <main className="route-redirect" aria-live="polite"><div className="route-redirect-mark">C</div><p>Checking your access…</p></main>
-  if (needsSignIn && !canAccessRoute(route, role)) return <AccessRestrictedPage route={route} role={role} />
+  if (needsSignIn && !canAccessRoute(route, role, organizationRoles)) return <AccessRestrictedPage route={route} role={role} />
 
   if (route === '#home' && signedIn) return <main className="route-redirect" aria-live="polite"><div className="route-redirect-mark">C</div><p>Opening your CareLife workspace…</p></main>
   if (route === '#home') return <HomePage />
   if (route === '#for-organizations') return <OrganizationOnboardingPage />
+  if (route === '#organization-apply' || route === '#staff-access') return <OrganizationApplicationPage />
   if (route === '#dashboard') return <DashboardPage />
   if (route === '#daycare') return <ModuleLandingPage moduleKey="daycare" />
   if (route === '#orphanage') return <ModuleLandingPage moduleKey="orphanage" />
@@ -139,8 +158,6 @@ function AppRoutes() {
   if (route === '#orphanage-support') return <OrphanageSupportPage />
   if (route === '#organization-approval') return <OrganizationApprovalDashboard />
   if (route === '#verification') return <VerificationStatusPage />
-  if (route === '#staff-access') return <StaffAccessPage />
-  if (route === '#admin-role-requests') return <AdminRoleRequestsPage />
   if (route === '#my-children') return <ChildrenWorkspacePage />
   if (route === '#care-bookings' && role === 'independent_caregiver') return <CaregiverWorkspacePage key="requests" initialSection="requests" />
   if (route === '#care-bookings') return <CareBookingsPage />

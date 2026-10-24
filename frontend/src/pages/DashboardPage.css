@@ -30,3 +30,4 @@
 .family-map-disclaimer{font-size:10px}
 @media(max-width:560px){.family-map-pin{width:27px;height:27px}}
 .family-provider-verification{display:inline-flex;align-self:flex-start;margin:3px 0;padding:4px 6px;border:1px solid #dfe4e8;border-radius:5px;color:#657282;background:#f7f8fa;font-size:9px;font-weight:700}.family-provider-verification.verified{border-color:#c8e1d4;color:#2e6b4a;background:#f0f8f3}
+.member-dashboard-avatar{overflow:hidden}.member-dashboard-avatar img{width:100%;height:100%;object-fit:cover}

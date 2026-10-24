@@ -8,7 +8,7 @@ from app.infrastructure.repositories.organization_repository import PostgresOrga
 
 
 class OrganizationRegistrationRepositoryIntegrationTests(unittest.TestCase):
-    def test_registration_persists_profile_and_links_submitter(self):
+    def test_pending_registration_persists_profile_without_granting_access(self):
         user_id = str(uuid4())
         organization_id = str(uuid4())
         email = f"{user_id}@carelife.test"
@@ -46,6 +46,8 @@ class OrganizationRegistrationRepositoryIntegrationTests(unittest.TestCase):
                 organization_type="daycare",
                 description="A test daycare profile",
                 location="Dhaka",
+                latitude=23.8103,
+                longitude=90.4125,
                 contact="+8801700000000",
                 license_number=f"LIC-{organization_id[:8]}",
                 license_expiry_date=date.today() + timedelta(days=30),
@@ -62,7 +64,16 @@ class OrganizationRegistrationRepositoryIntegrationTests(unittest.TestCase):
             self.assertIsNotNone(saved)
             self.assertEqual(saved.description, "A test daycare profile")
             self.assertEqual(saved.location, "Dhaka")
+            self.assertEqual(saved.latitude, 23.8103)
+            self.assertEqual(saved.longitude, 90.4125)
             self.assertEqual(saved.contact, "+8801700000000")
+
+            submitted = repository.get_submitted_by(user_id)
+            self.assertEqual(len(submitted), 1)
+            self.assertEqual(submitted[0].organization_id, organization_id)
+            self.assertEqual(submitted[0].latitude, 23.8103)
+            self.assertEqual(submitted[0].longitude, 90.4125)
+            self.assertEqual(submitted[0].contact, "+8801700000000")
 
             with get_connection() as connection:
                 membership = connection.execute(
@@ -74,7 +85,7 @@ class OrganizationRegistrationRepositoryIntegrationTests(unittest.TestCase):
                     (user_id, organization_id),
                 ).fetchone()
 
-            self.assertIsNotNone(membership)
+            self.assertIsNone(membership)
         finally:
             with get_connection() as connection:
                 with connection.transaction():

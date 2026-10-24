@@ -83,6 +83,7 @@ export const completeElderCareBooking = (id, note = '') => apiRequest('/elder-ca
 
 // Organization registration and management
 export const registerOrganization = (body) => apiRequest('/organizations/register', json('POST', body))
+export const getMyOrganizationApplications = () => apiRequest('/organizations/applications/mine')
 export const getOrganizationProfile = (id) => apiRequest('/organizations/' + safe(id) + '/profile')
 export const updateOrganizationProfile = (id, body) => apiRequest('/organizations/' + safe(id) + '/profile', json('PATCH', body))
 export const getOrganizationCampaigns = (id) => apiRequest('/organizations/' + safe(id) + '/donation-campaigns')

@@ -97,4 +97,5 @@ def get_authenticated_user(
         role=role,
         organization_id=user.organization_id,
         organization_ids=user.organization_ids,
+        organization_roles={organization_id: Role(role) for organization_id, role in user.organization_roles.items()},
     )

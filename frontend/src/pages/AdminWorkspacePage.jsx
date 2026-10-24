@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import AdminNav from '../components/AdminNav'
 import { getAdminOrganizationTracking } from '../api/organizationApproval'
-import { getAdminRoleRequests } from '../api/roleRequests'
 import { getAdminAuditLogs, getAdminUsers, getPendingCaregivers, getPendingImpactUpdates } from '../api/workspace'
 import { BANGLADESH_DIVISIONS } from '../data/bangladeshMap'
 import OrganizationSatelliteMap from '../components/OrganizationSatelliteMap'
@@ -9,7 +8,6 @@ import './AdminWorkspacePage.css'
 
 const workQueues = [
   { key: 'organizations', href: '#organization-approval', icon: '◇', title: 'Organization reviews', detail: 'Review care organizations and their submitted details.', action: 'Review organizations', tone: 'mint' },
-  { key: 'staff', href: '#admin-role-requests', icon: '✓', title: 'Staff access', detail: 'Decide who can use daycare, children’s home, or care-home tools.', action: 'Review staff requests', tone: 'peach' },
   { key: 'caregivers', href: '#admin-operations?tab=caregivers', icon: '♡', title: 'Caregiver profiles', detail: 'Check caregiver submissions and supporting documents.', action: 'Review caregivers', tone: 'lavender' },
   { key: 'impact', href: '#admin-operations?tab=impact', icon: '✳', title: 'Impact updates', detail: 'Review children’s-home updates before they are shared.', action: 'Review updates', tone: 'mint' },
 ]
@@ -26,11 +24,11 @@ export default function AdminWorkspacePage() {
 
   const load = useCallback(async () => {
     const results = await Promise.allSettled([
-      getAdminOrganizationTracking(), getAdminRoleRequests('pending'), getPendingCaregivers(), getPendingImpactUpdates(), getAdminAuditLogs(), getAdminUsers(),
+      getAdminOrganizationTracking(), getPendingCaregivers(), getPendingImpactUpdates(), getAdminAuditLogs(), getAdminUsers(),
     ])
     const nextCounts = {}
     const nextErrors = []
-    const keys = ['organizations', 'staff', 'caregivers', 'impact', 'audit', 'users']
+    const keys = ['organizations', 'caregivers', 'impact', 'audit', 'users']
     results.forEach((result, index) => {
       if (result.status === 'fulfilled') nextCounts[keys[index]] = Array.isArray(result.value) ? result.value.length : 0
       else nextErrors.push(keys[index])
@@ -40,7 +38,7 @@ export default function AdminWorkspacePage() {
       setOrganizations(records)
       nextCounts.organizations = records.filter((organization) => ['pending', 'under_review', 'needs_correction'].includes(String(organization.status).toLowerCase())).length
     }
-    if (results[5].status === 'fulfilled') setUsers(Array.isArray(results[5].value) ? results[5].value : [])
+    if (results[4].status === 'fulfilled') setUsers(Array.isArray(results[4].value) ? results[4].value : [])
     setCounts(nextCounts)
     setErrors(nextErrors)
     setLoading(false)
@@ -51,7 +49,7 @@ export default function AdminWorkspacePage() {
     return () => window.clearTimeout(timer)
   }, [load, refreshKey])
 
-  const totalOpen = ['organizations', 'staff', 'caregivers', 'impact'].reduce((sum, key) => sum + (counts[key] || 0), 0)
+  const totalOpen = ['organizations', 'caregivers', 'impact'].reduce((sum, key) => sum + (counts[key] || 0), 0)
   const roleCounts = users.reduce((totals, user) => ({ ...totals, [user.role]: (totals[user.role] || 0) + 1 }), {})
   const roleRows = Object.entries(roleCounts).sort((a, b) => b[1] - a[1])
   const maxRoleCount = Math.max(1, ...roleRows.map(([, count]) => count))
@@ -78,8 +76,8 @@ export default function AdminWorkspacePage() {
         <div><span>Active admins</span><strong>{loading ? '—' : errors.includes('users') ? '—' : users.filter((user) => user.role === 'carelife_admin' && user.is_active).length}</strong></div>
         <div><span>Open reviews</span><strong>{loading ? '—' : totalOpen}</strong></div>
         <div><span>Organizations</span><strong>{loading ? '—' : errors.includes('organizations') ? '—' : counts.organizations ?? 0}</strong></div>
-        <div><span>Staff requests</span><strong>{loading ? '—' : errors.includes('staff') ? '—' : counts.staff ?? 0}</strong></div>
-        <div><span>Caregiver profiles</span><strong>{loading ? '—' : errors.includes('caregivers') ? '—' : counts.caregivers ?? 0}</strong></div>
+        <div><span>Impact updates</span><strong>{loading ? '—' : errors.includes('impact') ? '—' : counts.impact ?? 0}</strong></div>
+        <div><span>Caregiver reviews</span><strong>{loading ? '—' : errors.includes('caregivers') ? '—' : counts.caregivers ?? 0}</strong></div>
       </section>
 
       <section className="admin-analytics" aria-label="CareLife platform statistics">

@@ -9,6 +9,7 @@ import { API_BASE_URL } from '../api/client'
 import { getToken } from '../lib/session'
 import { getCaregiverDirectory } from '../api/discovery'
 import './Workspace.css'
+import './AccountPrivacy.css'
 
 const prettyDate = (value) => {
   const date = new Date(value)
@@ -41,6 +42,7 @@ export default function AccountPage({ initialTab = 'profile' }) {
   const [message, setMessage] = useState('')
   const [photoUrl, setPhotoUrl] = useState('')
   const [photoBusy, setPhotoBusy] = useState(false)
+  const [copiedUserId, setCopiedUserId] = useState(false)
   const photoInput = useRef(null)
   const initialTabRef = useRef(initialTab)
 
@@ -103,6 +105,17 @@ export default function AccountPage({ initialTab = 'profile' }) {
       setError(err instanceof Error ? err.message : 'Profile photo could not be removed.')
     } finally {
       setPhotoBusy(false)
+    }
+  }
+
+  async function copyCareLifeId() {
+    if (!profile?.user_id || !navigator.clipboard?.writeText) return
+    try {
+      await navigator.clipboard.writeText(profile.user_id)
+      setCopiedUserId(true)
+      window.setTimeout(() => setCopiedUserId(false), 2200)
+    } catch {
+      setCopiedUserId(false)
     }
   }
 
@@ -274,6 +287,7 @@ export default function AccountPage({ initialTab = 'profile' }) {
               <label>Phone number<input type="tel" value={profileForm.phone} maxLength={30} placeholder="+8801XXXXXXXXX" onChange={(event) => setProfileForm((s) => ({ ...s, phone: event.target.value }))} /></label>
               <div className="cw-form-actions"><button className="cw-button primary" disabled={busy}>{busy ? 'Saving…' : 'Save profile'}</button></div>
             </form>
+            {profile?.user_id && <div className="cw-account-id"><div><strong>Your CareLife account ID</strong><span>Share this ID directly with a care home only when you want to authorize family check-ins.</span><code>{profile.user_id}</code></div><button type="button" className="cw-button" onClick={() => void copyCareLifeId()}>{copiedUserId ? 'Copied' : 'Copy ID'}</button></div>}
           </section></>}
           {tab === 'notifications' && <section className="cw-panel">
             <div className="cw-panel-heading"><div><p className="cw-kicker">UPDATES FOR YOU</p><h2>Notifications</h2></div><button type="button" className="cw-button" onClick={() => void loadInbox()}>Refresh</button></div>
@@ -284,18 +298,20 @@ export default function AccountPage({ initialTab = 'profile' }) {
               </article>)}</div>}
           </section>}
           {tab === 'messages' && <section className="cw-panel">
-            <div className="cw-panel-heading"><div><p className="cw-kicker">PRIVATE CONVERSATIONS</p><h2>Your inbox</h2><p className="cw-panel-subtitle">{profile?.role === 'independent_caregiver' ? 'Reply to families and coordinate with care professionals.' : 'Continue a conversation or start one with a care professional.'}</p></div><button type="button" className="cw-button primary" onClick={() => void toggleContactSearch()}>{contactSearchOpen ? 'Close search' : 'New message'}</button></div>
+            <div className="cw-panel-heading"><div><p className="cw-kicker">PRIVATE CONVERSATIONS</p><h2>Your inbox</h2><p className="cw-panel-subtitle">{profile?.role === 'independent_caregiver' ? 'Reply to families and coordinate with care professionals.' : 'Choose a listed care professional to open a private conversation and ask about their services.'}</p></div><button type="button" className="cw-button primary" onClick={() => void toggleContactSearch()}>{contactSearchOpen ? 'Close search' : 'New message'}</button></div>
+            <div className="cw-message-guide"><div><span>01</span><p><strong>Find a care professional</strong><small>Use New message or browse the caregiver directory.</small></p></div><div><span>02</span><p><strong>Open a conversation</strong><small>Select Message on a listed professional’s profile.</small></p></div><div><span>03</span><p><strong>Continue here</strong><small>Choose the conversation to read and reply.</small></p></div></div>
+            <p className="cw-message-privacy">Use messages to coordinate care services. Keep children’s and residents’ medical details and private records in their authorized workflows.</p>
             {contactSearchOpen && <div className="cw-contact-finder"><label>Find a care professional<input type="search" value={contactSearch} onChange={(event) => setContactSearch(event.target.value)} placeholder="Search by name, service or location" /></label>
-              {contactsLoading ? <p className="cw-contact-empty" role="status">Loading care professionals…</p> : <div className="cw-contact-results">{matchingContacts.map((contact) => <article className="cw-contact-result" key={contact.caregiver_id}><span className="cw-contact-avatar">{(contact.full_name || 'C').trim().charAt(0).toUpperCase()}</span><span className="cw-contact-info"><strong>{contact.full_name || 'CareLife caregiver'}</strong><small>{String(contact.service_type || 'Care service').replaceAll('_', ' ')} · {contact.location || 'Location not listed'}</small></span><button type="button" className="cw-button soft" disabled={busy} onClick={() => void createConversation(contact)}>{busy ? 'Opening…' : 'Message'}</button></article>)}
-                {!matchingContacts.length && <div className="cw-contact-empty">{contacts.length ? 'No care professionals match that search.' : <>No approved care professionals are listed yet. Check again in the <a href="#caregivers">caregiver directory</a>.</>}</div>}</div>}
+              {contactsLoading ? <p className="cw-contact-empty" role="status">Loading care professionals…</p> : <div className="cw-contact-results">{matchingContacts.map((contact) => <article className="cw-contact-result" key={contact.caregiver_id}><span className="cw-contact-avatar">{(contact.full_name || 'C').trim().charAt(0).toUpperCase()}</span><span className="cw-contact-info"><strong>{contact.full_name || 'CareLife caregiver'}</strong><small className={'cw-contact-verification ' + (contact.is_verified ? 'verified' : 'pending')}>{contact.is_verified ? 'Verified caregiver' : 'Not yet verified'} · {String(contact.service_type || 'Care service').replaceAll('_', ' ')} · {contact.location || 'Location not listed'}</small></span><button type="button" className="cw-button soft" disabled={busy} onClick={() => void createConversation(contact)}>{busy ? 'Opening…' : 'Message'}</button></article>)}
+                {!matchingContacts.length && <div className="cw-contact-empty">{contacts.length ? 'No care professionals match that search.' : <>No caregiver profiles are available yet. Check the <a href="#caregivers">caregiver directory</a> for updates.</>}</div>}</div>}
             </div>}
             <div className="cw-messaging-layout">
               <aside className="cw-conversation-list" aria-label="Your conversations">
                 <strong className="cw-list-heading">Recent conversations</strong>
-                {!conversations.length ? <div className="cw-conversation-empty"><p>Your conversations will appear here.</p><a href="#caregivers">Browse care professionals</a></div> : conversations.map((conversation) => <button type="button" key={conversation.id} className={selectedConversation === conversation.id ? 'selected' : ''} onClick={() => void openConversation(conversation.id)}><strong>{conversation.other_user_name || 'CareLife member'}</strong><small>{String(conversation.other_user_role || '').replaceAll('_', ' ')}</small><small>{conversation.last_message_at ? prettyDate(conversation.last_message_at) : 'No messages yet'}</small></button>)}
+                {!conversations.length ? <div className="cw-conversation-empty"><strong>No conversations yet</strong><p>Start from a care professional’s listing. Their reply will appear in this inbox.</p><a href="#caregivers">Browse caregiver profiles</a></div> : conversations.map((conversation) => <button type="button" key={conversation.id} className={selectedConversation === conversation.id ? 'selected' : ''} onClick={() => void openConversation(conversation.id)}><strong>{conversation.other_user_name || 'CareLife member'}</strong><small>{String(conversation.other_user_role || '').replaceAll('_', ' ')}</small><small>{conversation.last_message_at ? prettyDate(conversation.last_message_at) : 'No messages yet'}</small></button>)}
               </aside>
               <div className="cw-chat">
-                {!selectedConversation ? <div className="cw-chat-welcome"><span className="cw-chat-welcome-icon" aria-hidden="true">✉</span><strong>{conversations.length ? 'Choose a conversation' : 'Your conversations start here'}</strong><p>{conversations.length ? 'Select a name from your inbox to read and reply.' : 'Browse care professionals, then start a conversation from the directory.'}</p><a className="cw-button" href="#caregivers">Browse care professionals</a></div> : <>
+                {!selectedConversation ? <div className="cw-chat-welcome"><span className="cw-chat-welcome-icon" aria-hidden="true">✉</span><strong>{conversations.length ? 'Choose a conversation' : 'Ask a care professional a question'}</strong><p>{conversations.length ? 'Select a name from your inbox to read and reply.' : 'Start on a care professional listing, choose Message, and return here to continue the conversation.'}</p><a className="cw-button" href="#caregivers">Browse caregiver profiles</a></div> : <>
                   <div className="cw-chat-heading"><strong>{conversations.find((item) => item.id === selectedConversation)?.other_user_name || 'CareLife member'}</strong><small>{String(conversations.find((item) => item.id === selectedConversation)?.other_user_role || 'Private conversation').replaceAll('_', ' ')}</small></div>
                   <div className="cw-message-list">{messages.map((item) => <article key={item.id} className={'cw-message ' + (item.sender_user_id === profile?.user_id ? 'mine' : '')}><p>{item.body}</p><small>{item.sender_user_id === profile?.user_id ? 'You' : 'CareLife member'} · {prettyDate(item.created_at)}</small></article>)}</div>
                   <form className="cw-send-form" onSubmit={sendMessage}><label className="visually-hidden" htmlFor="cw-message-body">Message</label><textarea id="cw-message-body" rows={2} maxLength={5000} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Write a message…" required /><button className="cw-button primary" disabled={busy || !draft.trim()}>{busy ? 'Sending…' : 'Send'}</button></form>

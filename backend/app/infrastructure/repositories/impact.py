@@ -27,12 +27,10 @@ SELECT 1
 FROM organizations o
 JOIN user_organizations uo ON uo.organization_id = o.id
 JOIN users u ON u.id = uo.user_id
-JOIN roles r ON r.id = u.role_id
 WHERE o.id = %s
   AND o.organization_type = 'orphanage'
   AND u.id = %s
   AND u.is_active = TRUE
-  AND r.name = 'orphanage_staff'
 """
 
 

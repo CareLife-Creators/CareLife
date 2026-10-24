@@ -67,6 +67,24 @@ class LicenseExpiryDatabaseTests(unittest.TestCase):
                         ),
                     )
 
+                # A renewed license supersedes this older upload. Its stale
+                # expiry date must not generate a second reminder.
+                connection.execute(
+                    """
+                    INSERT INTO organization_documents (
+                        id, organization_id, document_type,
+                        document_number, expires_at,
+                        created_at, updated_at, updated_by
+                    )
+                    VALUES (
+                        %s, %s, 'license', 'CAR41-SUPERSEDED',
+                        CURRENT_DATE + 5, NOW() - INTERVAL '1 day',
+                        NOW() - INTERVAL '1 day', %s
+                    )
+                    """,
+                    (str(uuid4()), self.expiring_id, self.user_id),
+                )
+
                 connection.execute(
                     """
                     INSERT INTO organization_documents (
@@ -166,23 +184,30 @@ class LicenseExpiryDatabaseTests(unittest.TestCase):
             self.repository.get_public_daycare(self.expired_id)
         )
 
-    def test_expiry_reminder_is_not_duplicated(self):
+    def test_expiry_reminder_uses_latest_document_and_is_not_duplicated(self):
         self.repository.create_license_expiry_reminders(30)
         self.repository.create_license_expiry_reminders(30)
 
         with get_connection() as connection:
             count = connection.execute(
                 """
-                SELECT COUNT(*)
+                SELECT COUNT(*), MIN(document_expires_at),
+                       MAX(document_expires_at)
                 FROM notifications
                 WHERE organization_id = %s
                   AND user_id = %s
                   AND notification_type = 'organization_license_expiry'
                 """,
                 (self.expiring_id, self.user_id),
-            ).fetchone()[0]
+            ).fetchone()
 
-        self.assertEqual(count, 1)
+        self.assertEqual(count[0], 1)
+        with get_connection() as connection:
+            expected_expiry = connection.execute(
+                "SELECT CURRENT_DATE + 10"
+            ).fetchone()[0]
+        self.assertEqual(count[1], expected_expiry)
+        self.assertEqual(count[2], expected_expiry)
 
 
 if __name__ == "__main__":

@@ -35,11 +35,12 @@ class ResidentProfileService:
     @staticmethod
     def _require_authorized_staff(
         user: UserContext,
+        organization_id: str,
     ) -> None:
-        if user.role not in {
+        if user.role != Role.CARELIFE_ADMIN and not user.has_organization_role(
             Role.CARE_HOME_STAFF,
-            Role.CARELIFE_ADMIN,
-        }:
+            organization_id,
+        ):
             raise PermissionError(
                 "Only authorized care-home staff or administrators "
                 "can manage resident profiles"
@@ -51,7 +52,7 @@ class ResidentProfileService:
         organization_id: str,
         request: ResidentProfileCreateRequest,
     ) -> ResidentProfile:
-        self._require_authorized_staff(user)
+        self._require_authorized_staff(user, organization_id)
 
         return self.repository.create_profile(
             user=user,
@@ -65,7 +66,7 @@ class ResidentProfileService:
         organization_id: str,
         profile_status: ResidentProfileStatus | None = None,
     ) -> list[ResidentProfile]:
-        self._require_authorized_staff(user)
+        self._require_authorized_staff(user, organization_id)
 
         return self.repository.list_profiles(
             user=user,
@@ -79,7 +80,7 @@ class ResidentProfileService:
         organization_id: str,
         resident_id: str,
     ) -> ResidentProfile:
-        self._require_authorized_staff(user)
+        self._require_authorized_staff(user, organization_id)
 
         profile = self.repository.get_profile(
             user=user,
@@ -99,7 +100,7 @@ class ResidentProfileService:
         resident_id: str,
         changes: dict[str, object],
     ) -> ResidentProfile:
-        self._require_authorized_staff(user)
+        self._require_authorized_staff(user, organization_id)
 
         if not changes:
             raise ValueError(

@@ -38,10 +38,10 @@ STAFF_ORGANIZATION_TYPES = {
 
 def get_expected_organization_type(
     current_user: UserContext,
+    organization_id: str,
 ) -> str:
-    organization_type = STAFF_ORGANIZATION_TYPES.get(
-        current_user.role
-    )
+    organization_role = current_user.organization_role_for(organization_id)
+    organization_type = STAFF_ORGANIZATION_TYPES.get(organization_role)
 
     if organization_type is None:
         raise HTTPException(
@@ -66,7 +66,8 @@ def get_organization_profile(
     ),
 ) -> OrganizationProfileResponse:
     expected_type = get_expected_organization_type(
-        current_user
+        current_user,
+        organization_id,
     )
 
     try:
@@ -107,7 +108,8 @@ def update_organization_profile(
     ),
 ) -> OrganizationProfileResponse:
     expected_type = get_expected_organization_type(
-        current_user
+        current_user,
+        organization_id,
     )
 
     try:

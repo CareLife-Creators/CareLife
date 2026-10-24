@@ -172,12 +172,9 @@ class PostgresElderCareBookingRepository(
             FROM user_organizations AS uo
             JOIN users AS u
               ON u.id = uo.user_id
-            JOIN roles AS r
-              ON r.id = u.role_id
             WHERE uo.user_id = %s
               AND uo.organization_id = %s
               AND u.is_active = TRUE
-              AND r.name = 'care_home_staff'
             LIMIT 1
             """,
             (user_id, organization_id),
@@ -512,11 +509,8 @@ class PostgresElderCareBookingRepository(
                     FROM user_organizations AS uo
                     JOIN users AS u
                       ON u.id = uo.user_id
-                    JOIN roles AS r
-                      ON r.id = u.role_id
                     WHERE uo.user_id = %s
                       AND u.is_active = TRUE
-                      AND r.name = 'care_home_staff'
                 )
             """
             params = (user_id,)
