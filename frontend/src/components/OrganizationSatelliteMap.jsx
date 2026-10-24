@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import './OrganizationSatelliteMap.css'
 import './OrganizationSatelliteMapLocation.css'
 
@@ -9,8 +9,13 @@ const project = (longitude, latitude, zoom) => {
 }
 
 export default function OrganizationSatelliteMap({ organizations = [], selectedId, onSelect, value, onPick, centerLocation, startZoom = 7 }) {
-  const [zoom, setZoom] = useState(startZoom)
-  useEffect(() => { if (centerLocation) setZoom(startZoom) }, [centerLocation?.latitude, centerLocation?.longitude, startZoom])
+  const centerKey = centerLocation ? `${centerLocation.latitude}:${centerLocation.longitude}:${startZoom}` : ''
+  const [zoomState, setZoomState] = useState({ centerKey, value: startZoom })
+  const zoom = zoomState.centerKey === centerKey ? zoomState.value : startZoom
+  const changeZoom = (update) => setZoomState((current) => ({
+    centerKey,
+    value: update(current.centerKey === centerKey ? current.value : startZoom),
+  }))
   const width = 560
   const height = 390
   const scale = 0.8
@@ -49,9 +54,9 @@ export default function OrganizationSatelliteMap({ organizations = [], selectedI
       const left = (point.x - center.x) * scale + width / 2
       const top = (point.y - center.y) * scale + height / 2
       if (left < -20 || left > width + 20 || top < -20 || top > height + 20) return null
-      return <button type="button" key={org.organization_id} className={'org-satellite-pin' + (org.organization_id === selectedId ? ' selected' : '')} style={{ left: `${left / width * 100}%`, top: `${top / height * 100}%` }} aria-label={`Locate ${org.organization_name}`} aria-pressed={org.organization_id === selectedId} title={org.organization_name} onClick={() => { onSelect(org.organization_id); setZoom((value) => Math.max(value, 16)) }}><span /></button>
+      return <button type="button" key={org.organization_id} className={'org-satellite-pin' + (org.organization_id === selectedId ? ' selected' : '')} style={{ left: `${left / width * 100}%`, top: `${top / height * 100}%` }} aria-label={`Locate ${org.organization_name}`} aria-pressed={org.organization_id === selectedId} title={org.organization_name} onClick={() => { onSelect(org.organization_id); changeZoom((value) => Math.max(value, 16)) }}><span /></button>
     })}{onPick && hasValue && (() => { const point = project(Number(value.longitude), Number(value.latitude), zoom); const left = (point.x - center.x) * scale + width / 2; const top = (point.y - center.y) * scale + height / 2; return <span className="org-satellite-picker-pin" style={{ left: `${left / width * 100}%`, top: `${top / height * 100}%` }} aria-label="Selected organization location" /> })()}</div>
-    <div className="org-satellite-controls"><button type="button" aria-label="Zoom in" onClick={() => setZoom((value) => Math.min(18, value + 1))}>+</button><button type="button" aria-label="Zoom out" onClick={() => setZoom((value) => Math.max(5, value - 1))}>−</button></div>
+    <div className="org-satellite-controls"><button type="button" aria-label="Zoom in" onClick={() => changeZoom((value) => Math.min(18, value + 1))}>+</button><button type="button" aria-label="Zoom out" onClick={() => changeZoom((value) => Math.max(5, value - 1))}>−</button></div>
     <span className="org-satellite-label">{onPick ? 'Click the map to set a location · zoom in for precision' : 'Satellite view · select a pin to zoom to the submitted location'}</span>
     <a className="org-satellite-attribution" href="https://support.esri.com/en-us/knowledge-base/what-is-the-correct-way-to-cite-an-arcgis-online-basema-000012040" target="_blank" rel="noreferrer">Esri · Maxar imagery</a>
   </div>

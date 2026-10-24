@@ -26,23 +26,16 @@ export default function OrganizationWorkspacePage() {
   const organizationStorageKey = `${ORG_KEY}:${email || 'member'}`
   const approvedOrganizations = useMemo(() => organizationRoles.filter((item) => item?.organization_id && item?.organization_role), [organizationRoles])
   const [tab, setTab] = useState('overview')
-  const [organizationId, setOrganizationId] = useState(() => {
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState(() => {
     try {
       const saved = localStorage.getItem(`${ORG_KEY}:${email || 'member'}`) || ''
       return organizationRoles.some((item) => item.organization_id === saved) ? saved : (organizationRoles[0]?.organization_id || '')
     } catch { return organizationRoles[0]?.organization_id || '' }
   })
+  const organizationId = approvedOrganizations.some((item) => item.organization_id === selectedOrganizationId)
+    ? selectedOrganizationId
+    : (approvedOrganizations[0]?.organization_id || '')
   const workspaceRole = approvedOrganizations.find((item) => item.organization_id === organizationId)?.organization_role || ''
-
-  useEffect(() => {
-    if (!approvedOrganizations.some((item) => item.organization_id === organizationId)) {
-      const nextId = approvedOrganizations[0]?.organization_id || ''
-      setOrganizationId(nextId)
-      if (nextId) {
-        try { localStorage.setItem(organizationStorageKey, nextId) } catch { /* The approved ID remains selected in memory. */ }
-      }
-    }
-  }, [approvedOrganizations, organizationId, organizationStorageKey])
   const [profile, setProfile] = useState(null)
   const [profileForm, setProfileForm] = useState({})
   const [campaigns, setCampaigns] = useState([])
@@ -355,7 +348,7 @@ export default function OrganizationWorkspacePage() {
           <p>{workspaceDescription}</p>
           <div className="cw-hero-meta"><span>{organizationId ? 'Approved organization access' : 'Organization access'}</span><span>{workspaceRole ? workspaceRole.replaceAll('_', ' ') : 'Member'}</span></div>
         </header>
-        {approvedOrganizations.length > 1 && <section className="cw-panel cw-org-switcher"><label htmlFor="workspace-organization">Organization workspace</label><select id="workspace-organization" value={organizationId} onChange={(event) => { setOrganizationId(event.target.value); setTab('profile') }}>{approvedOrganizations.map((item) => <option key={item.organization_id} value={item.organization_id}>{item.organization_role.replaceAll('_', ' ')} · {item.organization_id}</option>)}</select></section>}
+        {approvedOrganizations.length > 1 && <section className="cw-panel cw-org-switcher"><label htmlFor="workspace-organization">Organization workspace</label><select id="workspace-organization" value={organizationId} onChange={(event) => { setSelectedOrganizationId(event.target.value); setTab('profile') }}>{approvedOrganizations.map((item) => <option key={item.organization_id} value={item.organization_id}>{item.organization_role.replaceAll('_', ' ')} · {item.organization_id}</option>)}</select></section>}
         {!organizationId && <section className="cw-panel"><div className="cw-panel-heading"><div><p className="cw-kicker">ORGANIZATION ACCESS</p><h2>No approved organization workspace yet</h2></div></div><p className="cw-help">Submit organization details from your account dashboard. An administrator must approve the application before private organization tools become available.</p><a className="cw-button primary" href="#organization-apply">Apply for organization access</a></section>}
         {error && <div className="cw-alert error" role="alert">{error}</div>}
         {notice && <div className="cw-alert success" role="status">{notice}</div>}

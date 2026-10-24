@@ -21,13 +21,26 @@ export default function OrganizationApplicationPage() {
   const [notice, setNotice] = useState('')
 
   const refreshApplications = useCallback(async () => {
-    setLoading(true)
     try { setApplications(await getMyOrganizationApplications()) }
     catch (err) { setError(err instanceof Error ? err.message : 'Your applications could not be loaded.') }
     finally { setLoading(false) }
   }, [])
 
-  useEffect(() => { void refreshApplications() }, [refreshApplications])
+  useEffect(() => {
+    let cancelled = false
+    async function loadApplications() {
+      try {
+        const result = await getMyOrganizationApplications()
+        if (!cancelled) setApplications(result)
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Your applications could not be loaded.')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    void loadApplications()
+    return () => { cancelled = true }
+  }, [])
 
   function update(field, value) { setForm((current) => ({ ...current, [field]: value })) }
 

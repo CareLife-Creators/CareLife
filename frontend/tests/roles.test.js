@@ -7,6 +7,7 @@ const publicRoutes = [
   '#elderly-care-directory',
   '#caregivers',
   '#orphanage-support',
+  '#organization-profile',
 ]
 
 test('public discovery and support routes are available while signed out', () => {
@@ -24,7 +25,6 @@ test('private records, bookings, messaging, and account routes still require sig
     '#messages',
     '#dashboard',
     '#account',
-    '#organization-profile',
   ]
 
   for (const route of privateRoutes) {
@@ -33,7 +33,9 @@ test('private records, bookings, messaging, and account routes still require sig
 })
 
 test('organization and admin workspaces retain their role checks', () => {
-  assert.equal(canAccessRoute('#organization-workspace', ROLE.DAYCARE_STAFF), true)
+  const approvedDaycareAccess = [{ organization_id: 'daycare-1', organization_role: ROLE.DAYCARE_STAFF }]
+  assert.equal(canAccessRoute('#organization-workspace', ROLE.PARENT_GUARDIAN, approvedDaycareAccess), true)
+  assert.equal(canAccessRoute('#organization-workspace', ROLE.DAYCARE_STAFF), false)
   assert.equal(canAccessRoute('#organization-workspace', ROLE.PARENT_GUARDIAN), false)
   assert.equal(canAccessRoute('#admin-operations', ROLE.ADMIN), true)
   assert.equal(canAccessRoute('#admin-operations', ROLE.DONOR_SUPPORTER), false)

@@ -29,11 +29,14 @@ function statusLabel(status) {
 
 function VerificationStatusPage() {
   const { organizationRoles = [] } = useSession()
-  const [organizationId, setOrganizationId] = useState(
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState(
     organizationRoles[0]?.organization_id || ''
   )
+  const organizationId = organizationRoles.some((item) => item.organization_id === selectedOrganizationId)
+    ? selectedOrganizationId
+    : (organizationRoles[0]?.organization_id || '')
   const [organization, setOrganization] = useState(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(Boolean(organizationRoles[0]?.organization_id))
   const [error, setError] = useState('')
 
   async function loadVerification(event) {
@@ -66,14 +69,21 @@ function VerificationStatusPage() {
   }
 
   useEffect(() => {
-    if (!organizationRoles.some((item) => item.organization_id === organizationId)) {
-      setOrganizationId(organizationRoles[0]?.organization_id || '')
-      return
-    }
-    if (organizationId.trim()) void loadVerification()
-  // Load status only for an organization in the signed-in user's approved memberships.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [organizationId, organizationRoles])
+    if (!organizationId.trim()) return undefined
+    let cancelled = false
+    getOrganizationVerification(organizationId.trim())
+      .then((data) => {
+        if (cancelled) return
+        setOrganization(data)
+        setError('')
+        localStorage.setItem('carelife_organization_id', organizationId.trim())
+      })
+      .catch((requestError) => {
+        if (!cancelled) setError(requestError instanceof Error ? requestError.message : 'Unable to load verification status. Please try again.')
+      })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [organizationId])
 
 
   const status = String(organization?.status || 'pending').toLowerCase()
@@ -101,7 +111,7 @@ function VerificationStatusPage() {
                 <h4>Organization ID</h4>
               </div>
             </div>
-            {organizationRoles.length > 1 && <label className="verification-field">Organization<select value={organizationId} onChange={(event) => setOrganizationId(event.target.value)}>{organizationRoles.map((item) => <option key={item.organization_id} value={item.organization_id}>{String(item.organization_role).replaceAll('_', ' ')} · {item.organization_id}</option>)}</select></label>}
+            {organizationRoles.length > 1 && <label className="verification-field">Organization<select value={organizationId} onChange={(event) => { setLoading(true); setOrganization(null); setSelectedOrganizationId(event.target.value) }}>{organizationRoles.map((item) => <option key={item.organization_id} value={item.organization_id}>{String(item.organization_role).replaceAll('_', ' ')} · {item.organization_id}</option>)}</select></label>}
             {!organizationId && <p className="verification-error" role="status">No approved organization access is linked to this account yet. Submitted applications can be tracked from the organization application page.</p>}
             {organizationId && <p className="verification-org-id">Organization reference: {organizationId}</p>}
             {error && <p className="verification-error" role="alert">{error}</p>}
