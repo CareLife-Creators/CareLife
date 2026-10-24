@@ -66,7 +66,14 @@ def test_login_and_password_reset_pages_render(browser, base_url):
     assert browser.find_element(By.ID, "login-email").is_displayed()
     assert browser.find_element(By.ID, "login-password").is_displayed()
 
-    browser.find_element(By.CSS_SELECTOR, "button.forgot-password").click()
+    # The app briefly renders a loader over the form during route/session checks.
+    wait.until(
+        EC.invisibility_of_element_located((By.CSS_SELECTOR, ".cl-loader"))
+    )
+    forgot_password = wait.until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, "button.forgot-password"))
+    )
+    forgot_password.click()
     wait.until(lambda driver: "#password-reset" in driver.current_url)
 
     wait.until(
