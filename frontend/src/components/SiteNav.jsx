@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import CareLifeLogo from './CareLifeLogo'
 import { logout } from '../api/auth'
 import { memberLinks, roleLabel } from '../lib/roles'
-import { useSession } from '../lib/session'
+import { getToken, useSession } from '../lib/session'
 import { getMyNotifications, getMyProfile } from '../api/workspace'
+import { API_BASE_URL } from '../api/client'
 import { publicOrganizationName } from '../lib/publicDisplay'
 import './SiteNav.css'
 
@@ -21,6 +22,9 @@ function SiteNav() {
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const [displayName, setDisplayName] = useState('')
+  const [profilePhotoKey, setProfilePhotoKey] = useState('')
+  const [profilePhotoRevision, setProfilePhotoRevision] = useState(0)
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState('')
   const [current, setCurrent] = useState(window.location.hash || '#home')
   const { signedIn, role, email } = useSession()
 
@@ -29,6 +33,8 @@ function SiteNav() {
       /* eslint-disable react-hooks/set-state-in-effect -- Clear user-specific navigation state on logout. */
       setUnreadCount(0)
       setDisplayName('')
+      setProfilePhotoKey('')
+      setProfilePhotoUrl('')
       /* eslint-enable react-hooks/set-state-in-effect */
       return undefined
     }
@@ -39,19 +45,52 @@ function SiteNav() {
       ])
       if (!mounted) return
       if (notifications.status === 'fulfilled') setUnreadCount(Array.isArray(notifications.value) ? notifications.value.filter((item) => !item.is_read).length : 0)
-      if (profile.status === 'fulfilled') setDisplayName(publicOrganizationName(profile.value.full_name) || '')
+      if (profile.status === 'fulfilled') {
+        setDisplayName(publicOrganizationName(profile.value.full_name) || '')
+        setProfilePhotoKey(profile.value.profile_photo_url ? `${profile.value.user_id}:${profile.value.profile_photo_url}` : '')
+        if (!profile.value.profile_photo_url) setProfilePhotoUrl('')
+      }
     }
     void refreshNavData()
     const interval = window.setInterval(() => void refreshNavData(), 60000)
     window.addEventListener('focus', refreshNavData)
     window.addEventListener('carelife:notifications-updated', refreshNavData)
+    const refreshProfilePhoto = () => {
+      setProfilePhotoRevision((revision) => revision + 1)
+      void refreshNavData()
+    }
+    window.addEventListener('carelife:profile-photo-updated', refreshProfilePhoto)
     return () => {
       mounted = false
       window.clearInterval(interval)
       window.removeEventListener('focus', refreshNavData)
       window.removeEventListener('carelife:notifications-updated', refreshNavData)
+      window.removeEventListener('carelife:profile-photo-updated', refreshProfilePhoto)
     }
   }, [signedIn])
+
+  useEffect(() => {
+    if (!signedIn || !profilePhotoKey) {
+      return undefined
+    }
+    let cancelled = false
+    let objectUrl = ''
+    fetch(API_BASE_URL + '/users/me/profile/photo', {
+      headers: getToken() ? { Authorization: 'Bearer ' + getToken() } : {},
+      credentials: 'include',
+    }).then((response) => {
+      if (!response.ok) throw new Error('No profile photo')
+      return response.blob()
+    }).then((blob) => {
+      if (cancelled) return
+      objectUrl = URL.createObjectURL(blob)
+      setProfilePhotoUrl(objectUrl)
+    }).catch(() => { if (!cancelled) setProfilePhotoUrl('') })
+    return () => {
+      cancelled = true
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [signedIn, profilePhotoKey, profilePhotoRevision])
 
   useEffect(() => {
     function sync() {
@@ -134,7 +173,7 @@ function SiteNav() {
               </a>
               <div className="site-nav-account">
                 <button type="button" className="site-nav-profile-trigger" aria-expanded={accountMenuOpen} aria-haspopup="menu" onClick={() => setAccountMenuOpen((value) => !value)}>
-                  <span className="site-nav-profile-avatar" aria-hidden="true">{initials}</span>
+                  <span className="site-nav-profile-avatar" aria-hidden="true">{profilePhotoUrl ? <img src={profilePhotoUrl} alt="" /> : initials}</span>
                   <span className="site-nav-profile-name">{profileLabel}</span>
                   <svg className="site-nav-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
                 </button>

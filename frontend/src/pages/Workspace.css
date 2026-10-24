@@ -253,3 +253,59 @@
 .cw-conversation-empty a:hover{text-decoration:underline}
 .cw-chat-welcome .cw-button{margin-top:5px}
 @media(max-width:520px){.cw-account-links{gap:3px;padding:5px}.cw-account-links a{flex:1;justify-content:center;padding:9px 6px;font-size:.75rem}.cw-account-hero.messages{padding:22px}}
+
+/* Shared inbox treatment for every signed-in role. */
+.cw-messages-panel{padding:clamp(18px,3vw,30px);border-color:#dce9e2;background:linear-gradient(160deg,#fff 0%,#fbfdfb 100%)}
+.cw-messages-panel>.cw-panel-heading{align-items:center;margin-bottom:18px}
+.cw-messages-panel>.cw-panel-heading>div{min-width:0}
+.cw-messages-panel .cw-panel-subtitle{max-width:58ch;line-height:1.65}
+.cw-messages-panel>.cw-panel-heading>.cw-button{flex:0 0 auto;min-height:44px;padding:10px 17px}
+.cw-messages-panel .cw-contact-finder{margin-bottom:16px;padding:18px;border-color:#dbe9e1;border-radius:19px;background:linear-gradient(135deg,#f4faf6,#fbfdfb)}
+.cw-contact-finder-heading strong{color:#1d493b;font-size:.95rem}
+.cw-contact-finder-heading p{margin:5px 0 14px;color:#74877d;font-size:.8rem;line-height:1.6}
+.cw-contact-finder>label{max-width:660px}
+.cw-messages-panel .cw-contact-results{margin-top:13px}
+.cw-messaging-layout{grid-template-columns:minmax(225px,.8fr) minmax(0,1.8fr);align-items:stretch;gap:14px;margin-top:0}
+.cw-conversation-list{gap:8px;padding:13px;border:1px solid #e2ece6;border-radius:19px;background:#f8fbf9}
+.cw-list-heading-row{display:flex;align-items:center;justify-content:space-between;padding:2px 4px 8px;border-bottom:1px solid #e5eee8}
+.cw-list-heading-row .cw-list-heading{padding:0;color:#466858;font-size:.7rem;letter-spacing:.1em}
+.cw-list-heading-row>span{display:grid;min-width:24px;height:24px;place-items:center;padding:0 6px;border-radius:999px;background:#e5f2ea;color:#21634d;font-size:.7rem;font-weight:800}
+.cw-conversation-list button{display:flex;flex-direction:row;align-items:center;gap:10px;padding:11px;border-color:transparent;border-radius:14px;background:transparent;transition:background .16s ease,border-color .16s ease}
+.cw-conversation-list button:hover{border-color:#e1ebe5;background:#fff}
+.cw-conversation-list button.selected{border-color:#cfe5d8;background:#fff;box-shadow:0 5px 16px #173f3509}
+.cw-conversation-avatar,.cw-chat-partner-avatar{display:grid;flex:0 0 42px;width:42px;height:42px;place-items:center;border:1px solid #d3e8dc;border-radius:50%;background:linear-gradient(145deg,#e7f5ec,#d8eee2);color:#176b5b;font-size:.78rem;font-weight:850}
+.cw-conversation-copy{display:grid;flex:1;min-width:0;gap:3px;text-align:left}
+.cw-conversation-copy strong{overflow:hidden;color:#244b3d;font-size:.81rem;text-overflow:ellipsis;white-space:nowrap}
+.cw-conversation-copy small{overflow:hidden;color:#7b8d83;font-size:.67rem;text-overflow:ellipsis;white-space:nowrap;text-transform:capitalize}
+.cw-conversation-empty{justify-items:start;align-content:start;gap:9px;padding:18px 6px;color:#73867c}
+.cw-conversation-empty strong{color:#315b4b;font-size:.85rem}
+.cw-conversation-empty p{max-width:24ch;font-size:.76rem;line-height:1.6}
+.cw-conversation-empty .cw-button{margin-top:3px;font-size:.7rem}
+.cw-empty-message-icon{display:grid;width:39px;height:39px;place-items:center;border-radius:13px;background:#e7f4ec;color:#176b5b;font-size:18px}
+.cw-chat{min-height:410px;border-color:#dfeae4;border-radius:19px;background:#f7faf8;box-shadow:0 5px 20px #173f3507}
+.cw-chat-heading{display:flex;flex-direction:row;align-items:center;gap:11px;padding:13px 17px;border-bottom-color:#e6eee9;background:#fff}
+.cw-chat-partner-avatar{flex-basis:40px;width:40px;height:40px}
+.cw-chat-partner-copy{display:grid;min-width:0;gap:3px}
+.cw-chat-partner-copy strong{overflow:hidden;color:#214b3c;font-size:.87rem;text-overflow:ellipsis;white-space:nowrap}
+.cw-chat-partner-copy small{color:#829187;font-size:.7rem;text-transform:capitalize}
+.cw-private-label{display:inline-flex;align-items:center;gap:6px;margin-left:auto;padding:6px 9px;border:1px solid #e2ebe5;border-radius:999px;color:#6d8176;background:#f8fbf9;font-size:.63rem;font-weight:750;white-space:nowrap}
+.cw-private-label:before{content:"";width:6px;height:6px;border-radius:50%;background:#4b9a75}
+.cw-message-list{flex:1;min-height:245px;max-height:440px;gap:13px;padding:18px}
+.cw-message{display:flex;align-items:flex-end;gap:8px;max-width:min(92%,580px);padding:0;border:0;background:transparent}
+.cw-message.mine{flex-direction:row-reverse;align-self:flex-end;background:transparent}
+.cw-message-avatar{display:grid;flex:0 0 28px;width:28px;height:28px;place-items:center;overflow:hidden;border:1px solid #d8e8de;border-radius:50%;background:#e8f4ed;color:#176b5b;font-size:.62rem;font-weight:850}
+.cw-message-avatar img{width:100%;height:100%;object-fit:cover}
+.cw-message-content{max-width:calc(100% - 36px);padding:10px 13px;border:1px solid #e2eae5;border-radius:15px 15px 15px 4px;background:#fff;box-shadow:0 3px 8px #173f3506}
+.cw-message.mine .cw-message-content{border-color:#cce5d6;border-radius:15px 15px 4px 15px;background:#eaf7ef}
+.cw-message-content p{line-height:1.55}
+.cw-message-content small{font-size:.64rem}
+.cw-chat-welcome{align-content:center;justify-items:center;min-height:350px;padding:32px}
+.cw-chat-welcome-icon{width:54px;height:54px;border-radius:18px;font-size:23px}
+.cw-chat-welcome strong{font-size:1.08rem}
+.cw-chat-welcome p{max-width:42ch;font-size:.82rem;line-height:1.75}
+.cw-chat-welcome .cw-button{margin-top:8px}
+.cw-send-form{padding:13px 15px;border-top-color:#e6eee9;background:#fff}
+.cw-send-form textarea{min-height:46px;border-radius:14px;background:#f8fbf9}
+.cw-send-form .cw-button{min-height:43px;padding-inline:18px}
+@media(max-width:760px){.cw-messaging-layout{grid-template-columns:minmax(0,1fr);gap:11px}.cw-conversation-list{max-height:235px}.cw-chat{min-height:380px}.cw-messages-panel>.cw-panel-heading{align-items:flex-start;flex-wrap:wrap}.cw-messages-panel>.cw-panel-heading>.cw-button{width:100%}}
+@media(max-width:520px){.cw-messages-panel{padding:16px}.cw-conversation-list{padding:10px}.cw-chat{min-height:360px}.cw-message-list{padding:13px}.cw-message{max-width:96%}.cw-private-label{font-size:0;padding:8px}.cw-private-label:before{width:7px;height:7px}}

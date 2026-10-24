@@ -82,6 +82,7 @@ export default function AccountPage({ initialTab = 'profile' }) {
     setMessage('')
     try {
       await uploadMyProfilePhoto(file)
+      window.dispatchEvent(new Event('carelife:profile-photo-updated'))
       setMessage('Profile photo updated.')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Profile photo could not be uploaded.')
@@ -98,6 +99,7 @@ export default function AccountPage({ initialTab = 'profile' }) {
     try {
       await removeMyProfilePhoto()
       setPhotoUrl('')
+      window.dispatchEvent(new Event('carelife:profile-photo-updated'))
       setMessage('Profile photo removed.')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Profile photo could not be removed.')
@@ -107,6 +109,8 @@ export default function AccountPage({ initialTab = 'profile' }) {
   }
 
   const initials = (profile?.full_name || profile?.email || 'CL').trim().split(/[\s@._-]+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase()
+  const activeConversation = conversations.find((item) => item.id === selectedConversation)
+  const conversationInitials = (activeConversation?.other_user_name || 'CareLife member').trim().split(/[\s@._-]+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase()
   const matchingContacts = contacts.filter((contact) => {
     const query = contactSearch.trim().toLowerCase()
     return !query || [contact.full_name, contact.service_type, contact.location].some((value) => String(value || '').toLowerCase().includes(query))
@@ -283,21 +287,33 @@ export default function AccountPage({ initialTab = 'profile' }) {
                 {!item.is_read && <button type="button" className="cw-button" onClick={() => void markRead(item)}>Mark read</button>}
               </article>)}</div>}
           </section>}
-          {tab === 'messages' && <section className="cw-panel">
-            <div className="cw-panel-heading"><div><p className="cw-kicker">PRIVATE CONVERSATIONS</p><h2>Your inbox</h2><p className="cw-panel-subtitle">{profile?.role === 'independent_caregiver' ? 'Reply to families and coordinate with care professionals.' : 'Continue a conversation or start one with a care professional.'}</p></div><button type="button" className="cw-button primary" onClick={() => void toggleContactSearch()}>{contactSearchOpen ? 'Close search' : 'New message'}</button></div>
-            {contactSearchOpen && <div className="cw-contact-finder"><label>Find a care professional<input type="search" value={contactSearch} onChange={(event) => setContactSearch(event.target.value)} placeholder="Search by name, service or location" /></label>
+          {tab === 'messages' && <section className="cw-panel cw-messages-panel">
+            <div className="cw-panel-heading"><div><p className="cw-kicker">PRIVATE CARE CONVERSATIONS</p><h2>Your inbox</h2><p className="cw-panel-subtitle">{profile?.role === 'independent_caregiver' ? 'Reply to families here, or find another care professional to coordinate with.' : 'Find a care professional to begin. Replies and care updates stay in this inbox.'}</p></div><button type="button" className="cw-button primary" onClick={() => void toggleContactSearch()}>{contactSearchOpen ? 'Close directory' : 'Find a care professional'}</button></div>
+            {contactSearchOpen && <div className="cw-contact-finder"><div className="cw-contact-finder-heading"><strong>Choose a care professional</strong><p>Search by name, service, or location. Select Message to open a private conversation.</p></div><label>Search the caregiver directory<input type="search" value={contactSearch} onChange={(event) => setContactSearch(event.target.value)} placeholder="Name, service, or location" /></label>
               {contactsLoading ? <p className="cw-contact-empty" role="status">Loading care professionals…</p> : <div className="cw-contact-results">{matchingContacts.map((contact) => <article className="cw-contact-result" key={contact.caregiver_id}><span className="cw-contact-avatar">{(contact.full_name || 'C').trim().charAt(0).toUpperCase()}</span><span className="cw-contact-info"><strong>{contact.full_name || 'CareLife caregiver'}</strong><small>{String(contact.service_type || 'Care service').replaceAll('_', ' ')} · {contact.location || 'Location not listed'}</small></span><button type="button" className="cw-button soft" disabled={busy} onClick={() => void createConversation(contact)}>{busy ? 'Opening…' : 'Message'}</button></article>)}
                 {!matchingContacts.length && <div className="cw-contact-empty">{contacts.length ? 'No care professionals match that search.' : <>No approved care professionals are listed yet. Check again in the <a href="#caregivers">caregiver directory</a>.</>}</div>}</div>}
             </div>}
             <div className="cw-messaging-layout">
               <aside className="cw-conversation-list" aria-label="Your conversations">
-                <strong className="cw-list-heading">Recent conversations</strong>
-                {!conversations.length ? <div className="cw-conversation-empty"><p>Your conversations will appear here.</p><a href="#caregivers">Browse care professionals</a></div> : conversations.map((conversation) => <button type="button" key={conversation.id} className={selectedConversation === conversation.id ? 'selected' : ''} onClick={() => void openConversation(conversation.id)}><strong>{conversation.other_user_name || 'CareLife member'}</strong><small>{String(conversation.other_user_role || '').replaceAll('_', ' ')}</small><small>{conversation.last_message_at ? prettyDate(conversation.last_message_at) : 'No messages yet'}</small></button>)}
+                <div className="cw-list-heading-row"><strong className="cw-list-heading">Conversations</strong><span>{conversations.length}</span></div>
+                {!conversations.length ? <div className="cw-conversation-empty"><span className="cw-empty-message-icon" aria-hidden="true">✉</span><strong>No conversations yet</strong><p>When you start or receive a message, it will appear here.</p><button type="button" className="cw-button soft" onClick={() => void toggleContactSearch()}>Find a care professional</button></div> : conversations.map((conversation) => {
+                  const otherName = conversation.other_user_name || 'CareLife member'
+                  const otherInitials = otherName.trim().split(/[\s@._-]+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase()
+                  return <button type="button" key={conversation.id} className={selectedConversation === conversation.id ? 'selected' : ''} aria-current={selectedConversation === conversation.id ? 'true' : undefined} onClick={() => void openConversation(conversation.id)}>
+                    <span className="cw-conversation-avatar" aria-hidden="true">{otherInitials}</span><span className="cw-conversation-copy"><strong>{otherName}</strong><small>{String(conversation.other_user_role || 'CareLife member').replaceAll('_', ' ')}</small><small>{conversation.last_message_at ? prettyDate(conversation.last_message_at) : 'Conversation started'}</small></span>
+                  </button>
+                })}
               </aside>
               <div className="cw-chat">
-                {!selectedConversation ? <div className="cw-chat-welcome"><span className="cw-chat-welcome-icon" aria-hidden="true">✉</span><strong>{conversations.length ? 'Choose a conversation' : 'Your conversations start here'}</strong><p>{conversations.length ? 'Select a name from your inbox to read and reply.' : 'Browse care professionals, then start a conversation from the directory.'}</p><a className="cw-button" href="#caregivers">Browse care professionals</a></div> : <>
-                  <div className="cw-chat-heading"><strong>{conversations.find((item) => item.id === selectedConversation)?.other_user_name || 'CareLife member'}</strong><small>{String(conversations.find((item) => item.id === selectedConversation)?.other_user_role || 'Private conversation').replaceAll('_', ' ')}</small></div>
-                  <div className="cw-message-list">{messages.map((item) => <article key={item.id} className={'cw-message ' + (item.sender_user_id === profile?.user_id ? 'mine' : '')}><p>{item.body}</p><small>{item.sender_user_id === profile?.user_id ? 'You' : 'CareLife member'} · {prettyDate(item.created_at)}</small></article>)}</div>
+                {!selectedConversation ? <div className="cw-chat-welcome"><span className="cw-chat-welcome-icon" aria-hidden="true">✉</span><strong>{conversations.length ? 'Select a conversation' : 'Start a care conversation'}</strong><p>{conversations.length ? 'Choose a person in your conversation list to read messages and reply.' : 'Find a care professional, open a conversation, then send your first message. Their reply will appear here.'}</p>{!conversations.length && <button type="button" className="cw-button primary" onClick={() => void toggleContactSearch()}>Browse care professionals</button>}</div> : <>
+                  <div className="cw-chat-heading"><span className="cw-chat-partner-avatar" aria-hidden="true">{conversationInitials}</span><span className="cw-chat-partner-copy"><strong>{activeConversation?.other_user_name || 'CareLife member'}</strong><small>{String(activeConversation?.other_user_role || 'Private conversation').replaceAll('_', ' ')}</small></span><span className="cw-private-label">Private conversation</span></div>
+                  <div className="cw-message-list">{messages.map((item) => {
+                    const isMine = item.sender_user_id === profile?.user_id
+                    return <article key={item.id} className={'cw-message ' + (isMine ? 'mine' : '')}>
+                      <span className="cw-message-avatar" aria-hidden="true">{isMine && photoUrl ? <img src={photoUrl} alt="" /> : isMine ? initials : conversationInitials}</span>
+                      <div className="cw-message-content"><p>{item.body}</p><small>{isMine ? 'You' : activeConversation?.other_user_name || 'CareLife member'} · {prettyDate(item.created_at)}</small></div>
+                    </article>
+                  })}</div>
                   <form className="cw-send-form" onSubmit={sendMessage}><label className="visually-hidden" htmlFor="cw-message-body">Message</label><textarea id="cw-message-body" rows={2} maxLength={5000} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Write a message…" required /><button className="cw-button primary" disabled={busy || !draft.trim()}>{busy ? 'Sending…' : 'Send'}</button></form>
                 </>}
               </div>
