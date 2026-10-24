@@ -15,6 +15,12 @@ on:
       - ".github/workflows/selenium-e2e.yml"
       - "docs/CAR-154-selenium.md"
   workflow_dispatch:
+    inputs:
+      target_url:
+        description: "Optional deployed URL to test instead of the local frontend build"
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -28,9 +34,9 @@ jobs:
       run:
         working-directory: backend
     env:
-      # By default, test the frontend built from this exact commit. Set the
-      # repository variable CARELIFE_E2E_BASE_URL to test a deployed environment.
-      CARELIFE_E2E_BASE_URL: ${{ vars.CARELIFE_E2E_BASE_URL || 'http://127.0.0.1:4173' }}
+      # Pushes and pull requests test the frontend built from the exact commit.
+      # Deployed-site testing is opt-in via workflow_dispatch.target_url.
+      CARELIFE_E2E_BASE_URL: ${{ inputs.target_url || 'http://127.0.0.1:4173' }}
       CARELIFE_HEADLESS: "true"
       CARELIFE_E2E_EMAIL: ${{ secrets.CARELIFE_E2E_EMAIL }}
       CARELIFE_E2E_PASSWORD: ${{ secrets.CARELIFE_E2E_PASSWORD }}

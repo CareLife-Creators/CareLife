@@ -4,7 +4,7 @@
 
 The Selenium suite checks the frontend built from the exact commit under test. By default GitHub Actions builds the checked-out \`frontend/\` and serves it locally at \`http://127.0.0.1:4173\`, avoiding stale-hosted-code false negatives. Frontend application source and product behavior are not changed by the Selenium workflow.
 
-To test a deployed environment instead, set the GitHub Actions repository variable \`CARELIFE_E2E_BASE_URL\` to that environment's URL, such as \`https://carelife-web.onrender.com\`. A deployed-site run can correctly fail when the hosted frontend has not yet received the latest code.
+Normal pushes and pull requests test the current source build. To run the same tests against a deployment, manually dispatch the **Selenium E2E** workflow and supply \`target_url\`, such as \`https://carelife-web.onrender.com\`. The suite keeps the same assertions in both modes; a deployed-site run can correctly fail when the hosted frontend has not yet received the latest code.
 
 ## Coverage
 
@@ -40,7 +40,7 @@ New-Item -ItemType Directory -Force test-results | Out-Null
 python -m pytest -q tests/e2e --junitxml=test-results/e2e-results.xml
 \`\`\`
 
-For deployed-site testing, set \`CARELIFE_E2E_BASE_URL\` to the hosted URL before running pytest or set it as a GitHub repository variable. For the optional admin test, set \`CARELIFE_E2E_EMAIL\` and \`CARELIFE_E2E_PASSWORD\` to a dedicated test account; do not commit credentials.
+For a deployed-site test, set \`CARELIFE_E2E_BASE_URL\` to the hosted URL before running pytest, or manually dispatch the GitHub Actions workflow with \`target_url\`. For the optional admin test, set \`CARELIFE_E2E_EMAIL\` and \`CARELIFE_E2E_PASSWORD\` to a dedicated test account; do not commit credentials.
 
 ## CI behavior
 
