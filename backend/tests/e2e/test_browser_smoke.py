@@ -84,7 +84,7 @@ def test_login_and_password_reset_pages_render(browser, base_url):
         )
     )
     assert browser.find_element(By.ID, "login-email").is_displayed()
-    assert browser.find_element(By.ID, "login-password").is_displayed()
+    wait.until(EC.visibility_of_element_located((By.ID, "login-password")))
 
     # The app can briefly put a loader above the login form while checking a session.
     wait.until(
