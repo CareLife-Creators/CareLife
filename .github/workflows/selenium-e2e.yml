@@ -30,10 +30,10 @@ jobs:
     env:
       # By default, test the frontend built from this exact commit. Set the
       # repository variable CARELIFE_E2E_BASE_URL to test a deployed environment.
-      CARELIFE_E2E_BASE_URL: \${{ vars.CARELIFE_E2E_BASE_URL || 'http://127.0.0.1:4173' }}
+      CARELIFE_E2E_BASE_URL: ${{ vars.CARELIFE_E2E_BASE_URL || 'http://127.0.0.1:4173' }}
       CARELIFE_HEADLESS: "true"
-      CARELIFE_E2E_EMAIL: \${{ secrets.CARELIFE_E2E_EMAIL }}
-      CARELIFE_E2E_PASSWORD: \${{ secrets.CARELIFE_E2E_PASSWORD }}
+      CARELIFE_E2E_EMAIL: ${{ secrets.CARELIFE_E2E_EMAIL }}
+      CARELIFE_E2E_PASSWORD: ${{ secrets.CARELIFE_E2E_PASSWORD }}
 
     steps:
       - name: Check out repository
@@ -96,7 +96,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: selenium-e2e-results-\${{ github.run_id }}
+          name: selenium-e2e-results-${{ github.run_id }}
           path: backend/test-results/
           if-no-files-found: warn
           retention-days: 14
