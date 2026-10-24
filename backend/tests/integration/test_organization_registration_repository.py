@@ -8,7 +8,7 @@ from app.infrastructure.repositories.organization_repository import PostgresOrga
 
 
 class OrganizationRegistrationRepositoryIntegrationTests(unittest.TestCase):
-    def test_registration_persists_profile_and_links_submitter(self):
+    def test_pending_registration_persists_profile_without_granting_access(self):
         user_id = str(uuid4())
         organization_id = str(uuid4())
         email = f"{user_id}@carelife.test"
@@ -78,7 +78,7 @@ class OrganizationRegistrationRepositoryIntegrationTests(unittest.TestCase):
                     (user_id, organization_id),
                 ).fetchone()
 
-            self.assertIsNotNone(membership)
+            self.assertIsNone(membership)
         finally:
             with get_connection() as connection:
                 with connection.transaction():
