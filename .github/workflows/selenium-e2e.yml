@@ -11,6 +11,7 @@ on:
     paths:
       - "backend/tests/e2e/**"
       - "backend/requirements-test.txt"
+      - "frontend/**"
       - ".github/workflows/selenium-e2e.yml"
       - "docs/CAR-154-selenium.md"
   workflow_dispatch:
@@ -19,22 +20,54 @@ permissions:
   contents: read
 
 jobs:
-  deployed-site-e2e:
-    name: Deployed-site Selenium tests
+  selenium-e2e:
+    name: Selenium UI regression tests
     runs-on: ubuntu-latest
     timeout-minutes: 25
     defaults:
       run:
         working-directory: backend
     env:
-      CARELIFE_E2E_BASE_URL: ${{ vars.CARELIFE_E2E_BASE_URL || 'https://carelife-web.onrender.com' }}
+      # By default, test the frontend built from this exact commit. Set the
+      # repository variable CARELIFE_E2E_BASE_URL to test a deployed environment.
+      CARELIFE_E2E_BASE_URL: \${{ vars.CARELIFE_E2E_BASE_URL || 'http://127.0.0.1:4173' }}
       CARELIFE_HEADLESS: "true"
-      CARELIFE_E2E_EMAIL: ${{ secrets.CARELIFE_E2E_EMAIL }}
-      CARELIFE_E2E_PASSWORD: ${{ secrets.CARELIFE_E2E_PASSWORD }}
+      CARELIFE_E2E_EMAIL: \${{ secrets.CARELIFE_E2E_EMAIL }}
+      CARELIFE_E2E_PASSWORD: \${{ secrets.CARELIFE_E2E_PASSWORD }}
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci --no-audit --no-fund
+
+      - name: Build frontend from tested commit
+        working-directory: frontend
+        run: npm run build
+
+      - name: Start frontend preview for Selenium
+        working-directory: frontend
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/carelife-vite-preview.log 2>&1 &
+          echo $! > /tmp/carelife-vite-preview.pid
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/ > /dev/null; then
+              echo "Frontend preview is ready."
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/carelife-vite-preview.log
+          exit 1
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -53,7 +86,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements-test.txt
 
-      - name: Run deployed-site browser tests
+      - name: Run Selenium regression suite
         run: |
           mkdir -p test-results
           python -m pytest -q tests/e2e \
@@ -63,7 +96,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: selenium-e2e-results-${{ github.run_id }}
+          name: selenium-e2e-results-\${{ github.run_id }}
           path: backend/test-results/
           if-no-files-found: warn
           retention-days: 14
