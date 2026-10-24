@@ -68,6 +68,13 @@ class OrganizationRegistrationRepositoryIntegrationTests(unittest.TestCase):
             self.assertEqual(saved.longitude, 90.4125)
             self.assertEqual(saved.contact, "+8801700000000")
 
+            submitted = repository.get_submitted_by(user_id)
+            self.assertEqual(len(submitted), 1)
+            self.assertEqual(submitted[0].organization_id, organization_id)
+            self.assertEqual(submitted[0].latitude, 23.8103)
+            self.assertEqual(submitted[0].longitude, 90.4125)
+            self.assertEqual(submitted[0].contact, "+8801700000000")
+
             with get_connection() as connection:
                 membership = connection.execute(
                     """

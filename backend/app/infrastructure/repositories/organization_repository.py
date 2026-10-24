@@ -271,7 +271,7 @@ class PostgresOrganizationRepository:
                        document.document_number, document.expires_at,
                        o.submitted_by, status.name, o.created_at,
                        o.updated_at, latest_review.notes, o.description,
-                       o.location, o.contact
+                       o.location, o.latitude, o.longitude, o.contact
                 FROM organizations o
                 JOIN verification_statuses status ON status.id = o.status_id
                 LEFT JOIN LATERAL (
@@ -1007,12 +1007,23 @@ class PostgresOrganizationRepository:
                     FROM organizations o
                     JOIN verification_statuses status
                         ON status.id = o.status_id
-                    JOIN organization_documents document
-                        ON document.organization_id = o.id
-                       AND LOWER(document.document_type) IN (
-                           'license', 'registration',
-                           'registration_certificate'
-                       )
+                    JOIN LATERAL (
+                        SELECT current_documents.document_type,
+                               current_documents.expires_at
+                        FROM (
+                            SELECT DISTINCT ON (
+                                LOWER(od.document_type)
+                            ) od.document_type, od.expires_at
+                            FROM organization_documents od
+                            WHERE od.organization_id = o.id
+                              AND LOWER(od.document_type) IN (
+                                  'license', 'registration',
+                                  'registration_certificate'
+                              )
+                            ORDER BY LOWER(od.document_type),
+                                     od.created_at DESC, od.id DESC
+                        ) current_documents
+                    ) document ON TRUE
                     CROSS JOIN LATERAL (
                         SELECT o.submitted_by AS user_id
                         UNION
