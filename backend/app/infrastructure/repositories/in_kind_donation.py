@@ -41,21 +41,18 @@ _AUTHORIZATION_SELECT = """
         ON uo.organization_id = o.id
     JOIN users u
         ON u.id = uo.user_id
-    JOIN roles r
-        ON r.id = u.role_id
     WHERE o.id = %s
       AND u.id = %s
       AND u.is_active = TRUE
-      AND r.name = %s
       AND (
           (o.organization_type = 'daycare'
-              AND r.name = 'daycare_staff')
+              AND %s = 'daycare_staff')
           OR
           (o.organization_type = 'orphanage'
-              AND r.name = 'orphanage_staff')
+              AND %s = 'orphanage_staff')
           OR
           (o.organization_type = 'elderly_care'
-              AND r.name = 'care_home_staff')
+              AND %s = 'care_home_staff')
       )
 """
 
@@ -72,7 +69,7 @@ class PostgresInKindDonationRepository(InKindDonationRepository):
         with get_connection() as connection:
             row = connection.execute(
                 _AUTHORIZATION_SELECT,
-                (organization_id, user_id, role.value),
+                (organization_id, user_id, role.value, role.value, role.value),
             ).fetchone()
 
         return row is not None

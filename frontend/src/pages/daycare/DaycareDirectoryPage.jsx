@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { getDaycareDirectory } from '../../api/daycareDirectory'
+import OrganizationSatelliteMap from '../../components/OrganizationSatelliteMap'
 import './DaycareDirectoryPage.css'
 import './DaycareDirectoryLinks.css'
+import '../DirectoryLocation.css'
 import SiteNav from '../../components/SiteNav'
 import { publicOrganizationDescription, publicOrganizationName } from '../../lib/publicDisplay'
+import { requestApproximateLocation, withDistance } from '../../lib/geo'
 
 function DaycareDirectoryPage() {
   const [search, setSearch] = useState('')
@@ -13,6 +16,25 @@ function DaycareDirectoryPage() {
   const [loading, setLoading] = useState(true)
 
   const [error, setError] = useState('')
+  const [origin, setOrigin] = useState(null)
+  const [locationMessage, setLocationMessage] = useState('')
+  const [locationBusy, setLocationBusy] = useState(false)
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState('')
+  const nearbyOrganizations = useMemo(() => withDistance(organizations, origin), [organizations, origin])
+
+  async function findNearby() {
+    setLocationBusy(true)
+    setLocationMessage('')
+    try {
+      const current = await requestApproximateLocation()
+      setOrigin(current)
+      setLocationMessage('Nearby centers are sorted by straight-line distance. Your location stays in this browser and is not saved to CareLife.')
+    } catch (err) {
+      setLocationMessage(err instanceof Error ? err.message : 'Location is unavailable. Search by city or area instead.')
+    } finally {
+      setLocationBusy(false)
+    }
+  }
 
   async function loadDirectory(
     currentSearch = search,
@@ -154,6 +176,11 @@ function DaycareDirectoryPage() {
             </div>
 
           </form>
+          <div className="directory-nearby-tools">
+            <button type="button" onClick={findNearby} disabled={locationBusy}>{locationBusy ? 'Finding your location…' : origin ? 'Refresh nearby centers' : 'Use my location for nearby centers'}</button>
+            {origin && <button type="button" className="directory-location-clear" onClick={() => { setOrigin(null); setLocationMessage('') }}>Clear location</button>}
+            {locationMessage && <p role="status">{locationMessage}</p>}
+          </div>
         </section>
 
 
@@ -204,7 +231,7 @@ function DaycareDirectoryPage() {
 
             <div className="daycare-results-grid">
 
-              {organizations.map(
+                {nearbyOrganizations.map(
                 (organization) => (
                   <article
                     className="daycare-card"
@@ -263,6 +290,11 @@ function DaycareDirectoryPage() {
                       {publicOrganizationDescription(organization.description, 'daycare')}
                     </p>
 
+                    <div className="daycare-nearby-meta">
+                      {organization.distance_km != null ? <strong>{organization.distance_km < 10 ? organization.distance_km.toFixed(1) : Math.round(organization.distance_km)} km away</strong> : <span>{origin ? 'Location not published for distance search' : 'Distance available when you share your location'}</span>}
+                      {organization.latitude != null && organization.longitude != null && <a href={`https://www.google.com/maps/dir/?api=1&destination=${organization.latitude},${organization.longitude}`} target="_blank" rel="noreferrer">Directions ↗</a>}
+                    </div>
+
 
                     <a
                       className="daycare-details-button"
@@ -276,6 +308,8 @@ function DaycareDirectoryPage() {
               )}
 
             </div>
+
+            {nearbyOrganizations.some((organization) => organization.latitude != null && organization.longitude != null) && <section className="daycare-nearby-map" aria-label="Map of listed daycare centers"><div><strong>{origin ? 'Centers near your location' : 'Daycare locations'}</strong><span>Only verified public listing coordinates are shown. No children or family locations are displayed.</span></div><OrganizationSatelliteMap organizations={nearbyOrganizations.filter((organization) => organization.latitude != null && organization.longitude != null).map((organization) => ({ ...organization, organization_name: organization.organization_name }))} selectedId={selectedOrganizationId} onSelect={setSelectedOrganizationId} centerLocation={origin} startZoom={origin ? 10 : 7} /></section>}
 
           </section>
         )}

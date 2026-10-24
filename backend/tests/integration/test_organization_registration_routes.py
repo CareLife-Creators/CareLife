@@ -64,15 +64,14 @@ class OrganizationRegistrationRouteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 401)
         self.service.register.assert_not_called()
 
-    def test_valid_registration_is_created_as_pending(self):
-        staff_user = UserContext(
-            user_id="staff-1",
-            role=Role.DAYCARE_STAFF,
-            organization_id=None,
+    def test_authenticated_member_can_submit_registration_for_review(self):
+        member = UserContext(
+            user_id="member-1",
+            role=Role.PARENT_GUARDIAN,
         )
 
         app.dependency_overrides[get_current_user] = (
-            lambda: staff_user
+            lambda: member
         )
 
         response = self.client.post(
@@ -87,7 +86,7 @@ class OrganizationRegistrationRouteTests(unittest.TestCase):
         )
         self.assertEqual(
             response.json()["submitted_by"],
-            "staff-1",
+            "member-1",
         )
         self.assertEqual(
             response.json()["organization_type"],
@@ -96,15 +95,14 @@ class OrganizationRegistrationRouteTests(unittest.TestCase):
 
         self.service.register.assert_called_once()
 
-    def test_staff_cannot_register_a_different_organization_type(self):
-        staff_user = UserContext(
-            user_id="staff-1",
-            role=Role.DAYCARE_STAFF,
-            organization_id=None,
+    def test_member_can_apply_for_any_organization_type(self):
+        member = UserContext(
+            user_id="member-1",
+            role=Role.PARENT_GUARDIAN,
         )
 
         app.dependency_overrides[get_current_user] = (
-            lambda: staff_user
+            lambda: member
         )
 
         mismatched_payload = {
@@ -118,22 +116,18 @@ class OrganizationRegistrationRouteTests(unittest.TestCase):
             json=mismatched_payload,
         )
 
-        self.assertEqual(response.status_code, 403)
-        self.assertEqual(
-            response.json()["detail"],
-            "Your staff role cannot register this organization type",
-        )
-        self.service.register.assert_not_called()
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["organization_type"], "orphanage")
+        self.service.register.assert_called_once()
 
     def test_invalid_payload_is_rejected(self):
-        staff_user = UserContext(
-            user_id="staff-1",
-            role=Role.DAYCARE_STAFF,
-            organization_id=None,
+        member = UserContext(
+            user_id="member-1",
+            role=Role.PARENT_GUARDIAN,
         )
 
         app.dependency_overrides[get_current_user] = (
-            lambda: staff_user
+            lambda: member
         )
 
         invalid_payload = {
@@ -149,15 +143,15 @@ class OrganizationRegistrationRouteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 422)
         self.service.register.assert_not_called()
 
-    def test_non_staff_role_is_rejected(self):
-        parent_user = UserContext(
-            user_id="parent-1",
-            role=Role.PARENT_GUARDIAN,
+    def test_administrator_cannot_submit_organization_application(self):
+        admin = UserContext(
+            user_id="admin-1",
+            role=Role.CARELIFE_ADMIN,
             organization_id=None,
         )
 
         app.dependency_overrides[get_current_user] = (
-            lambda: parent_user
+            lambda: admin
         )
 
         response = self.client.post(
@@ -166,6 +160,7 @@ class OrganizationRegistrationRouteTests(unittest.TestCase):
         )
 
         self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json()["detail"], "Administrator accounts cannot submit organization applications")
         self.service.register.assert_not_called()
 
 

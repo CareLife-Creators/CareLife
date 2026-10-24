@@ -34,6 +34,11 @@ class PostgresOrganizationRepository:
                         latitude,
                         longitude,
                         contact,
+                        capacity,
+                        age_range,
+                        opening_hours,
+                        facilities,
+                        fees,
                         created_at,
                         updated_at,
                         updated_by
@@ -47,6 +52,11 @@ class PostgresOrganizationRepository:
                             FROM verification_statuses
                             WHERE name = %s
                         ),
+                        %s,
+                        %s,
+                        %s,
+                        %s,
+                        %s,
                         %s,
                         %s,
                         %s,
@@ -69,24 +79,14 @@ class PostgresOrganizationRepository:
                         organization.latitude,
                         organization.longitude,
                         organization.contact,
+                        organization.capacity,
+                        organization.age_range,
+                        organization.opening_hours,
+                        organization.facilities,
+                        organization.fees,
                         organization.submitted_at,
                         organization.updated_at,
                         organization.submitted_by,
-                    ),
-                )
-
-                connection.execute(
-                    """
-                    INSERT INTO user_organizations (
-                        user_id,
-                        organization_id
-                    )
-                    VALUES (%s, %s)
-                    ON CONFLICT (user_id, organization_id) DO NOTHING
-                    """,
-                    (
-                        organization.submitted_by,
-                        organization.organization_id,
                     ),
                 )
 
@@ -177,6 +177,8 @@ class PostgresOrganizationRepository:
                     latest_review.notes,
                     o.description,
                     o.location,
+                    o.latitude,
+                    o.longitude,
                     o.contact
                 FROM organizations o
                 JOIN verification_statuses status
@@ -260,6 +262,39 @@ class PostgresOrganizationRepository:
             for row in rows
             if row is not None
         ]
+
+    def get_submitted_by(self, user_id: str) -> list[Organization]:
+        with get_connection() as connection:
+            rows = connection.execute(
+                """
+                SELECT o.id, o.name, o.organization_type,
+                       document.document_number, document.expires_at,
+                       o.submitted_by, status.name, o.created_at,
+                       o.updated_at, latest_review.notes, o.description,
+                       o.location, o.contact
+                FROM organizations o
+                JOIN verification_statuses status ON status.id = o.status_id
+                LEFT JOIN LATERAL (
+                    SELECT od.document_number, od.expires_at
+                    FROM organization_documents od
+                    WHERE od.organization_id = o.id
+                      AND od.document_type = 'license'
+                    ORDER BY od.created_at DESC, od.id DESC
+                    LIMIT 1
+                ) document ON TRUE
+                LEFT JOIN LATERAL (
+                    SELECT vr.notes
+                    FROM verification_reviews vr
+                    WHERE vr.organization_id = o.id
+                    ORDER BY vr.reviewed_at DESC, vr.id DESC
+                    LIMIT 1
+                ) latest_review ON TRUE
+                WHERE o.submitted_by = %s
+                ORDER BY o.created_at DESC
+                """,
+                (user_id,),
+            ).fetchall()
+        return [self._to_entity(row) for row in rows if row is not None]
 
     def get_tracking_records(self) -> list[OrganizationTrackingRecord]:
         with get_connection() as connection:
@@ -392,6 +427,21 @@ class PostgresOrganizationRepository:
 
                 if updated is None:
                     return None
+
+                applicant = connection.execute(
+                    "SELECT submitted_by FROM organizations WHERE id = %s",
+                    (organization_id,),
+                ).fetchone()
+                if applicant is None:
+                    return None
+                connection.execute(
+                    """
+                    INSERT INTO user_organizations (user_id, organization_id)
+                    VALUES (%s, %s)
+                    ON CONFLICT (user_id, organization_id) DO NOTHING
+                    """,
+                    (applicant[0], organization_id),
+                )
 
                 connection.execute(
                     """
@@ -542,6 +592,8 @@ class PostgresOrganizationRepository:
                     o.organization_type,
                     o.description,
                     o.location,
+                    o.latitude,
+                    o.longitude,
                     o.contact
                 FROM organizations o
                 JOIN verification_statuses status
@@ -630,6 +682,8 @@ class PostgresOrganizationRepository:
                     o.organization_type,
                     o.description,
                     o.location,
+                    o.latitude,
+                    o.longitude,
                     o.contact,
                     o.capacity,
                     o.age_range,
@@ -720,6 +774,8 @@ class PostgresOrganizationRepository:
                     o.organization_type,
                     o.description,
                     o.location,
+                    o.latitude,
+                    o.longitude,
                     o.contact
                 FROM organizations o
                 JOIN verification_statuses status
@@ -758,7 +814,9 @@ class PostgresOrganizationRepository:
             organization_type=row[2],
             description=row[3],
             location=row[4],
-            contact=row[5],
+            latitude=row[5],
+            longitude=row[6],
+            contact=row[7],
         )
 
     @staticmethod
@@ -774,12 +832,14 @@ class PostgresOrganizationRepository:
             organization_type=row[2],
             description=row[3],
             location=row[4],
-            contact=row[5],
-            capacity=row[6],
-            age_range=row[7],
-            opening_hours=row[8],
-            facilities=row[9],
-            fees=row[10],
+            latitude=row[5],
+            longitude=row[6],
+            contact=row[7],
+            capacity=row[8],
+            age_range=row[9],
+            opening_hours=row[10],
+            facilities=row[11],
+            fees=row[12],
         )
 
     @staticmethod
@@ -802,7 +862,9 @@ class PostgresOrganizationRepository:
             message=row[9],
             description=row[10],
             location=row[11],
-            contact=row[12],
+            latitude=row[12],
+            longitude=row[13],
+            contact=row[14],
         )
 
     def expire_verified_organizations(self) -> int:
@@ -815,22 +877,32 @@ class PostgresOrganizationRepository:
                     SELECT
                         o.id,
                         o.name,
-                        license.expires_at
+                        document.document_type,
+                        document.expires_at
                     FROM organizations o
                     JOIN verification_statuses status
                         ON status.id = o.status_id
                     JOIN LATERAL (
-                        SELECT od.expires_at
-                        FROM organization_documents od
-                        WHERE od.organization_id = o.id
-                          AND od.document_type = 'license'
-                        ORDER BY
-                            od.created_at DESC,
-                            od.id DESC
+                        SELECT current_documents.document_type,
+                               current_documents.expires_at
+                        FROM (
+                            SELECT DISTINCT ON (
+                                LOWER(od.document_type)
+                            ) od.document_type, od.expires_at
+                            FROM organization_documents od
+                            WHERE od.organization_id = o.id
+                              AND LOWER(od.document_type) IN (
+                                  'license', 'registration',
+                                  'registration_certificate'
+                              )
+                            ORDER BY LOWER(od.document_type),
+                                     od.created_at DESC, od.id DESC
+                        ) current_documents
+                        ORDER BY current_documents.expires_at ASC
                         LIMIT 1
-                    ) license ON TRUE
+                    ) document ON TRUE
                     WHERE status.name = %s
-                      AND license.expires_at < CURRENT_DATE
+                      AND document.expires_at < CURRENT_DATE
                     ORDER BY o.id
                     FOR UPDATE OF o
                     """,
@@ -840,6 +912,7 @@ class PostgresOrganizationRepository:
                 for (
                     organization_id,
                     organization_name,
+                    document_type,
                     expires_at,
                 ) in expired_organizations:
                     updated = connection.execute(
@@ -898,7 +971,8 @@ class PostgresOrganizationRepository:
                             organization_id,
                             OrganizationStatus.EXPIRED.value,
                             (
-                                f"License for {organization_name} expired "
+                                f"{document_type.replace('_', ' ').title()} "
+                                f"for {organization_name} expired "
                                 f"on {expires_at.isoformat()}; verification "
                                 "automatically changed to expired."
                             ),
@@ -927,21 +1001,18 @@ class PostgresOrganizationRepository:
                     SELECT
                         o.id,
                         o.name,
-                        license.expires_at,
+                        document.document_type,
+                        document.expires_at,
                         recipient.user_id
                     FROM organizations o
                     JOIN verification_statuses status
                         ON status.id = o.status_id
-                    JOIN LATERAL (
-                        SELECT od.expires_at
-                        FROM organization_documents od
-                        WHERE od.organization_id = o.id
-                          AND od.document_type = 'license'
-                        ORDER BY
-                            od.created_at DESC,
-                            od.id DESC
-                        LIMIT 1
-                    ) license ON TRUE
+                    JOIN organization_documents document
+                        ON document.organization_id = o.id
+                       AND LOWER(document.document_type) IN (
+                           'license', 'registration',
+                           'registration_certificate'
+                       )
                     CROSS JOIN LATERAL (
                         SELECT o.submitted_by AS user_id
                         UNION
@@ -953,11 +1024,13 @@ class PostgresOrganizationRepository:
                         ON notification_user.id = recipient.user_id
                        AND notification_user.is_active = TRUE
                     WHERE status.name = %s
-                      AND license.expires_at >= CURRENT_DATE
-                      AND license.expires_at
+                      AND document.expires_at >= CURRENT_DATE
+                      AND document.expires_at
                           <= CURRENT_DATE + %s
                     ORDER BY
                         o.id,
+                        document.document_type,
+                        document.expires_at,
                         recipient.user_id
                     """,
                     (
@@ -969,18 +1042,21 @@ class PostgresOrganizationRepository:
                 for (
                     organization_id,
                     organization_name,
+                    document_type,
                     expires_at,
                     user_id,
                 ) in expiring_organizations:
                     event_key = (
-                        "organization-license-expiry:"
+                        "organization-document-expiry:"
                         f"{organization_id}:"
+                        f"{document_type}:"
                         f"{expires_at.isoformat()}:"
                         f"reminder:{user_id}"
                     )
 
                     message = (
-                        f"The license for {organization_name} expires on "
+                        f"The {document_type.replace('_', ' ')} for "
+                        f"{organization_name} expires on "
                         f"{expires_at.isoformat()}. Please renew it before "
                         "expiry to keep the organization's verification "
                         "current."
@@ -995,12 +1071,16 @@ class PostgresOrganizationRepository:
                             notification_type,
                             title,
                             message,
+                            document_type,
+                            document_expires_at,
                             event_key,
                             is_read,
                             created_at
                         )
                         VALUES (
                             gen_random_uuid()::text,
+                            %s,
+                            %s,
                             %s,
                             %s,
                             %s,
@@ -1017,8 +1097,10 @@ class PostgresOrganizationRepository:
                             user_id,
                             organization_id,
                             "organization_license_expiry",
-                            "Organization license expiring soon",
+                            "Organization document expiring soon",
                             message,
+                            document_type,
+                            expires_at,
                             event_key,
                         ),
                     ).fetchone()
@@ -1027,3 +1109,61 @@ class PostgresOrganizationRepository:
                         reminders_created += 1
 
         return reminders_created
+
+    def get_pending_license_expiry_emails(self) -> list[dict[str, str]]:
+        with get_connection() as connection:
+            rows = connection.execute(
+                """
+                SELECT
+                    n.id,
+                    u.email,
+                    o.name,
+                    n.document_type,
+                    n.document_expires_at,
+                    n.message
+                FROM notifications n
+                JOIN users u ON u.id = n.user_id
+                JOIN organizations o ON o.id = n.organization_id
+                JOIN verification_statuses status ON status.id = o.status_id
+                WHERE n.notification_type = 'organization_license_expiry'
+                  AND n.email_sent_at IS NULL
+                  AND n.document_type IS NOT NULL
+                  AND n.document_expires_at IS NOT NULL
+                  AND u.is_active = TRUE
+                  AND status.name = %s
+                  AND n.document_expires_at >= CURRENT_DATE
+                ORDER BY n.created_at, n.id
+                """,
+                (OrganizationStatus.VERIFIED.value,),
+            ).fetchall()
+
+        return [
+            {
+                "notification_id": row[0],
+                "email": row[1],
+                "organization_name": row[2],
+                "document_type": row[3],
+                "expires_on": row[4].isoformat(),
+                "message": row[5],
+            }
+            for row in rows
+        ]
+
+    def mark_license_expiry_email_sent(
+        self,
+        notification_id: str,
+    ) -> bool:
+        with get_connection() as connection:
+            with connection.transaction():
+                row = connection.execute(
+                    """
+                    UPDATE notifications
+                    SET email_sent_at = CURRENT_TIMESTAMP
+                    WHERE id = %s
+                      AND notification_type = 'organization_license_expiry'
+                      AND email_sent_at IS NULL
+                    RETURNING id
+                    """,
+                    (notification_id,),
+                ).fetchone()
+        return row is not None

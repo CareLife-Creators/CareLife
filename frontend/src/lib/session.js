@@ -3,18 +3,20 @@ import { useSyncExternalStore } from 'react'
 const TOKEN_KEY = 'carelife_access_token'
 const EMAIL_KEY = 'carelife_email'
 const ROLE_KEY = 'carelife_role'
+const ORGANIZATION_ROLES_KEY = 'carelife_organization_roles'
 const listeners = new Set()
 
 function readStorage() {
-  if (typeof window === 'undefined') return { token: '', email: '', role: '' }
+  if (typeof window === 'undefined') return { token: '', email: '', role: '', organizationRoles: [] }
   try {
     return {
       token: window.localStorage.getItem(TOKEN_KEY) || '',
       email: window.localStorage.getItem(EMAIL_KEY) || '',
       role: (window.localStorage.getItem(ROLE_KEY) || '').toLowerCase(),
+      organizationRoles: JSON.parse(window.localStorage.getItem(ORGANIZATION_ROLES_KEY) || '[]'),
     }
   } catch {
-    return { token: '', email: '', role: '' }
+    return { token: '', email: '', role: '', organizationRoles: [] }
   }
 }
 
@@ -51,6 +53,7 @@ export function saveSession({ token, email = '', role = '' }) {
     window.localStorage.setItem(TOKEN_KEY, token || '')
     window.localStorage.setItem(EMAIL_KEY, email || '')
     window.localStorage.setItem(ROLE_KEY, String(role || '').toLowerCase())
+    window.localStorage.setItem(ORGANIZATION_ROLES_KEY, '[]')
   } catch {
     // The API request still succeeds, but this browser cannot persist the session.
   }
@@ -67,11 +70,24 @@ export function setRole(role) {
   refreshSnapshot()
 }
 
+export function setOrganizationRoles(organizationRoles) {
+  const safeRoles = Array.isArray(organizationRoles)
+    ? organizationRoles.filter((item) => item && item.organization_id && item.organization_role)
+    : []
+  try {
+    window.localStorage.setItem(ORGANIZATION_ROLES_KEY, JSON.stringify(safeRoles))
+  } catch {
+    // Role checks are refreshed after the next authenticated profile request.
+  }
+  refreshSnapshot()
+}
+
 export function clearSession() {
   try {
     window.localStorage.removeItem(TOKEN_KEY)
     window.localStorage.removeItem(EMAIL_KEY)
     window.localStorage.removeItem(ROLE_KEY)
+    window.localStorage.removeItem(ORGANIZATION_ROLES_KEY)
   } catch {
     // Keep the UI responsive when storage is blocked.
   }

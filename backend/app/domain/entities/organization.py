@@ -23,6 +23,11 @@ class Organization(BaseModel):
     latitude: float | None = None
     longitude: float | None = None
     contact: str | None = None
+    capacity: int = 20
+    age_range: str | None = None
+    opening_hours: str | None = None
+    facilities: str | None = None
+    fees: str | None = None
 
     license_number: str
     license_expiry_date: date
@@ -72,6 +77,8 @@ class DaycareDirectoryEntry(BaseModel):
     organization_type: str
     description: str | None = None
     location: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
     contact: str | None = None
 
 class ElderCareDirectoryEntry(BaseModel):
@@ -83,6 +90,8 @@ class ElderCareDirectoryEntry(BaseModel):
 
     description: str | None = None
     location: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
     contact: str | None = None
 
     capacity: int

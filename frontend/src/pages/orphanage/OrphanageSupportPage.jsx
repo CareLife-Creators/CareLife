@@ -227,7 +227,7 @@ export default function OrphanageSupportPage() {
           {!publicUpdates.length && <div className="directory-state">No impact updates have been published for public viewing yet.</div>}
           <div className="impact-list">{publicUpdates.map((update) => <article className="impact-card" key={update.id}>
             <small>{date(update.published_at || update.created_at)} · {publicOrganizationName(update.organization_name)}</small><h3>{publicContentLabel(update.title)}</h3><p>{publicActivityText(update.content) || 'The organization shared a progress update. Contact them for current details.'}</p>
-            {update.media?.length > 0 && <div className="cw-document-list"><strong>Attached media</strong>{update.media.map((media) => <a href={API_BASE_URL + media.url} key={media.id} target="_blank" rel="noreferrer">{media.media_type} · {media.content_type}</a>)}</div>}
+            {update.media?.length > 0 && <div className="cw-impact-media" aria-label={'Media for ' + update.title}>{update.media.map((media) => media.media_type === 'video' ? <video key={media.id} controls preload="metadata" src={API_BASE_URL + media.url} aria-label={'Video for ' + update.title} /> : <a key={media.id} href={API_BASE_URL + media.url} target="_blank" rel="noreferrer"><img src={API_BASE_URL + media.url} alt={'Organization impact photo for ' + update.title} loading="lazy" /></a>)}</div>}
           </article>)}</div>
         </>}
 

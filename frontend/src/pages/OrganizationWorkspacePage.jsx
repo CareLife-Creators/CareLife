@@ -1,16 +1,17 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import SiteNav from '../components/SiteNav'
 import OrganizationSatelliteMap from '../components/OrganizationSatelliteMap'
 import { useSession } from '../lib/session'
 import { publicOrganizationDescription, publicOrganizationName, publicOrganizationValue } from '../lib/publicDisplay'
 import {
-  registerOrganization, getOrganizationProfile, updateOrganizationProfile,
+  getOrganizationProfile, updateOrganizationProfile,
   getOrganizationCampaigns, createOrganizationCampaign, getOrganizationNeeds,
   createOrganizationNeed, getOrganizationImpactUpdates, createOrganizationImpactUpdate,
   getOrganizationResidents, createResidentProfile, setResidentConsent, getResidentCheckIns,
   getOrganizationOrphanageChildren, createOrphanageChild,
   getChildOutcomes, createChildOutcome, uploadImpactMedia,
   getOrganizationInKindPledges, updateInKindPledgeStatus,
+  getPendingDaycareEnrollments, reviewEnrollment,
 } from '../api/workspace'
 import './Workspace.css'
 
@@ -20,31 +21,28 @@ const dateTime = (value) => {
   return value && !Number.isNaN(date.getTime()) ? date.toLocaleString() : 'Not recorded'
 }
 
-function roleOrganizationType(role) {
-  if (role === 'daycare_staff') return 'daycare'
-  if (role === 'orphanage_staff') return 'orphanage'
-  if (role === 'care_home_staff') return 'elderly_care'
-  return 'daycare'
-}
-
 export default function OrganizationWorkspacePage() {
-  const { role } = useSession()
-  const organizationStorageKey = `${ORG_KEY}:${role || 'staff'}`
-  const [tab, setTab] = useState('profile')
-  const [organizationId, setOrganizationId] = useState(() => {
-    try { return localStorage.getItem(`${ORG_KEY}:${role || 'staff'}`) || '' } catch { return '' }
+  const { email, organizationRoles = [] } = useSession()
+  const organizationStorageKey = `${ORG_KEY}:${email || 'member'}`
+  const approvedOrganizations = useMemo(() => organizationRoles.filter((item) => item?.organization_id && item?.organization_role), [organizationRoles])
+  const [tab, setTab] = useState('overview')
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`${ORG_KEY}:${email || 'member'}`) || ''
+      return organizationRoles.some((item) => item.organization_id === saved) ? saved : (organizationRoles[0]?.organization_id || '')
+    } catch { return organizationRoles[0]?.organization_id || '' }
   })
-  const [registration, setRegistration] = useState(() => ({
-    organization_name: '', organization_type: roleOrganizationType(role), description: '',
-    location: '', contact: '', license_number: '', license_expiry_date: '',
-    latitude: '', longitude: '',
-  }))
+  const organizationId = approvedOrganizations.some((item) => item.organization_id === selectedOrganizationId)
+    ? selectedOrganizationId
+    : (approvedOrganizations[0]?.organization_id || '')
+  const workspaceRole = approvedOrganizations.find((item) => item.organization_id === organizationId)?.organization_role || ''
   const [profile, setProfile] = useState(null)
   const [profileForm, setProfileForm] = useState({})
   const [campaigns, setCampaigns] = useState([])
   const [needs, setNeeds] = useState([])
   const [updates, setUpdates] = useState([])
   const [pledges, setPledges] = useState([])
+  const [daycareEnrollments, setDaycareEnrollments] = useState([])
   const [residents, setResidents] = useState([])
   const [selectedResidentId, setSelectedResidentId] = useState('')
   const [checkIns, setCheckIns] = useState([])
@@ -68,20 +66,26 @@ export default function OrganizationWorkspacePage() {
 
   const loadOrganization = useCallback(async () => {
     if (!organizationId.trim()) {
-      setProfile(null); setCampaigns([]); setNeeds([]); setUpdates([]); setResidents([]); setPledges([]); setOrphanageChildren([]); setOutcomes([]); setLoading(false)
+      setProfile(null); setCampaigns([]); setNeeds([]); setUpdates([]); setResidents([]); setPledges([]); setDaycareEnrollments([]); setOrphanageChildren([]); setOutcomes([]); setLoading(false)
       return
     }
     setLoading(true)
     setError('')
-    try { localStorage.setItem(organizationStorageKey, organizationId.trim()) } catch { /* Keep the typed ID usable for this session. */ }
+    if (!approvedOrganizations.some((item) => item.organization_id === organizationId.trim())) {
+      setProfile(null); setCampaigns([]); setNeeds([]); setUpdates([]); setResidents([]); setPledges([]); setDaycareEnrollments([]); setOrphanageChildren([]); setOutcomes([]); setLoading(false)
+      setError('This account has no approved access to that organization.')
+      return
+    }
+    try { localStorage.setItem(organizationStorageKey, organizationId.trim()) } catch { /* Current approved selection remains in memory. */ }
     const results = await Promise.allSettled([
       getOrganizationProfile(organizationId.trim()),
-      role === 'orphanage_staff' ? getOrganizationCampaigns(organizationId.trim()) : Promise.resolve([]),
-      role === 'orphanage_staff' ? getOrganizationNeeds(organizationId.trim()) : Promise.resolve([]),
-      role === 'orphanage_staff' ? getOrganizationImpactUpdates(organizationId.trim()) : Promise.resolve([]),
-      role === 'care_home_staff' ? getOrganizationResidents(organizationId.trim()) : Promise.resolve([]),
-      role === 'orphanage_staff' ? getOrganizationOrphanageChildren(organizationId.trim()) : Promise.resolve([]),
-      role === 'orphanage_staff' ? getOrganizationInKindPledges(organizationId.trim()) : Promise.resolve([]),
+      workspaceRole === 'orphanage_staff' ? getOrganizationCampaigns(organizationId.trim()) : Promise.resolve([]),
+      workspaceRole === 'orphanage_staff' ? getOrganizationNeeds(organizationId.trim()) : Promise.resolve([]),
+      workspaceRole === 'orphanage_staff' ? getOrganizationImpactUpdates(organizationId.trim()) : Promise.resolve([]),
+      workspaceRole === 'care_home_staff' ? getOrganizationResidents(organizationId.trim()) : Promise.resolve([]),
+      workspaceRole === 'orphanage_staff' ? getOrganizationOrphanageChildren(organizationId.trim()) : Promise.resolve([]),
+      workspaceRole === 'orphanage_staff' ? getOrganizationInKindPledges(organizationId.trim()) : Promise.resolve([]),
+      workspaceRole === 'daycare_staff' ? getPendingDaycareEnrollments() : Promise.resolve([]),
     ])
     if (results[0].status === 'fulfilled') {
       setProfile(results[0].value)
@@ -106,14 +110,21 @@ export default function OrganizationWorkspacePage() {
       setResidents(rows)
       setSelectedResidentId((current) => current && rows.some((item) => item.id === current) ? current : (rows[0]?.id || ''))
     }
-    if (role === 'orphanage_staff' && results[5].status === 'fulfilled') {
+    if (workspaceRole === 'orphanage_staff' && results[5].status === 'fulfilled') {
       const rows = Array.isArray(results[5].value) ? results[5].value : []
       setOrphanageChildren(rows)
       setSelectedOrphanageChildId((current) => current && rows.some((item) => item.id === current) ? current : (rows[0]?.id || ''))
     }
-    if (role === 'orphanage_staff' && results[6].status === 'fulfilled') setPledges(Array.isArray(results[6].value) ? results[6].value : [])
+    if (workspaceRole === 'orphanage_staff' && results[6].status === 'fulfilled') setPledges(Array.isArray(results[6].value) ? results[6].value : [])
+    if (workspaceRole === 'daycare_staff' && results[7].status === 'fulfilled') {
+      setDaycareEnrollments((Array.isArray(results[7].value) ? results[7].value : [])
+        .filter((item) => item.daycare_organization_id === organizationId.trim()))
+    } else if (workspaceRole === 'daycare_staff') {
+      setDaycareEnrollments([])
+      setError((current) => current || (results[7].reason instanceof Error ? results[7].reason.message : 'Enrollment requests could not be loaded.'))
+    }
     setLoading(false)
-  }, [organizationId, organizationStorageKey, role])
+  }, [approvedOrganizations, organizationId, organizationStorageKey, workspaceRole])
 
   // eslint-disable-next-line react-hooks/set-state-in-effect -- Load organization data when role, ID, or refresh token changes.
   useEffect(() => { void loadOrganization() }, [refreshKey, loadOrganization])
@@ -131,13 +142,13 @@ export default function OrganizationWorkspacePage() {
 
   /* eslint-disable react-hooks/set-state-in-effect -- Clear previous child outcomes when there is no eligible orphanage child selected. */
   useEffect(() => {
-    if (!selectedOrphanageChildId || role !== 'orphanage_staff') { setOutcomes([]); return }
+    if (!selectedOrphanageChildId || workspaceRole !== 'orphanage_staff') { setOutcomes([]); return }
     let cancelled = false
     getChildOutcomes(selectedOrphanageChildId).then((data) => {
       if (!cancelled) setOutcomes(Array.isArray(data) ? data : [])
     }).catch(() => { if (!cancelled) setOutcomes([]) })
     return () => { cancelled = true }
-  }, [selectedOrphanageChildId, refreshKey, role])
+  }, [selectedOrphanageChildId, refreshKey, workspaceRole])
   /* eslint-enable react-hooks/set-state-in-effect */
 
 
@@ -149,6 +160,17 @@ export default function OrganizationWorkspacePage() {
       setNotice('Pledge marked ' + status + '.')
     } catch (err) { setError(err instanceof Error ? err.message : 'Pledge status could not be updated.') }
     finally { setBusy('') }
+  }
+
+  async function reviewDaycareEnrollment(enrollmentId, status) {
+    setBusy(enrollmentId); setError(''); setNotice('')
+    try {
+      await reviewEnrollment(enrollmentId, status)
+      setNotice(`Enrollment request ${status}.`)
+      setRefreshKey((value) => value + 1)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Enrollment request could not be updated.')
+    } finally { setBusy('') }
   }
 
   async function submitOrphanageChild(event) {
@@ -206,23 +228,6 @@ export default function OrganizationWorkspacePage() {
       setRefreshKey((value) => value + 1)
     } catch (err) { setError(err instanceof Error ? err.message : 'Impact media upload failed.') }
     finally { setBusy('') }
-  }
-
-  async function submitRegistration(event) {
-    event.preventDefault()
-    setBusy('registration'); setError(''); setNotice('')
-    try {
-      const result = await registerOrganization({ ...registration, organization_name: registration.organization_name.trim(), license_expiry_date: registration.license_expiry_date, latitude: registration.latitude === '' ? null : Number(registration.latitude), longitude: registration.longitude === '' ? null : Number(registration.longitude) })
-      const id = result.organization_id || result.id || ''
-      if (id) {
-        setOrganizationId(id)
-        try { localStorage.setItem(organizationStorageKey, id) } catch { /* The displayed ID remains available. */ }
-      }
-      setNotice(id ? 'Registration submitted. Organization ID saved for this workspace.' : 'Registration submitted. Copy the organization ID from the response if one was returned.')
-      setRefreshKey((value) => value + 1)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Organization registration could not be submitted.')
-    } finally { setBusy('') }
   }
 
   async function submitProfile(event) {
@@ -308,9 +313,9 @@ export default function OrganizationWorkspacePage() {
 
 
 
-  const isOrphanage = role === 'orphanage_staff'
-  const isCareHome = role === 'care_home_staff'
-  const isDaycare = role === 'daycare_staff'
+  const isOrphanage = workspaceRole === 'orphanage_staff'
+  const isCareHome = workspaceRole === 'care_home_staff'
+  const isDaycare = workspaceRole === 'daycare_staff'
   const workspaceTitle = isDaycare ? 'Daycare operations' : isOrphanage ? 'Children’s home operations' : 'Care-home operations'
   const workspaceDescription = isDaycare
     ? 'Manage your daycare’s public information, enrollment requests, attendance, daily updates and pickup permissions.'
@@ -318,11 +323,20 @@ export default function OrganizationWorkspacePage() {
       ? 'Manage children’s home information, private child records, fundraising, item pledges and published impact updates.'
       : 'Manage your care home’s public information, resident records, family consent and wellbeing check-ins.'
   const tabs = [
+    ['overview', 'Overview'],
     ['profile', 'Organization profile'],
-    ...(isDaycare ? [['children', 'Children & attendance']] : []),
+    ...(isDaycare ? [['enrollments', 'Enrollment review']] : []),
     ...(isCareHome ? [['residents', 'Residents & check-ins']] : []),
     ...(isOrphanage ? [['children', 'Children & outcomes'], ['support', 'Campaigns & impact'], ['pledges', 'Item pledges']] : []),
   ]
+  const pendingRequestTrend = Array.from({ length: 7 }, (_, index) => {
+    const day = new Date()
+    day.setDate(day.getDate() - (6 - index))
+    const key = day.toLocaleDateString()
+    const count = daycareEnrollments.filter((item) => item.requested_at && new Date(item.requested_at).toLocaleDateString() === key).length
+    return { label: day.toLocaleDateString(undefined, { weekday: 'short' }), count }
+  })
+  const maxRequestCount = Math.max(1, ...pendingRequestTrend.map((item) => item.count))
 
   return (
     <>
@@ -332,37 +346,24 @@ export default function OrganizationWorkspacePage() {
           <span className="cw-kicker">{workspaceTitle.toUpperCase()}</span>
           <h1>{workspaceTitle}</h1>
           <p>{workspaceDescription}</p>
-          <div className="cw-hero-meta"><span>{organizationId ? 'Organization connected' : 'Setup required'}</span><span>{role ? role.replaceAll('_', ' ') : 'Staff'}</span></div>
+          <div className="cw-hero-meta"><span>{organizationId ? 'Approved organization access' : 'Organization access'}</span><span>{workspaceRole ? workspaceRole.replaceAll('_', ' ') : 'Member'}</span></div>
         </header>
-        {!organizationId && <section className="cw-panel">
-          <div className="cw-panel-heading"><div><p className="cw-kicker">REGISTER AN ORGANIZATION</p><h2>Submit organization details</h2></div></div>
-          <p className="cw-help">The organization type is tied to the signed-in staff role. The backend requires a valid license expiry date and reviews the submission before it appears in public listings.</p>
-          <form className="cw-form" onSubmit={submitRegistration}>
-            <label>Organization name<input value={registration.organization_name} maxLength={200} onChange={(event) => setRegistration((s) => ({ ...s, organization_name: event.target.value }))} required /></label>
-            <label>Organization type<input value={registration.organization_type.replaceAll('_', ' ')} disabled /></label>
-            <label>Location<input value={registration.location} maxLength={255} onChange={(event) => setRegistration((s) => ({ ...s, location: event.target.value }))} /></label>
-            <label>Map latitude<input type="number" step="any" min="20.5" max="26.8" placeholder="e.g. 23.8103" value={registration.latitude} onChange={(event) => setRegistration((s) => ({ ...s, latitude: event.target.value }))} /></label>
-            <label>Map longitude<input type="number" step="any" min="88" max="92.8" placeholder="e.g. 90.4125" value={registration.longitude} onChange={(event) => setRegistration((s) => ({ ...s, longitude: event.target.value }))} /></label>
-            <div className="cw-full-field"><strong>Pin your organization on the satellite map</strong><span className="cw-help">Zoom in and click the exact entrance or building location. Your address remains visible in directory listings.</span><OrganizationSatelliteMap value={{ latitude: registration.latitude || null, longitude: registration.longitude || null }} onPick={({ latitude, longitude }) => setRegistration((s) => ({ ...s, latitude: String(latitude), longitude: String(longitude) }))} />{registration.latitude && <small>Selected coordinates: {Number(registration.latitude).toFixed(6)}, {Number(registration.longitude).toFixed(6)}</small>}</div>
-            <label>Contact details<input value={registration.contact} maxLength={100} onChange={(event) => setRegistration((s) => ({ ...s, contact: event.target.value }))} /></label>
-            <label>License number<input value={registration.license_number} maxLength={100} onChange={(event) => setRegistration((s) => ({ ...s, license_number: event.target.value }))} required /></label>
-            <label>License expiry date<input type="date" min={new Date().toISOString().slice(0, 10)} value={registration.license_expiry_date} onChange={(event) => setRegistration((s) => ({ ...s, license_expiry_date: event.target.value }))} required /></label>
-            <label className="cw-full-field">Description<textarea rows={3} maxLength={5000} value={registration.description} onChange={(event) => setRegistration((s) => ({ ...s, description: event.target.value }))} /></label>
-            <div className="cw-form-actions"><button className="cw-button primary" disabled={busy === 'registration'}>{busy === 'registration' ? 'Submitting…' : 'Submit for verification'}</button></div>
-          </form>
-        </section>}
-        <section className="cw-panel">
-          <div className="cw-panel-heading"><div><p className="cw-kicker">WORKSPACE TARGET</p><h2>{organizationId ? 'Load your organization' : 'Have an existing organization ID?'}</h2></div></div>
-          <form className="cw-inline-form" onSubmit={(event) => { event.preventDefault(); try { localStorage.setItem(organizationStorageKey, organizationId.trim()) } catch { /* Use current field value. */ } setRefreshKey((value) => value + 1) }}>
-            <label>Organization ID<input value={organizationId} onChange={(event) => setOrganizationId(event.target.value)} placeholder="Enter the organization ID returned at registration" required /></label>
-            <button className="cw-button primary" disabled={loading}>{loading ? 'Loading…' : 'Load organization'}</button>
-            {organizationId && <button type="button" className="cw-button" onClick={() => { setOrganizationId(''); setProfile(null); setCampaigns([]); setNeeds([]); setUpdates([]); setResidents([]); setOrphanageChildren([]); setOutcomes([]); try { localStorage.removeItem(organizationStorageKey) } catch { /* Ignore blocked storage. */ } }}>Clear ID</button>}
-          </form>
-        </section>
+        {approvedOrganizations.length > 1 && <section className="cw-panel cw-org-switcher"><label htmlFor="workspace-organization">Organization workspace</label><select id="workspace-organization" value={organizationId} onChange={(event) => { setSelectedOrganizationId(event.target.value); setTab('profile') }}>{approvedOrganizations.map((item) => <option key={item.organization_id} value={item.organization_id}>{item.organization_role.replaceAll('_', ' ')} · {item.organization_id}</option>)}</select></section>}
+        {!organizationId && <section className="cw-panel"><div className="cw-panel-heading"><div><p className="cw-kicker">ORGANIZATION ACCESS</p><h2>No approved organization workspace yet</h2></div></div><p className="cw-help">Submit organization details from your account dashboard. An administrator must approve the application before private organization tools become available.</p><a className="cw-button primary" href="#organization-apply">Apply for organization access</a></section>}
         {error && <div className="cw-alert error" role="alert">{error}</div>}
         {notice && <div className="cw-alert success" role="status">{notice}</div>}
         {organizationId && <nav className="cw-tabs" aria-label="Organization tools">{tabs.map(([id, label]) => <button key={id} type="button" className={tab === id ? 'active' : ''} aria-pressed={tab === id} onClick={() => setTab(id)}>{label}</button>)}<button type="button" className="cw-tabs-action" onClick={() => setRefreshKey((value) => value + 1)} disabled={loading}>Refresh</button></nav>}
-        {loading ? <div className="cw-state">Loading organization records…</div> : profile && tab === 'profile' && <section className="cw-panel">
+        {loading ? <div className="cw-state">Loading organization records…</div> : profile && tab === 'overview' && <section className="cw-panel cw-org-overview">
+          <div className="cw-panel-heading"><div><p className="cw-kicker">{workspaceTitle.toUpperCase()}</p><h2>{profile.organization_name}</h2><p className="cw-help">Live operational summary for this approved organization.</p></div><span className="cw-status">{String(profile.status || '').replaceAll('_', ' ')}</span></div>
+          <div className="cw-org-stat-grid">
+            {isDaycare && <><article><span>Family applications</span><strong>{daycareEnrollments.length}</strong><small>Awaiting a staff decision</small></article><article><span>Registered capacity</span><strong>{profile.capacity ?? '—'}</strong><small>Places listed in the organization profile</small></article><article><span>Organization status</span><strong>{String(profile.status || 'unknown').replaceAll('_', ' ')}</strong><small>Verification status</small></article></>}
+            {isOrphanage && <><article><span>Private case records</span><strong>{orphanageChildren.length}</strong><small>Visible to this approved organization</small></article><article><span>Published campaigns</span><strong>{campaigns.length}</strong><small>Organization fundraising</small></article><article><span>Item pledges</span><strong>{pledges.length}</strong><small>Track receipt and allocation</small></article></>}
+            {isCareHome && <><article><span>Resident records</span><strong>{residents.length}</strong><small>Restricted to authorized care-home staff</small></article><article><span>Family check-ins</span><strong>{checkIns.length}</strong><small>For the selected resident</small></article><article><span>Organization status</span><strong>{String(profile.status || 'unknown').replaceAll('_', ' ')}</strong><small>Verification status</small></article></>}
+          </div>
+          {isDaycare && <div className="cw-org-chart"><div><p className="cw-kicker">ENROLLMENT QUEUE</p><h3>Pending applications received this week</h3><p className="cw-help">Only applications still awaiting review are counted here.</p></div><div className="cw-org-bars" role="img" aria-label={pendingRequestTrend.map((item) => `${item.label}: ${item.count} pending applications`).join('; ')}>{pendingRequestTrend.map((item) => <div className="cw-org-bar-column" key={item.label}><span>{item.count}</span><i style={{ height: `${Math.max(8, (item.count / maxRequestCount) * 100)}%` }} /><small>{item.label}</small></div>)}</div></div>}
+          {isDaycare && <div className="cw-org-shortcuts"><a href="#organization-workspace" onClick={() => setTab('enrollments')}>Review family applications →</a><a href="#organization-workspace" onClick={() => setTab('profile')}>Update public profile →</a></div>}
+        </section>}
+        {loading ? null : profile && tab === 'profile' && <section className="cw-panel">
           <div className="cw-panel-heading"><div><p className="cw-kicker">PUBLIC DETAILS</p><h2>{profile.organization_name}</h2></div><span className="cw-status">{String(profile.status || '').replaceAll('_', ' ')}</span></div>
           <form className="cw-form" onSubmit={submitProfile}>
             <label>Organization name<input value={profileForm.organization_name || ''} maxLength={200} onChange={(event) => setProfileForm((s) => ({ ...s, organization_name: event.target.value }))} required /></label>
@@ -381,14 +382,27 @@ export default function OrganizationWorkspacePage() {
           </form>
         </section>}
         {organizationId && !loading && !profile && <div className="cw-alert error" role="status">No editable organization profile was returned for this ID. Confirm the ID and that your staff role has access to it.</div>}
-        {organizationId && !loading && isDaycare && tab === 'children' && <section className="cw-panel">
-          <div className="cw-panel-heading"><div><p className="cw-kicker">DAYCARE OPERATIONS</p><h2>Children, enrollment & attendance</h2></div></div>
-          <p className="cw-help">Review enrollment requests, manage attendance and daily updates, and maintain emergency contacts and authorized pickup permissions for children connected to your daycare.</p>
-          <a className="cw-button primary" href="#my-children">Open children & attendance <span aria-hidden="true">→</span></a>
+        {organizationId && !loading && isDaycare && tab === 'enrollments' && <section className="cw-panel">
+          <div className="cw-panel-heading"><div><p className="cw-kicker">DAYCARE ENROLLMENT</p><h2>Review family applications</h2></div><span className="cw-status">{daycareEnrollments.length} awaiting review</span></div>
+          <p className="cw-help">Parents and guardians create and manage child profiles, then send an enrollment request to your daycare. Staff can review requests here; this workspace does not create child profiles.</p>
+          {!daycareEnrollments.length ? <div className="cw-empty"><strong>No enrollment requests are waiting.</strong><p>New family applications for this daycare will appear here.</p></div> :
+            <div className="cw-record-list">{daycareEnrollments.map((item) => <article className="cw-record" key={item.id}>
+              <div className="cw-record-main"><div className="cw-record-title-row"><h3>Family enrollment request</h3><span className="cw-pill warning">{item.status}</span></div>
+                <p>Child record reference: {item.child_id}</p><small>Received {dateTime(item.requested_at)} · Request {item.id}</small>
+              </div>
+              <div className="cw-record-actions">
+                {['pending', 'waitlisted'].includes(String(item.status).toLowerCase()) && <>
+                  <button type="button" className="cw-button primary" disabled={busy === item.id} onClick={() => void reviewDaycareEnrollment(item.id, 'approved')}>Approve</button>
+                  <button type="button" className="cw-button danger" disabled={busy === item.id} onClick={() => void reviewDaycareEnrollment(item.id, 'rejected')}>Reject</button>
+                  <button type="button" className="cw-button" disabled={busy === item.id} onClick={() => void reviewDaycareEnrollment(item.id, 'waitlisted')}>Waitlist</button>
+                </>}
+              </div>
+            </article>)}</div>}
+          <div className="cw-alert">For a child who already attends, ask their parent or guardian to create or claim the child profile and submit an enrollment request. That keeps the family in control of the child’s information and consent.</div>
         </section>}
         {organizationId && !loading && isCareHome && tab === 'residents' && <section className="cw-panel">
           <div className="cw-panel-heading"><div><p className="cw-kicker">ELDER-CARE RESIDENTS</p><h2>Resident profiles & family check-ins</h2></div><span className="cw-status">{residents.length} profiles</span></div>
-          <p className="cw-help">Use the organization ID for this care home. Create private resident records, record a named family representative’s consent, and then record wellbeing check-ins under the backend’s consent rules.</p>
+          <p className="cw-help">Remote check-in means an authorized family representative can send a brief written wellbeing update from their own account when away from the home. It is not location tracking, live video, or a medical assessment. Create the resident’s private record, verify the family member’s CareLife user ID with them, then grant consent before they can view or submit check-ins. Revoke consent when access should end.</p>
           <form className="cw-form" onSubmit={submitResident}>
             <label>Resident’s full name<input value={residentForm.full_name} maxLength={150} onChange={(event) => setResidentForm((s) => ({ ...s, full_name: event.target.value }))} required /></label>
             <label>Preferred name<input value={residentForm.preferred_name} maxLength={100} onChange={(event) => setResidentForm((s) => ({ ...s, preferred_name: event.target.value }))} /></label>
@@ -402,11 +416,11 @@ export default function OrganizationWorkspacePage() {
             <section className="cw-subpanel"><h3>Residents</h3>{residents.map((item) => <button type="button" className={'cw-child-card ' + (selectedResidentId === item.id ? 'selected' : '')} key={item.id} onClick={() => setSelectedResidentId(item.id)}><span className="cw-child-avatar">{(item.preferred_name || item.full_name || '?').charAt(0).toUpperCase()}</span><span><strong>{item.preferred_name || item.full_name}</strong><small>{item.room_number ? 'Room ' + item.room_number : 'No room recorded'}</small><small>ID: {item.id}</small></span></button>)}{!residents.length && <p className="cw-muted">No resident profiles returned.</p>}</section>
             <section className="cw-subpanel"><h3>Consent & check-ins</h3>{selectedResidentId ? <>
               <form className="cw-form cw-single-column" onSubmit={submitConsent}>
-                <label>Family representative user ID<input value={consentForm.family_representative_id} onChange={(event) => setConsentForm((s) => ({ ...s, family_representative_id: event.target.value }))} required /></label>
+                <label>Family representative CareLife user ID<input value={consentForm.family_representative_id} onChange={(event) => setConsentForm((s) => ({ ...s, family_representative_id: event.target.value }))} required /><small>Ask the family representative to share the user ID shown in their account profile. Confirm the ID with them before granting access.</small></label>
                 <label>Consent action<select value={String(consentForm.consent_granted)} onChange={(event) => setConsentForm((s) => ({ ...s, consent_granted: event.target.value === 'true' }))}><option value="true">Grant consent</option><option value="false">Revoke consent</option></select></label>
                 <div className="cw-form-actions"><button className="cw-button" disabled={busy === 'consent'}>{busy === 'consent' ? 'Saving…' : 'Save consent'}</button></div>
               </form>
-              <p className="cw-help">Family representatives submit wellbeing check-ins from their Family Check-ins page. This staff view is for managing consent and reviewing the check-in history returned for this resident.</p>
+              <p className="cw-help">Family representatives submit written wellbeing updates from their Family Check-ins page. This staff view manages permission and reviews this resident’s history. “Urgent” is a record label only and does not send an emergency alert; follow your care home’s direct escalation procedure.</p>
               <div className="cw-record-list cw-spaced">{checkIns.map((item) => <article className="cw-mini-record" key={item.id}><strong>{String(item.wellbeing_status || '').replaceAll('_', ' ')}</strong><span>{item.notes || 'No note recorded.'}</span><small>{dateTime(item.recorded_at)}</small></article>)}{!checkIns.length && <p className="cw-muted">No check-ins have been returned for this resident.</p>}</div>
             </> : <p className="cw-muted">Select a resident to manage consent and check-in history.</p>}</section>
           </div>
@@ -491,7 +505,7 @@ export default function OrganizationWorkspacePage() {
             <div className="cw-form-actions"><button className="cw-button primary" disabled={busy === 'media' || !updates.length}>{busy === 'media' ? 'Uploading…' : 'Upload impact media'}</button></div>
           </form>
         </section>}
-        {organizationId && !loading && isDaycare && tab === 'profile' && <div className="cw-alert">Daycare child profiles, enrollment, attendance, emergency contacts and pickup permissions are available in <a href="#my-children">Children & attendance</a>.</div>}
+        {organizationId && !loading && isDaycare && tab === 'profile' && <div className="cw-alert">Families manage child profiles. Use <strong>Enrollment review</strong> to approve or reject applications sent to your daycare.</div>}
       </main>
     </>
   )

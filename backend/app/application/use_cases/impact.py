@@ -94,9 +94,9 @@ class ImpactService:
         user: UserContext,
         organization_id: str,
     ) -> bool:
-        return (
-            organization_id == user.organization_id
-            or organization_id in user.organization_ids
+        return user.has_organization_role(
+            Role.ORPHANAGE_STAFF,
+            organization_id,
         )
 
     def _authorize_orphanage_staff(
@@ -104,7 +104,10 @@ class ImpactService:
         user: UserContext,
         organization_id: str,
     ) -> None:
-        if user.role != Role.ORPHANAGE_STAFF:
+        if not user.has_organization_role(
+            Role.ORPHANAGE_STAFF,
+            organization_id,
+        ):
             raise PermissionError("Orphanage staff access required")
 
         if not self._organization_access(user, organization_id):

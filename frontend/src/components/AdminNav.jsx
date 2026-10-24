@@ -6,7 +6,6 @@ const navigation = [
   { href: '#dashboard', label: 'Overview' },
   { href: '#admin-users', label: 'Users' },
   { href: '#organization-approval', label: 'Organizations' },
-  { href: '#admin-role-requests', label: 'Staff access' },
   { href: '#admin-operations?tab=caregivers', label: 'Caregiver review' },
   { href: '#admin-operations?tab=impact', label: 'Impact review' },
   { href: '#admin-operations?tab=audit', label: 'Audit log' },

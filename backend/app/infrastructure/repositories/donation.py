@@ -45,14 +45,12 @@ _AUTHORIZATION_SELECT = """
     FROM organizations o
     JOIN user_organizations uo ON uo.organization_id = o.id
     JOIN users u ON u.id = uo.user_id
-    JOIN roles r ON r.id = u.role_id
     WHERE o.id = %s
       AND u.id = %s
       AND u.is_active = TRUE
-      AND r.name = %s
-      AND ((o.organization_type = 'daycare' AND r.name = 'daycare_staff')
-        OR (o.organization_type = 'orphanage' AND r.name = 'orphanage_staff')
-        OR (o.organization_type = 'elderly_care' AND r.name = 'care_home_staff'))
+      AND ((o.organization_type = 'daycare' AND %s = 'daycare_staff')
+        OR (o.organization_type = 'orphanage' AND %s = 'orphanage_staff')
+        OR (o.organization_type = 'elderly_care' AND %s = 'care_home_staff'))
 """
 
 
@@ -66,14 +64,14 @@ class PostgresDonationRepository(DonationRepository):
 
     def is_authorized_organization_staff(self, organization_id: str, user_id: str, role: Role) -> bool:
         with get_connection() as connection:
-            row = connection.execute(_AUTHORIZATION_SELECT, (organization_id, user_id, role.value)).fetchone()
+            row = connection.execute(_AUTHORIZATION_SELECT, (organization_id, user_id, role.value, role.value, role.value)).fetchone()
         return row is not None
 
     @staticmethod
     def _assert_staff_access(connection, organization_id: str, user_id: str, role: Role) -> None:
         row = connection.execute(
             _AUTHORIZATION_SELECT + " FOR SHARE OF o, uo, u",
-            (organization_id, user_id, role.value),
+            (organization_id, user_id, role.value, role.value, role.value),
         ).fetchone()
         if row is None:
             raise PermissionError("Authorized staff membership for this organization is required")

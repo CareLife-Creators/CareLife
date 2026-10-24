@@ -26,6 +26,11 @@ class OrganizationRegistrationRequest(BaseModel):
     latitude: float | None = Field(default=None, ge=20.5, le=26.8)
     longitude: float | None = Field(default=None, ge=88.0, le=92.8)
     contact: str | None = Field(default=None, max_length=100)
+    capacity: int = Field(default=20, ge=0, le=100000)
+    age_range: str | None = Field(default=None, max_length=100)
+    opening_hours: str | None = Field(default=None, max_length=255)
+    facilities: str | None = Field(default=None, max_length=5000)
+    fees: str | None = Field(default=None, max_length=2000)
 
     license_number: str = Field(
         min_length=1,
@@ -65,6 +70,10 @@ class OrganizationRegistrationRequest(BaseModel):
         "description",
         "location",
         "contact",
+        "age_range",
+        "opening_hours",
+        "facilities",
+        "fees",
         mode="before",
     )
     @classmethod
@@ -103,6 +112,28 @@ class OrganizationVerificationResponse(BaseModel):
     submitted_at: datetime
     updated_at: datetime
     message: str | None = None
+
+
+class OrganizationApplicantApplicationResponse(BaseModel):
+    organization_id: str
+    organization_name: str
+    organization_type: str
+    status: OrganizationStatus
+    submitted_at: datetime
+    updated_at: datetime
+    message: str | None = None
+
+    @classmethod
+    def from_entity(cls, organization):
+        return cls(
+            organization_id=organization.organization_id,
+            organization_name=organization.organization_name,
+            organization_type=organization.organization_type,
+            status=organization.status,
+            submitted_at=organization.submitted_at,
+            updated_at=organization.updated_at,
+            message=organization.message,
+        )
 
 
 class OrganizationVerificationDecisionRequest(BaseModel):
@@ -144,6 +175,8 @@ class DaycareDirectoryResponse(BaseModel):
     organization_type: str
     description: str | None = None
     location: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
     contact: str | None = None
 
     @classmethod
@@ -158,6 +191,8 @@ class DaycareDirectoryResponse(BaseModel):
             organization_type=organization.organization_type,
             description=organization.description,
             location=organization.location,
+            latitude=organization.latitude,
+            longitude=organization.longitude,
             contact=organization.contact,
         )
 
@@ -171,6 +206,8 @@ class ElderCareDirectoryResponse(BaseModel):
 
     description: str | None = None
     location: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
     contact: str | None = None
 
     capacity: int
@@ -190,6 +227,8 @@ class ElderCareDirectoryResponse(BaseModel):
             organization_type=organization.organization_type,
             description=organization.description,
             location=organization.location,
+            latitude=organization.latitude,
+            longitude=organization.longitude,
             contact=organization.contact,
             capacity=organization.capacity,
             age_range=organization.age_range,

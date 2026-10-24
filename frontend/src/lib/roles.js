@@ -48,14 +48,17 @@ export function isStaff(role) {
   return STAFF.has(String(role || '').toLowerCase())
 }
 
-export function canAccessRoute(route, role) {
+export function canAccessRoute(route, role, organizationRoles = []) {
   const key = String(role || '').toLowerCase()
-  if (['#organization-approval', '#admin-role-requests', '#admin-operations', '#admin-users'].includes(route)) return isAdmin(key)
-  if (route === '#verification') return isStaff(key) || isAdmin(key)
-  if (route === '#organization-workspace') return isStaff(key)
-  if (route === '#caregiver-workspace') return key === ROLE.INDEPENDENT_CAREGIVER || isAdmin(key)
-  if (route === '#my-children') return [ROLE.PARENT_GUARDIAN, ROLE.DAYCARE_STAFF, ROLE.ADMIN].includes(key)
-  if (route === '#family-checkins') return [ROLE.FAMILY_REPRESENTATIVE, ROLE.PARENT_GUARDIAN, ROLE.ADMIN].includes(key)
+  const hasOrganizationAccess = Array.isArray(organizationRoles) && organizationRoles.length > 0
+  if (['#organization-approval', '#admin-operations', '#admin-users'].includes(route)) return isAdmin(key)
+  if (route === '#verification') return isAdmin(key) || hasOrganizationAccess
+  if (route === '#organization-apply' || route === '#staff-access') return Boolean(key) && !isAdmin(key)
+  if (route === '#organization-workspace') return hasOrganizationAccess
+  if (route === '#caregiver-workspace') return key === ROLE.INDEPENDENT_CAREGIVER
+  if (route === '#care-bookings') return [ROLE.PARENT_GUARDIAN, ROLE.INDEPENDENT_CAREGIVER, ROLE.FAMILY_REPRESENTATIVE].includes(key)
+  if (route === '#my-children') return key === ROLE.PARENT_GUARDIAN
+  if (route === '#family-checkins') return [ROLE.FAMILY_REPRESENTATIVE, ROLE.PARENT_GUARDIAN].includes(key)
   return true
 }
 
@@ -66,15 +69,15 @@ export function canUseDonorFeatures(role, signedIn) {
 const PRIVATE_ROUTES = new Set([
   '#dashboard', '#my-children', '#care-bookings', '#caregiver-workspace',
   '#account', '#notifications', '#messages', '#organization-workspace', '#admin-operations', '#admin-users',
-  '#organization-approval', '#verification', '#staff-access', '#admin-role-requests', '#family-checkins',
-  '#organization-profile',
+  '#organization-approval', '#verification', '#staff-access', '#family-checkins',
+  '#organization-apply',
 ])
 
 export function isProtectedRoute(route) {
   return PRIVATE_ROUTES.has(route)
 }
 
-export function memberLinks(role) {
+export function memberLinks(role, organizationRoles = []) {
   const key = String(role || '').toLowerCase()
   const links = [{ href: '#dashboard', label: 'Workspace' }]
 
@@ -94,32 +97,18 @@ export function memberLinks(role) {
     )
   } else if (key === ROLE.FAMILY_REPRESENTATIVE) {
     links.push({ href: '#care-bookings', label: 'Care bookings' }, { href: '#family-checkins', label: 'Family check-ins' })
-  } else if (key === ROLE.DAYCARE_STAFF) {
-    links.push(
-      { href: '#my-children', label: 'Children & attendance' },
-      { href: '#organization-workspace', label: 'Organization tools' },
-    )
-  } else if (key === ROLE.ORPHANAGE_STAFF) {
-    links.push(
-      { href: '#organization-workspace', label: 'Organization tools' },
-      { href: '#orphanage-support', label: 'Support board' },
-    )
-  } else if (key === ROLE.CARE_HOME_STAFF) {
-    links.push(
-      { href: '#care-bookings', label: 'Care bookings' },
-      { href: '#organization-workspace', label: 'Organization tools' },
-    )
   } else if (isAdmin(key)) {
     links.push(
       { href: '#organization-approval', label: 'Organization approvals' },
-      { href: '#admin-role-requests', label: 'Staff access requests' },
       { href: '#admin-operations', label: 'Admin operations' },
     )
-  } else {
-    links.push({ href: '#staff-access', label: 'Request staff access' })
   }
 
-  if (!isStaff(key) && !isAdmin(key)) links.push({ href: '#for-organizations', label: 'For organizations' })
+  if (!isAdmin(key)) links.push({ href: '#for-organizations', label: 'For organizations' })
+  if (!isAdmin(key) && Array.isArray(organizationRoles) && organizationRoles.length) {
+    links.splice(1, 0, { href: '#organization-workspace', label: 'Organization workspace' })
+    links.push({ href: '#verification', label: 'Verification status' })
+  }
 
   return links
 }

@@ -340,3 +340,10 @@
     transition: none;
   }
 }
+.verification-shell.app-layout{display:block;min-height:0;background:transparent}
+.verification-shell .sidebar{display:none}
+.verification-shell .main-content{min-height:0;margin-left:0;padding:0;background:transparent}
+.verification-shell .page-content{max-width:1240px;margin:0 auto;padding:42px 32px 64px}
+.verification-workspace-link{display:inline-flex;margin-top:14px;color:#126c60;font-weight:700;text-decoration:none}
+.verification-workspace-link:hover{text-decoration:underline}
+@media(max-width:640px){.verification-shell .page-content{padding:28px 18px 44px}}
