@@ -70,3 +70,4 @@ class UserProfileResponse(BaseModel):
     full_name: str | None = None
     phone: str | None = None
     role: str
+    profile_photo_url: str | None = None

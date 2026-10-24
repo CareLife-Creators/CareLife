@@ -10,6 +10,8 @@ from app.application.schemas.organization import (
     ElderCareDirectoryResponse,
     OrganizationVerificationDecisionRequest,
     OrganizationVerificationResponse,
+    OrganizationTrackingResponse,
+    OrganizationMapEntryResponse,
 )
 from app.application.use_cases.organization_verification import (
     OrganizationVerificationService,
@@ -28,6 +30,15 @@ router = APIRouter(
     prefix="/organizations",
     tags=["Organization Verification"],
 )
+
+
+@router.get("/map", response_model=list[OrganizationMapEntryResponse])
+def get_public_organization_map(
+    service: OrganizationVerificationService = Depends(
+        get_organization_verification_service
+    ),
+):
+    return service.get_public_map_entries()
 
 
 @router.get(
@@ -150,6 +161,21 @@ def get_pending_organizations(
     ),
 ):
     return service.get_pending()
+
+
+@router.get(
+    "/verification/tracking",
+    response_model=list[OrganizationTrackingResponse],
+)
+def get_organization_tracking(
+    _current_user: UserContext = Depends(
+        require_role(Role.CARELIFE_ADMIN)
+    ),
+    service: OrganizationVerificationService = Depends(
+        get_organization_verification_service
+    ),
+):
+    return service.get_tracking_records()
 
 
 @router.post(

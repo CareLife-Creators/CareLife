@@ -6,6 +6,11 @@ from app.infrastructure.models.child import (
     DailyUpdateModel,
     OrphanageOutcomeModel,
 )
+from app.infrastructure.models.caregiver_booking import (
+    CaregiverAppointmentModel,
+    CaregiverAvailabilityModel,
+)
+from app.infrastructure.models.audit_log import AuditLogModel
 from app.infrastructure.models.donation import (
     DonationCampaignModel,
     DonationNeedModel,
@@ -21,8 +26,17 @@ from app.infrastructure.models.organization_document import (
 from app.infrastructure.models.password_reset_token import (
     PasswordResetTokenModel,
 )
+from app.infrastructure.models.messaging import (
+    ConversationModel,
+    MessageModel,
+)
+from app.infrastructure.models.elder_care_booking import (
+    ElderCareBookingModel,
+    ElderCareBookingStatusHistoryModel,
+)
 from app.infrastructure.models.revoked_token import RevokedTokenModel
 from app.infrastructure.models.role import RoleModel
+from app.infrastructure.models.role_request import RoleRequestModel
 from app.infrastructure.models.user import UserModel
 from app.infrastructure.models.user_organization import (
     UserOrganizationModel,
@@ -47,7 +61,9 @@ from app.infrastructure.models.remote_checkin import (
     ResidentFamilyConsentModel,
 )
 from app.infrastructure.models.resident import ResidentProfileModel
-
+from app.infrastructure.models.donation_payment import (
+    DonationPaymentModel,
+)
 
 __all__ = [
     "Base",
@@ -56,6 +72,7 @@ __all__ = [
     "PasswordResetTokenModel",
     "RevokedTokenModel",
     "RoleModel",
+    "RoleRequestModel",
     "UserModel",
     "UserOrganizationModel",
     "VerificationReviewModel",
@@ -75,4 +92,12 @@ __all__ = [
     "RemoteCheckInModel",
     "ResidentFamilyConsentModel",
     "ResidentProfileModel",
+    "AuditLogModel",
+    "ConversationModel",
+    "MessageModel",
+    "CaregiverAvailabilityModel",
+"CaregiverAppointmentModel",
+"DonationPaymentModel",
+"ElderCareBookingModel",
+"ElderCareBookingStatusHistoryModel",
 ]

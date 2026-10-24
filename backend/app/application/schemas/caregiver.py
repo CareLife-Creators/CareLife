@@ -4,6 +4,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.core.caregiver_documents import parse_upload_reference
+
 from app.domain.entities.caregiver import (
     CaregiverDocument,
     CaregiverProfile,
@@ -93,6 +95,7 @@ class CaregiverDocumentResponse(BaseModel):
     id: str
     document_type: str
     document_reference: str
+    file_name: str | None = None
     submitted_at: datetime
 
     @classmethod
@@ -100,10 +103,12 @@ class CaregiverDocumentResponse(BaseModel):
         cls,
         document: CaregiverDocument,
     ) -> "CaregiverDocumentResponse":
+        upload = parse_upload_reference(document.document_reference)
         return cls(
             id=document.id,
             document_type=document.document_type.value,
-            document_reference=document.document_reference,
+            document_reference=upload[1] if upload else document.document_reference,
+            file_name=upload[1] if upload else None,
             submitted_at=document.submitted_at,
         )
 
@@ -161,6 +166,7 @@ class CaregiverPublicProfileResponse(BaseModel):
     bio: str | None = None
     experience_years: int
     location: str | None = None
+    is_verified: bool = False
 
     @classmethod
     def from_entity(
@@ -174,4 +180,5 @@ class CaregiverPublicProfileResponse(BaseModel):
             bio=profile.bio,
             experience_years=profile.experience_years,
             location=profile.location,
+            is_verified=profile.is_verified,
         )

@@ -13,20 +13,22 @@ from app.infrastructure.repositories.user_repository import (
 def get_bearer_token(
     authorization: str | None = Header(default=None),
 ) -> str:
-
     if not authorization:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication required",
         )
 
-    if not authorization.startswith("Bearer "):
+    scheme, separator, credentials = authorization.partition(" ")
+
+    # HTTP authentication scheme names are case-insensitive.
+    if not separator or scheme.lower() != "bearer":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication scheme",
         )
 
-    token = authorization[7:].strip()
+    token = credentials.strip()
 
     if not token:
         raise HTTPException(

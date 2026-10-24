@@ -19,19 +19,20 @@ router = APIRouter(
 def signup(
     request: SignupRequest,
     service: SignupService = Depends(get_signup_service),
-):
+) -> SignupResponse:
     try:
-        user = service.signup(
+        service.signup(
             email=request.email,
             password=request.password,
+            full_name=request.full_name,
+            phone=request.phone,
+            role=request.role,
         )
     except ValueError as exc:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(exc),
         ) from exc
 
-    return SignupResponse(
-        message="Account created successfully.",
-        user_id=user.id,
-    )
+    # The response is identical for a new or previously registered email.
+    return SignupResponse(message="Signup request received.")

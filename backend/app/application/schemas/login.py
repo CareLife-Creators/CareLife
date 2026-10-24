@@ -10,5 +10,6 @@ class LoginResponse(BaseModel):
     message: str
     user_id: str
     email: EmailStr
+    role: str
     access_token: str
     token_type: str = "bearer"

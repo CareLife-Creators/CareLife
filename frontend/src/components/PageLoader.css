@@ -1,0 +1,38 @@
+.cl-loader {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: grid;
+    place-items: center;
+    background: #0b3b33;
+    transition: opacity 500ms ease;
+}
+
+.cl-loader.leaving {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.cl-loader canvas {
+    width: min(80vw, 360px);
+    height: auto;
+    aspect-ratio: 1;
+}
+
+.cl-loader-skip {
+    position: absolute;
+    right: 28px;
+    bottom: 28px;
+    padding: 8px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 999px;
+    background: none;
+    color: #cdeee4;
+    font: inherit;
+    cursor: pointer;
+}
+
+.cl-loader-skip:focus-visible {
+    outline: 3px solid #6fe3c0;
+    outline-offset: 3px;
+}

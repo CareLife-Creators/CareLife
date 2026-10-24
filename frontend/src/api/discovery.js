@@ -1,4 +1,7 @@
 import { apiRequest } from './client'
+export async function getPublicOrganizationMap() {
+  return apiRequest('/organizations/map', { authenticated: false })
+}
 function buildQuery(values) {
   const params = new URLSearchParams()
   Object.entries(values).forEach(([key,value]) => { if (value !== undefined && value !== null && String(value).trim()) params.set(key,String(value).trim()) })
@@ -7,6 +10,9 @@ function buildQuery(values) {
 export async function getElderCareDirectory({search='',location='',facility=''}={}) {
   const query=buildQuery({search,location,facility})
   return apiRequest(query?'/organizations/elder-care?'+query:'/organizations/elder-care',{authenticated:false})
+}
+export async function getPublicOrganizationProfile(organizationId) {
+  return apiRequest('/organizations/'+encodeURIComponent(organizationId)+'/public-profile',{authenticated:false})
 }
 export async function getCaregiverDirectory({search='',location='',serviceType=''}={}) {
   const query=buildQuery({search,location,service_type:serviceType})

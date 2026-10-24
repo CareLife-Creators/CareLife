@@ -39,6 +39,12 @@ class OrganizationVerificationService:
     def get_pending(self):
         return self.repository.get_pending()
 
+    def get_tracking_records(self):
+        return self.repository.get_tracking_records()
+
+    def get_public_map_entries(self):
+        return self.repository.get_public_map_entries()
+
     def get_daycare_directory(
         self,
         search: str | None = None,

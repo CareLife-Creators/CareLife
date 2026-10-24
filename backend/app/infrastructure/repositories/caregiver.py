@@ -45,6 +45,7 @@ class PostgresCaregiverRepository(CaregiverRepository):
             bio=row[3],
             experience_years=row[4],
             location=row[5],
+            is_verified=row[6],
         )
 
     @staticmethod
@@ -340,21 +341,22 @@ class PostgresCaregiverRepository(CaregiverRepository):
                     p.service_type,
                     p.bio,
                     p.experience_years,
-                    p.location
+                    p.location,
+                    p.verification_status = 'approved'
                 FROM caregiver_profiles p
                 JOIN users u ON u.id = p.user_id
-                WHERE p.verification_status = 'approved'
+                WHERE p.verification_status IN ('pending', 'approved')
                   AND (
-                      %s IS NULL
+                      %s::text IS NULL
                       OR u.full_name ILIKE %s
                       OR COALESCE(p.bio, '') ILIKE %s
                   )
                   AND (
-                      %s IS NULL
+                      %s::text IS NULL
                       OR COALESCE(p.location, '') ILIKE %s
                   )
                   AND (
-                      %s IS NULL
+                      %s::text IS NULL
                       OR p.service_type = %s
                   )
                 ORDER BY u.full_name ASC, p.user_id ASC
@@ -388,11 +390,12 @@ class PostgresCaregiverRepository(CaregiverRepository):
                     p.service_type,
                     p.bio,
                     p.experience_years,
-                    p.location
+                    p.location,
+                    p.verification_status = 'approved'
                 FROM caregiver_profiles p
                 JOIN users u ON u.id = p.user_id
                 WHERE p.user_id = %s
-                  AND p.verification_status = 'approved'
+                  AND p.verification_status IN ('pending', 'approved')
                 """,
                 (caregiver_id,),
             ).fetchone()

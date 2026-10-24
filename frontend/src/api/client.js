@@ -49,7 +49,8 @@ export async function apiRequest(path, options = {}) {
   const headers = new Headers(suppliedHeaders || {})
   const token = localStorage.getItem('carelife_access_token')
 
-  if (requestOptions.body !== undefined && !headers.has('Content-Type')) {
+  const isFormData = typeof FormData !== 'undefined' && requestOptions.body instanceof FormData
+  if (requestOptions.body !== undefined && !isFormData && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json')
   }
 

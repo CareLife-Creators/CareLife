@@ -1,0 +1,148 @@
+/* Shared visual language for the private administration routes. */
+.admin-console-page {
+  --console-ink: #202d3b;
+  --console-muted: #718094;
+  --console-line: #dce3ea;
+  --console-accent: #365b82;
+  color: var(--console-ink);
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.cw-page.admin-console-page {
+  width: min(1220px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 32px 0 72px;
+}
+.admin-console-page .cw-hero.admin {
+  padding: 26px 0 23px;
+  border-bottom: 1px solid var(--console-line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.admin-console-page .cw-kicker {
+  color: #718196;
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: .13em;
+}
+.admin-console-page .cw-hero h1 {
+  max-width: 760px;
+  color: #17283b;
+  font-size: clamp(1.8rem, 3vw, 2.45rem);
+  line-height: 1.12;
+  letter-spacing: -.04em;
+}
+.admin-console-page .cw-hero > p,
+.admin-console-page .cw-help { color: var(--console-muted); }
+.admin-console-page .cw-hero-meta span,
+.admin-console-page .cw-status {
+  border-color: var(--console-line);
+  color: #52647a;
+  background: #f5f7f9;
+}
+.admin-console-page .cw-tabs {
+  position: sticky;
+  top: 68px;
+  z-index: 5;
+  margin: 15px 0;
+  padding: 7px;
+  border: 1px solid var(--console-line);
+  border-radius: 9px;
+  background: #f7f9fb;
+}
+.admin-console-page .cw-tabs button {
+  border-radius: 6px;
+  color: #596b7f;
+  font-size: .76rem;
+}
+.admin-console-page .cw-tabs button.active {
+  color: #fff;
+  background: #2c435d;
+}
+.admin-console-page .cw-panel,
+.admin-console-page .cw-record,
+.admin-console-page .cw-state {
+  border-color: var(--console-line);
+  border-radius: 9px;
+  background: #fff;
+  box-shadow: none;
+}
+.admin-console-page .cw-panel { padding: 21px; }
+.admin-console-page .cw-panel h2,
+.admin-console-page .cw-panel h3 { color: #27394d; }
+.admin-console-page .cw-panel p,
+.admin-console-page .cw-panel small { color: #718094; }
+.admin-console-page .cw-record { padding: 17px; }
+.admin-console-page .cw-button.primary {
+  border-color: #2c435d;
+  background: #2c435d;
+}
+.admin-console-page .cw-button.primary:hover:not(:disabled) { background: #1e3045; }
+.admin-console-page .cw-button:not(.primary):not(.danger) {
+  border-color: #ccd6e0;
+  color: #344b65;
+  background: #f8fafb;
+}
+.admin-console-page :focus-visible {
+  outline: 3px solid #7ca7d8;
+  outline-offset: 3px;
+}
+
+.rr-page.admin-console-page {
+  width: min(1220px, calc(100% - 48px));
+  max-width: none;
+  padding: 32px 0 72px;
+}
+.admin-console-page.rr-page .rr-hero {
+  padding: 8px 0 18px;
+  border-bottom: 1px solid var(--console-line);
+}
+.admin-console-page.rr-page .rr-hero h1 { color: #17283b; }
+.admin-console-page.rr-page .rr-hero p { color: var(--console-muted); }
+.admin-console-page.rr-page .rr-panel,
+.admin-console-page.rr-page .rr-item {
+  border-color: var(--console-line);
+  border-radius: 9px;
+  box-shadow: none;
+}
+.admin-console-page.rr-page .rr-panel h2,
+.admin-console-page.rr-page .rr-item strong { color: #27394d; }
+.admin-console-page.rr-page .rr-tabs button { border-radius: 6px; }
+.admin-console-page.rr-page .rr-tabs button.active,
+.admin-console-page.rr-page .rr-btn:not(.secondary) { background: #2c435d; }
+
+.approval-dashboard.admin-console-page {
+  min-height: calc(100vh - 68px);
+  padding: 32px 24px 72px;
+  background: #f3f6f8;
+}
+.admin-console-page.approval-dashboard .approval-dashboard-container { max-width: 1220px; }
+.admin-console-page.approval-dashboard .approval-header {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--console-line);
+}
+.admin-console-page.approval-dashboard .approval-eyebrow { color: #718196; }
+.admin-console-page.approval-dashboard .approval-header h1 { color: #17283b; }
+.admin-console-page.approval-dashboard .approval-description { color: var(--console-muted); }
+.admin-console-page.approval-dashboard .approval-summary-card,
+.admin-console-page.approval-dashboard .approval-card {
+  border-color: var(--console-line);
+  border-radius: 9px;
+  box-shadow: none;
+}
+.admin-console-page.approval-dashboard .approval-summary-card strong { color: #2c435d; }
+.admin-console-page.approval-dashboard .approval-card-actions { background: #f7f9fb; }
+.admin-console-page.approval-dashboard .approval-refresh-button { border-color: #ccd6e0; color: #344b65; border-radius: 7px; }
+
+@media (max-width: 760px) {
+  .cw-page.admin-console-page,
+  .rr-page.admin-console-page { width: calc(100% - 28px); padding-top: 24px; }
+  .admin-console-page .cw-tabs { top: 112px; overflow-x: auto; }
+  .approval-dashboard.admin-console-page { padding: 24px 14px 48px; }
+}
+@media (max-width: 480px) {
+  .cw-page.admin-console-page,
+  .rr-page.admin-console-page { width: calc(100% - 22px); }
+  .admin-console-page .cw-panel { padding: 15px; }
+}
