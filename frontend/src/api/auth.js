@@ -1,5 +1,5 @@
 import { apiRequest } from './client'
-import { clearSession, getToken, saveSession, setRole } from '../lib/session'
+import { clearSession, getToken, saveSession, setOrganizationRoles, setRole } from '../lib/session'
 
 function cleanMessage(message) {
     return String(message || '').replace(/^Value error,\s*/i, '')
@@ -89,6 +89,8 @@ export async function refreshSession() {
     try {
         const profile = await apiRequest('/users/me/profile')
         if (profile && profile.role) setRole(profile.role)
+        const organizations = await apiRequest('/organizations/mine')
+        setOrganizationRoles(Array.isArray(organizations) ? organizations : [])
         return profile
     } catch (error) {
         if (error && error.status === 401) clearSession()

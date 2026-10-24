@@ -15,6 +15,9 @@ downloads/
 eggs/
 .eggs/
 lib/
+# Keep frontend source modules despite Python's global lib/ ignore rule.
+!frontend/src/lib/
+!frontend/src/lib/**
 lib64/
 parts/
 sdist/

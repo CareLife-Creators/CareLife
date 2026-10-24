@@ -30,7 +30,10 @@ class AttendanceService:
         user: UserContext,
         organization_id: str,
     ) -> None:
-        if user.role != Role.DAYCARE_STAFF:
+        if not user.has_organization_role(
+            Role.DAYCARE_STAFF,
+            organization_id,
+        ):
             raise PermissionError(
                 "Daycare staff access required"
             )
@@ -48,11 +51,6 @@ class AttendanceService:
         user: UserContext,
         enrollment_id: str,
     ) -> Attendance:
-        if user.role != Role.DAYCARE_STAFF:
-            raise PermissionError(
-                "Daycare staff access required"
-            )
-
         enrollment = self.enrollment_repository.get_by_id(
             enrollment_id
         )
@@ -106,11 +104,6 @@ class AttendanceService:
         user: UserContext,
         attendance_id: str,
     ) -> Attendance:
-        if user.role != Role.DAYCARE_STAFF:
-            raise PermissionError(
-                "Daycare staff access required"
-            )
-
         attendance = self.attendance_repository.get_by_id(
             attendance_id
         )
@@ -167,7 +160,10 @@ class AttendanceService:
                 child_id
             )
 
-        if user.role == Role.DAYCARE_STAFF:
+        if child.daycare_organization_id and user.has_organization_role(
+            Role.DAYCARE_STAFF,
+            child.daycare_organization_id,
+        ):
             organization_id = child.daycare_organization_id
 
             if organization_id is None:
@@ -203,11 +199,6 @@ class AttendanceService:
         child_id: str,
         request: DailyUpdateCreateRequest,
     ) -> DailyUpdate:
-        if user.role != Role.DAYCARE_STAFF:
-            raise PermissionError(
-                "Daycare staff access required"
-            )
-
         child = self.child_repository.get(child_id)
 
         if child is None:
@@ -269,7 +260,10 @@ class AttendanceService:
                 child_id
             )
 
-        if user.role == Role.DAYCARE_STAFF:
+        if child.daycare_organization_id and user.has_organization_role(
+            Role.DAYCARE_STAFF,
+            child.daycare_organization_id,
+        ):
             organization_id = child.daycare_organization_id
 
             if organization_id is None:

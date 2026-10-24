@@ -94,14 +94,11 @@ class PostgresRemoteCheckInRepository:
               ON uo.organization_id = o.id
             JOIN users u
               ON u.id = uo.user_id
-            JOIN roles r
-              ON r.id = u.role_id
             WHERE o.id = %s
               AND o.organization_type = 'elderly_care'
               AND vs.name = 'verified'
               AND u.id = %s
               AND u.is_active = TRUE
-              AND r.name = 'care_home_staff'
             LIMIT 1
             """,
             (organization_id, user_id),
@@ -144,12 +141,11 @@ class PostgresRemoteCheckInRepository:
                         "Verified elderly-care organization not found"
                     )
 
-                if user.role == Role.CARE_HOME_STAFF:
-                    self._assert_care_home_access(
-                        connection,
-                        organization_id,
-                        user.user_id,
-                    )
+                self._assert_care_home_access(
+                    connection,
+                    organization_id,
+                    user.user_id,
+                )
 
                 representative = connection.execute(
                     """
@@ -357,19 +353,23 @@ class PostgresRemoteCheckInRepository:
                     (resident_id, user.user_id),
                 ).fetchall()
 
-            elif user.role == Role.CARE_HOME_STAFF:
+            elif user.has_role(Role.CARE_HOME_STAFF):
                 allowed = connection.execute(
                     """
                     SELECT 1
                     FROM resident_family_consents c
                     JOIN user_organizations uo
                       ON uo.organization_id = c.organization_id
+                    JOIN organizations o
+                      ON o.id = c.organization_id
+                    JOIN verification_statuses vs
+                      ON vs.id = o.status_id
                     JOIN users u ON u.id = uo.user_id
-                    JOIN roles r ON r.id = u.role_id
                     WHERE c.resident_id = %s
+                      AND o.organization_type = 'elderly_care'
+                      AND vs.name = 'verified'
                       AND u.id = %s
                       AND u.is_active = TRUE
-                      AND r.name = 'care_home_staff'
                     LIMIT 1
                     """,
                     (resident_id, user.user_id),
@@ -390,27 +390,20 @@ class PostgresRemoteCheckInRepository:
                           FROM resident_family_consents consent
                           JOIN user_organizations uo
                             ON uo.organization_id = consent.organization_id
+                          JOIN organizations o
+                            ON o.id = consent.organization_id
+                          JOIN verification_statuses vs
+                            ON vs.id = o.status_id
                           JOIN users u ON u.id = uo.user_id
-                          JOIN roles r ON r.id = u.role_id
                           WHERE consent.resident_id = %s
+                            AND o.organization_type = 'elderly_care'
+                            AND vs.name = 'verified'
                             AND u.id = %s
                             AND u.is_active = TRUE
-                            AND r.name = 'care_home_staff'
                       )
                     ORDER BY recorded_at DESC, id DESC
                     """,
                     (resident_id, resident_id, user.user_id),
-                ).fetchall()
-
-            elif user.role == Role.CARELIFE_ADMIN:
-                rows = connection.execute(
-                    f"""
-                    SELECT {_CHECKIN_COLUMNS}
-                    FROM resident_remote_checkins
-                    WHERE resident_id = %s
-                    ORDER BY recorded_at DESC, id DESC
-                    """,
-                    (resident_id,),
                 ).fetchall()
 
             else:

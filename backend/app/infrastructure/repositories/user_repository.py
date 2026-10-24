@@ -116,18 +116,19 @@ class PostgresUserRepository:
 
             organization_rows = connection.execute(
                 """
-                SELECT organization_id
-                FROM user_organizations
-                WHERE user_id = %s
-                ORDER BY organization_id
+                SELECT uo.organization_id, o.organization_type
+                FROM user_organizations uo
+                JOIN organizations o ON o.id = uo.organization_id
+                JOIN verification_statuses status ON status.id = o.status_id
+                WHERE uo.user_id = %s AND status.name = 'verified'
+                ORDER BY o.name, o.id
                 """,
                 (row[0],),
             ).fetchall()
 
-        organization_ids = [
-            organization_row[0]
-            for organization_row in organization_rows
-        ]
+        role_by_type = {"daycare": "daycare_staff", "orphanage": "orphanage_staff", "elderly_care": "care_home_staff"}
+        organization_roles = {row[0]: role_by_type[row[1]] for row in organization_rows if row[1] in role_by_type}
+        organization_ids = list(organization_roles)
 
         return User(
             id=row[0],
@@ -140,6 +141,7 @@ class PostgresUserRepository:
                 else None
             ),
             organization_ids=organization_ids,
+            organization_roles=organization_roles,
             full_name=row[4],
             phone=row[5],
             is_active=row[6],
@@ -175,18 +177,19 @@ class PostgresUserRepository:
 
             organization_rows = connection.execute(
                 """
-                SELECT organization_id
-                FROM user_organizations
-                WHERE user_id = %s
-                ORDER BY organization_id
+                SELECT uo.organization_id, o.organization_type
+                FROM user_organizations uo
+                JOIN organizations o ON o.id = uo.organization_id
+                JOIN verification_statuses status ON status.id = o.status_id
+                WHERE uo.user_id = %s AND status.name = 'verified'
+                ORDER BY o.name, o.id
                 """,
                 (user_id,),
             ).fetchall()
 
-        organization_ids = [
-            organization_row[0]
-            for organization_row in organization_rows
-        ]
+        role_by_type = {"daycare": "daycare_staff", "orphanage": "orphanage_staff", "elderly_care": "care_home_staff"}
+        organization_roles = {row[0]: role_by_type[row[1]] for row in organization_rows if row[1] in role_by_type}
+        organization_ids = list(organization_roles)
 
         return User(
             id=row[0],
@@ -199,6 +202,7 @@ class PostgresUserRepository:
                 else None
             ),
             organization_ids=organization_ids,
+            organization_roles=organization_roles,
             full_name=row[4],
             phone=row[5],
             is_active=row[6],

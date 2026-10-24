@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import SiteNav from '../../components/SiteNav'
 import { useSession } from '../../lib/session'
+import { canUseDonorFeatures } from '../../lib/roles'
 import { publicActivityText, publicContentLabel, publicOrganizationDescription, publicOrganizationName } from '../../lib/publicDisplay'
 import { API_BASE_URL } from '../../api/client'
 import { createInKindPledge, getDonationCampaigns, getDonationNeeds, getPublicImpactUpdates, getPublicOrphanageProfile } from '../../api/discovery'
@@ -39,7 +40,7 @@ export default function OrphanageSupportPage() {
   const [messages, setMessages] = useState({})
   const [profile, setProfile] = useState(null)
 
-  const isDonor = signedIn && role === 'donor_supporter'
+  const isDonor = canUseDonorFeatures(role, signedIn)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -65,7 +66,7 @@ export default function OrphanageSupportPage() {
 
   useEffect(() => { void load() }, [load])
   useEffect(() => {
-    if (tab !== 'pledges' || !signedIn) return
+    if (tab !== 'pledges' || !isDonor) return
     let cancelled = false
     setPledgesLoading(true)
     setMessages((current) => ({ ...current, pledges: '' }))
@@ -74,12 +75,16 @@ export default function OrphanageSupportPage() {
       .catch((err) => { if (!cancelled) setMessages((current) => ({ ...current, pledges: err instanceof Error ? err.message : 'Pledge history could not be loaded.' })) })
       .finally(() => { if (!cancelled) setPledgesLoading(false) })
     return () => { cancelled = true }
-  }, [tab, signedIn])
+  }, [tab, isDonor])
 
 
   async function pledge(event, need) {
     event.preventDefault()
     if (!signedIn) { window.location.hash = '#login'; return }
+    if (!isDonor) {
+      setMessages((current) => ({ ...current, [need.id]: 'Only Donor / Supporter accounts can submit item pledges.' }))
+      return
+    }
     const form = pledgeForms[need.id] || {}
     if (!form.quantity || Number(form.quantity) <= 0) {
       setMessages((current) => ({ ...current, [need.id]: 'Enter a quantity greater than zero.' }))
@@ -145,7 +150,7 @@ export default function OrphanageSupportPage() {
   const activeCampaigns = campaigns.filter((item) => item.is_active !== false)
   const activeNeeds = needs.filter((item) => item.is_active !== false)
   const publicUpdates = updates.filter((item) => !item.status || String(item.status).toLowerCase() === 'published')
-  const tabs = [['campaigns', 'Campaigns'], ['needs', 'In-kind needs'], ['impact', 'Impact updates'], ...(signedIn ? [['pledges', 'My item pledges']] : []), ...(isDonor ? [['payments', 'My payments']] : [])]
+  const tabs = [['campaigns', 'Campaigns'], ['needs', 'In-kind needs'], ['impact', 'Impact updates'], ...(isDonor ? [['pledges', 'My item pledges'], ['payments', 'My payments']] : [])]
 
   return (
     <>
@@ -209,8 +214,8 @@ export default function OrphanageSupportPage() {
               {inKind ? <form className="pledge-form" onSubmit={(event) => void pledge(event, need)}>
                 <label>Quantity to pledge<input type="number" min="0.001" step="0.001" value={form.quantity || ''} onChange={(event) => setPledgeForms((current) => ({ ...current, [need.id]: { ...(current[need.id] || {}), quantity: event.target.value } }))} required /></label>
                 <label>Message to the organization (optional)<input maxLength="1000" value={form.notes || ''} onChange={(event) => setPledgeForms((current) => ({ ...current, [need.id]: { ...(current[need.id] || {}), notes: event.target.value } }))} /></label>
-                <button type="submit" disabled={busy === need.id}>{busy === need.id ? 'Submitting pledge…' : signedIn ? 'Submit in-kind pledge' : 'Sign in to pledge'}</button>
-                {!signedIn && <small>Sign in is required to submit an item pledge.</small>}
+                <button type="submit" disabled={busy === need.id}>{busy === need.id ? 'Submitting pledge…' : isDonor ? 'Submit in-kind pledge' : signedIn ? 'Donor account required' : 'Sign in to pledge'}</button>
+                {!isDonor && <small>{signedIn ? 'Only Donor / Supporter accounts can submit an item pledge.' : 'Sign in with a Donor / Supporter account to submit an item pledge.'}</small>}
                 {messages[need.id] && <p role="status">{messages[need.id]}</p>}
               </form> : <p className="directory-note">This is a monetary need. Use the campaign’s bKash checkout when the organization has published a fundraising campaign for it.</p>}
             </article>
@@ -222,7 +227,7 @@ export default function OrphanageSupportPage() {
           {!publicUpdates.length && <div className="directory-state">No impact updates have been published for public viewing yet.</div>}
           <div className="impact-list">{publicUpdates.map((update) => <article className="impact-card" key={update.id}>
             <small>{date(update.published_at || update.created_at)} · {publicOrganizationName(update.organization_name)}</small><h3>{publicContentLabel(update.title)}</h3><p>{publicActivityText(update.content) || 'The organization shared a progress update. Contact them for current details.'}</p>
-            {update.media?.length > 0 && <div className="cw-document-list"><strong>Attached media</strong>{update.media.map((media) => <a href={API_BASE_URL + media.url} key={media.id} target="_blank" rel="noreferrer">{media.media_type} · {media.content_type}</a>)}</div>}
+            {update.media?.length > 0 && <div className="cw-impact-media" aria-label={'Media for ' + update.title}>{update.media.map((media) => media.media_type === 'video' ? <video key={media.id} controls preload="metadata" src={API_BASE_URL + media.url} aria-label={'Video for ' + update.title} /> : <a key={media.id} href={API_BASE_URL + media.url} target="_blank" rel="noreferrer"><img src={API_BASE_URL + media.url} alt={'Organization impact photo for ' + update.title} loading="lazy" /></a>)}</div>}
           </article>)}</div>
         </>}
 
@@ -240,7 +245,7 @@ export default function OrphanageSupportPage() {
           </article>)}</div>
         </>}
 
-        {!loading && !error && tab === 'pledges' && signedIn && <>
+        {!loading && !error && tab === 'pledges' && isDonor && <>
           <div className="directory-section-title"><h2>Your in-kind pledges</h2><span>{myPledges.length} records</span></div>
           {messages.pledges && <div className="cw-alert error" role="alert">{messages.pledges}</div>}
           {pledgesLoading && <div className="directory-state" role="status">Loading your pledge history…</div>}

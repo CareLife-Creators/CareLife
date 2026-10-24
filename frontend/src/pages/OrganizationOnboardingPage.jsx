@@ -1,5 +1,5 @@
 import SiteNav from '../components/SiteNav'
-import { isAdmin, isStaff, roleLabel } from '../lib/roles'
+import { isAdmin, roleLabel } from '../lib/roles'
 import { useSession } from '../lib/session'
 import './OrganizationOnboardingPage.css'
 
@@ -11,10 +11,9 @@ const organizationTypes = [
 
 export default function OrganizationOnboardingPage() {
   const { signedIn, role } = useSession()
-  const staff = isStaff(role)
   const admin = isAdmin(role)
-  const primaryHref = !signedIn ? '#signup' : admin ? '#organization-approval' : staff ? '#organization-workspace' : '#staff-access'
-  const primaryLabel = !signedIn ? 'Create your account' : admin ? 'Review organizations' : staff ? 'Open organization workspace' : 'Request staff access'
+  const primaryHref = !signedIn ? '#signup' : admin ? '#organization-approval' : '#organization-apply'
+  const primaryLabel = !signedIn ? 'Create your account' : admin ? 'Review organizations' : 'Apply for your organization'
 
   return (
     <>
@@ -28,7 +27,7 @@ export default function OrganizationOnboardingPage() {
             <div className="org-onboarding-actions">
               <a className="org-onboarding-primary" href={primaryHref}>{primaryLabel}<span aria-hidden="true">→</span></a>
               {!signedIn && <a className="org-onboarding-secondary" href="#login">I already have an account</a>}
-              {staff && <a className="org-onboarding-secondary" href="#verification">Check review status</a>}
+              {signedIn && !admin && <a className="org-onboarding-secondary" href="#organization-apply">View my applications</a>}
             </div>
             {signedIn && <p className="org-onboarding-role">Signed in as {roleLabel(role)}.</p>}
           </div>
@@ -55,13 +54,13 @@ export default function OrganizationOnboardingPage() {
         <section className="org-steps-section" aria-labelledby="org-steps-title">
           <div className="org-section-heading">
             <div><p className="org-onboarding-eyebrow">HOW TO GET STARTED</p><h2 id="org-steps-title">Four clear steps</h2></div>
-            <p>Staff access and organization verification are separate reviews, so each one has a clear status.</p>
+            <p>Submit the organization details once. A CareLife administrator reviews the application before workspace access is enabled.</p>
           </div>
           <ol className="org-steps-list">
             <li><span>01</span><div><h3>Create a CareLife account</h3><p>Sign up with your name, work email and phone number, then sign in.</p></div></li>
-            <li><span>02</span><div><h3>Request the right staff access</h3><p>Choose daycare, orphanage or care-home staff access. Include your organization and position in the note.</p></div></li>
-            <li><span>03</span><div><h3>Register your organization</h3><p>After staff access is approved, open Organization workspace and submit your organization name and license details. If your organization already has an ID, load it there.</p></div></li>
-            <li><span>04</span><div><h3>Complete organization review</h3><p>CareLife reviews the organization separately. Its profile can be presented in the relevant directory after approval.</p></div></li>
+            <li><span>02</span><div><h3>Submit the organization application</h3><p>Provide the organization type, contact and location, license details, and the information families need to understand your services.</p></div></li>
+            <li><span>03</span><div><h3>Wait for administrator review</h3><p>Track your application and organization ID from your organization application page.</p></div></li>
+            <li><span>04</span><div><h3>Open the organization workspace</h3><p>After approval, CareLife grants access to the organization tools for the approved organization type.</p></div></li>
           </ol>
           <div className="org-review-note"><span aria-hidden="true">i</span><p><strong>Two reviews, two statuses.</strong> Staff access approval gives you the matching workspace. Organization approval is a separate step for the organization’s profile.</p></div>
         </section>

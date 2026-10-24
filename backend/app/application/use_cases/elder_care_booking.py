@@ -65,14 +65,14 @@ class ElderCareBookingService:
         self,
         user: UserContext,
     ) -> list[ElderCareBooking]:
-        if user.role not in VIEWER_ROLES:
+        if user.role not in VIEWER_ROLES and not user.has_role(Role.CARE_HOME_STAFF):
             raise PermissionError(
                 "You cannot view elder-care bookings"
             )
 
         return self.repository.list_for_user(
             user_id=user.user_id,
-            role=user.role,
+            role=(Role.CARE_HOME_STAFF if user.has_role(Role.CARE_HOME_STAFF) else user.role),
         )
 
     def _require_read_access(
@@ -96,7 +96,7 @@ class ElderCareBookingService:
             return
 
         if (
-            user.role == Role.CARE_HOME_STAFF
+            user.has_organization_role(Role.CARE_HOME_STAFF, booking.resident_organization_id)
             and self.repository.is_care_home_staff(
                 user.user_id,
                 booking.resident_organization_id,
@@ -113,7 +113,7 @@ class ElderCareBookingService:
         user: UserContext,
         booking_id: str,
     ) -> ElderCareBooking:
-        if user.role not in VIEWER_ROLES:
+        if user.role not in VIEWER_ROLES and not user.has_role(Role.CARE_HOME_STAFF):
             raise PermissionError(
                 "You cannot view elder-care bookings"
             )
@@ -164,7 +164,7 @@ class ElderCareBookingService:
             return
 
         if (
-            user.role != Role.CARE_HOME_STAFF
+            not user.has_organization_role(Role.CARE_HOME_STAFF, booking.organization_id or '')
             or booking.organization_id is None
             or not self.repository.is_care_home_staff(
                 user.user_id,

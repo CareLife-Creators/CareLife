@@ -26,12 +26,11 @@ class DonationService:
         self.repository = repository
 
     def _authorize_organization_staff(self, user: UserContext, organization_id: str) -> None:
-        if user.role not in _ORGANIZATION_STAFF_ROLES:
+        role = user.organization_role_for(organization_id)
+        if role not in _ORGANIZATION_STAFF_ROLES:
             raise PermissionError("Organization staff access required")
-        if organization_id not in user.organization_ids and user.organization_id != organization_id:
-            raise PermissionError("You do not have access to this organization")
         if not self.repository.is_authorized_organization_staff(
-            organization_id, user.user_id, user.role
+            organization_id, user.user_id, role
         ):
             raise PermissionError("You do not have permission to manage donations for this organization")
 
@@ -46,7 +45,7 @@ class DonationService:
             remaining_amount=request.target_amount, is_active=request.is_active,
             created_at=now, updated_at=now,
         )
-        return self.repository.create_campaign(campaign, user.user_id, user.role)
+        return self.repository.create_campaign(campaign, user.user_id, user.organization_role_for(organization_id))
 
     def list_organization_campaigns(self, user: UserContext, organization_id: str) -> list[DonationCampaign]:
         self._authorize_organization_staff(user, organization_id)
@@ -60,7 +59,7 @@ class DonationService:
         for field in ("title", "target_amount", "currency", "utilized_amount", "is_active"):
             if field in changes and changes[field] is None:
                 raise ValueError(f"{field} cannot be null")
-        updated = self.repository.update_campaign(organization_id, campaign_id, changes, user.user_id, user.role)
+        updated = self.repository.update_campaign(organization_id, campaign_id, changes, user.user_id, user.organization_role_for(organization_id))
         if updated is None:
             raise LookupError("Campaign not found for this organization")
         return updated
@@ -85,7 +84,7 @@ class DonationService:
             unit=request.unit, is_active=request.is_active,
             created_at=now, updated_at=now,
         )
-        return self.repository.create_need(need, user.user_id, user.role)
+        return self.repository.create_need(need, user.user_id, user.organization_role_for(organization_id))
 
     def list_organization_needs(self, user: UserContext, organization_id: str) -> list[DonationNeed]:
         self._authorize_organization_staff(user, organization_id)
@@ -118,7 +117,7 @@ class DonationService:
             "target_quantity": validated.target_quantity,
             "unit": validated.unit,
         })
-        updated = self.repository.update_need(organization_id, need_id, changes, user.user_id, user.role)
+        updated = self.repository.update_need(organization_id, need_id, changes, user.user_id, user.organization_role_for(organization_id))
         if updated is None:
             raise LookupError("Donation need not found for this organization")
         return updated

@@ -10,6 +10,17 @@
 }
 
 .daycare-directory-container { width: min(1240px, 100%); margin: 0 auto; }
+.directory-nearby-tools { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:14px; }
+.directory-nearby-tools button { min-height:40px; padding:0 14px; border:1px solid #b9d9ca; border-radius:11px; color:#176b5b; background:#eff8f2; font:inherit; font-size:.8rem; font-weight:750; cursor:pointer; }
+.directory-nearby-tools button:disabled { opacity:.65; cursor:wait; }
+.directory-nearby-tools .directory-location-clear { color:#61776d; background:#fff; }
+.directory-nearby-tools p { flex-basis:100%; margin:0; color:#657b70; font-size:.76rem; line-height:1.55; }
+.daycare-nearby-meta { display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin:-8px 0 15px; color:#527366; font-size:.76rem; }
+.daycare-nearby-meta a { color:#176b5b; font-weight:750; text-decoration:none; }
+.daycare-nearby-map { margin-top:26px; padding:18px; border:1px solid var(--daycare-border); border-radius:22px; background:#fff; }
+.daycare-nearby-map>div:first-child { display:grid; gap:5px; margin-bottom:12px; }
+.daycare-nearby-map>div:first-child strong { color:var(--daycare-ink); }
+.daycare-nearby-map>div:first-child span { color:var(--daycare-muted); font-size:.78rem; line-height:1.5; }
 .daycare-directory-header { position: relative; display: flex; align-items: center; min-height: 270px; margin-bottom: 24px; padding: clamp(30px, 5vw, 58px); overflow: hidden; border: 1px solid var(--daycare-border); border-radius: 28px; background: linear-gradient(120deg, #e1f2eb, #f7fbf9 62%, #f8f2e9); box-shadow: 0 20px 55px rgb(28 69 54 / 6%); }
 .daycare-directory-header::before, .daycare-directory-header::after { position: absolute; right: -4%; top: -42%; width: min(48vw, 480px); aspect-ratio: 1; border: 1px solid rgb(23 107 91 / 12%); border-radius: 50%; content: ''; pointer-events: none; }
 .daycare-directory-header::after { right: 4%; top: -25%; width: min(38vw, 370px); border-color: rgb(23 107 91 / 9%); }
