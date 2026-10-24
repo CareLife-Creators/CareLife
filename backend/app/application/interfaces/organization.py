@@ -28,6 +28,9 @@ class OrganizationRepository(Protocol):
     ) -> list[Organization]:
         ...
 
+    def get_submitted_by(self, user_id: str) -> list[Organization]:
+        ...
+
     def get_tracking_records(self) -> list[OrganizationTrackingRecord]:
         ...
 

@@ -39,6 +39,9 @@ class OrganizationVerificationService:
     def get_pending(self):
         return self.repository.get_pending()
 
+    def get_submitted_by(self, user_id: str):
+        return self.repository.get_submitted_by(user_id)
+
     def get_tracking_records(self):
         return self.repository.get_tracking_records()
 

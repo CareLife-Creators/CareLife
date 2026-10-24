@@ -10,6 +10,7 @@ import { getDaycareDirectory } from '../api/daycareDirectory'
 import { BANGLADESH_DIVISIONS } from '../data/bangladeshMap'
 import AdminWorkspacePage from './AdminWorkspacePage'
 import OrganizationSatelliteMap from '../components/OrganizationSatelliteMap'
+import useMyProfilePhoto from '../hooks/useMyProfilePhoto'
 import './DashboardPage.css'
 
 const modules = [
@@ -19,15 +20,28 @@ const modules = [
 ]
 
 // Tools differ by role. The backend enforces the same rules.
-function toolsFor(role) {
+function toolsFor(role, organizationRoles = []) {
   if (isAdmin(role)) {
     return {
       title: 'Administration',
-      intro: 'Review organizations, caregiver verification and staff access.',
+      intro: 'Review organization applications, caregiver verification, and public impact submissions.',
       links: [
         { href: '#organization-approval', icon: '◇', title: 'Organization approvals', text: 'Review submitted organization verification records.' },
-        { href: '#admin-role-requests', icon: '✓', title: 'Staff access requests', text: 'Approve or reject staff-role requests.' },
         { href: '#admin-operations', icon: '⌁', title: 'Caregiver review & audit', text: 'Review caregiver submissions and inspect audit events.' },
+      ],
+    }
+  }
+  if (organizationRoles.length) {
+    const roles = new Set(organizationRoles.map((item) => item.organization_role))
+    return {
+      title: 'Your organization',
+      intro: 'Open a workspace for an organization that approved your access.',
+      links: [
+        { href: '#organization-workspace', icon: '⌂', title: 'Organization workspace', text: `Manage ${organizationRoles.length === 1 ? 'your approved organization' : `${organizationRoles.length} approved organizations`} and their authorized workflows.` },
+        { href: '#verification', icon: '✓', title: 'Verification status', text: 'Review current organization verification and license dates.' },
+        ...(roles.has('daycare_staff') ? [{ href: '#organization-workspace', icon: '✳', title: 'Enrollment review', text: 'Review family applications and manage daycare attendance.' }] : []),
+        ...(roles.has('orphanage_staff') ? [{ href: '#organization-workspace', icon: '♡', title: 'Children’s home operations', text: 'Manage approved support updates and restricted case workflows.' }] : []),
+        ...(roles.has('care_home_staff') ? [{ href: '#organization-workspace', icon: '◷', title: 'Care-home operations', text: 'Manage authorized resident and family-consent workflows.' }] : []),
       ],
     }
   }
@@ -38,7 +52,7 @@ function toolsFor(role) {
       links: [
         { href: '#organization-workspace', icon: '⌂', title: 'Organization workspace', text: 'Edit public details and open role-specific organization tools.' },
         { href: '#verification', icon: '✓', title: 'Organization verification', text: 'Check the status of your organization submission.' },
-        ...(role === 'daycare_staff' ? [{ href: '#my-children', icon: '✳', title: 'Children & attendance', text: 'Review enrollments, pickup permissions and attendance.' }] : []),
+        ...(role === 'daycare_staff' ? [{ href: '#organization-workspace', icon: '✳', title: 'Enrollment review', text: 'Review family applications for your daycare.' }] : []),
         ...(role === 'orphanage_staff' ? [{ href: '#orphanage-support', icon: '♡', title: 'Support board', text: 'See the published campaigns and impact updates.' }] : []),
         ...(role === 'care_home_staff' ? [{ href: '#care-bookings', icon: '◷', title: 'Care bookings', text: 'Review service requests and booking statuses.' }] : []),
       ],
@@ -74,17 +88,18 @@ function toolsFor(role) {
     }
   }
   return {
-    title: role === 'donor_supporter' ? 'Giving & support' : 'Staff access',
-    intro: role === 'donor_supporter' ? 'Review active needs and follow campaign payment records.' : 'Work at a daycare, orphanage or care home?',
+    title: role === 'donor_supporter' ? 'Giving & support' : 'CareLife workspace',
+    intro: role === 'donor_supporter' ? 'Review active needs and follow campaign payment records.' : 'Choose the care tools that match how you use CareLife.',
     links: role === 'donor_supporter'
       ? [{ href: '#orphanage-support', icon: '♡', title: 'Support board', text: 'Pledge practical items or start bKash checkout for a campaign.' }]
-      : [{ href: '#staff-access', icon: '✓', title: 'Request staff access', text: 'Ask a CareLife administrator for a staff role.' }],
+      : [{ href: '#organization-apply', icon: '◇', title: 'Register an organization', text: 'Submit organization details for administrator review.' }],
   }
 }
 function DashboardPage() {
-  const { email: storedEmail, role } = useSession()
+  const { email: storedEmail, role, organizationRoles = [] } = useSession()
+  const profilePhotoUrl = useMyProfilePhoto()
   const email = storedEmail || 'CareLife member'
-  const tools = toolsFor(role)
+  const tools = toolsFor(role, organizationRoles)
 
   if (role === 'independent_caregiver') return <CaregiverDashboard email={email} />
   if (role === 'parent_guardian') return <FamilyDashboard email={email} />
@@ -99,7 +114,7 @@ function DashboardPage() {
           <h1>Good to see you.</h1>
           <p className="member-dashboard-intro">Signed in as <strong>{email}</strong>{role ? ' · ' + roleLabel(role) : ''}. Start with a module or open one of your tools.</p>
         </div>
-        <div className="member-dashboard-avatar" aria-hidden="true">{email.charAt(0).toUpperCase()}</div>
+        <div className="member-dashboard-avatar" aria-hidden="true">{profilePhotoUrl ? <img src={profilePhotoUrl} alt="" /> : email.charAt(0).toUpperCase()}</div>
       </header>
       <section className="member-dashboard-section" aria-labelledby="member-module-title">
         <div className="member-dashboard-section-heading">

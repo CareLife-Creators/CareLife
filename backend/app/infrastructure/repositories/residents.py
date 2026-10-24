@@ -84,7 +84,10 @@ class PostgresResidentProfileRepository:
         if user.role == Role.CARELIFE_ADMIN:
             return
 
-        if user.role != Role.CARE_HOME_STAFF:
+        if not user.has_organization_role(
+            Role.CARE_HOME_STAFF,
+            organization_id,
+        ):
             raise PermissionError(
                 "Care-home staff access is required"
             )
@@ -95,12 +98,9 @@ class PostgresResidentProfileRepository:
             FROM user_organizations uo
             JOIN users u
               ON u.id = uo.user_id
-            JOIN roles r
-              ON r.id = u.role_id
             WHERE uo.organization_id = %s
               AND u.id = %s
               AND u.is_active = TRUE
-              AND r.name = 'care_home_staff'
             LIMIT 1
             """,
             (organization_id, user.user_id),

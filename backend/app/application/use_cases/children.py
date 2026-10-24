@@ -27,9 +27,9 @@ class ChildService:
         user: UserContext,
         organization_id: str,
     ) -> bool:
-        return (
-            organization_id in user.organization_ids
-            or user.organization_id == organization_id
+        return user.has_organization_role(
+            Role.ORPHANAGE_STAFF,
+            organization_id,
         )
 
     def _check_orphanage_staff(
@@ -37,7 +37,10 @@ class ChildService:
         user: UserContext,
         organization_id: str,
     ) -> None:
-        if user.role != Role.ORPHANAGE_STAFF:
+        if not user.has_organization_role(
+            Role.ORPHANAGE_STAFF,
+            organization_id,
+        ):
             raise PermissionError("Orphanage staff access required")
 
         if not self._organization_access(user, organization_id):
@@ -59,16 +62,19 @@ class ChildService:
         if user.role == Role.CARELIFE_ADMIN:
             return
 
-        if user.role != Role.ORPHANAGE_STAFF:
-            raise PermissionError(
-                "Orphanage staff access required"
-            )
-
         organization_id = child.orphanage_organization_id
 
         if organization_id is None:
             raise PermissionError(
                 "Child is not assigned to an orphanage"
+            )
+
+        if not user.has_organization_role(
+            Role.ORPHANAGE_STAFF,
+            organization_id,
+        ):
+            raise PermissionError(
+                "Orphanage staff access required"
             )
 
         if not self._organization_access(user, organization_id):
@@ -319,7 +325,10 @@ class ChildService:
 
             return
 
-        if user.role == Role.DAYCARE_STAFF:
+        if child.daycare_organization_id and user.has_organization_role(
+            Role.DAYCARE_STAFF,
+            child.daycare_organization_id,
+        ):
             daycare_id = child.daycare_organization_id
 
             if daycare_id is None:

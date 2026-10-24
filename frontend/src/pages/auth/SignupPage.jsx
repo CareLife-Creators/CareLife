@@ -207,7 +207,7 @@ function SignupPage({ onLogin }) {
                   </fieldset>
 
                   <p className="auth-staff-note">
-                    Represent a daycare, children’s home or care home? <a href="#for-organizations">See how to register your organization</a> and get the right staff access.
+                    Represent a daycare, children’s home or care home? <a href="#for-organizations">Apply to register your organization</a> for administrator review.
                   </p>
 
                   <div className="form-field">

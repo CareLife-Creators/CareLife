@@ -27,10 +27,10 @@ class RemoteCheckInService:
         resident_id: str,
         request: ConsentUpdateRequest,
     ) -> ResidentConsent:
-        if user.role not in {
+        if not user.has_organization_role(
             Role.CARE_HOME_STAFF,
-            Role.CARELIFE_ADMIN,
-        }:
+            organization_id,
+        ):
             raise PermissionError(
                 "Care-home staff or administrator access required"
             )
@@ -68,11 +68,7 @@ class RemoteCheckInService:
         user: UserContext,
         resident_id: str,
     ) -> list[RemoteCheckIn]:
-        if user.role not in {
-            Role.FAMILY_REPRESENTATIVE,
-            Role.CARE_HOME_STAFF,
-            Role.CARELIFE_ADMIN,
-        }:
+        if user.role != Role.FAMILY_REPRESENTATIVE and not user.has_role(Role.CARE_HOME_STAFF):
             raise PermissionError(
                 "You do not have permission to view these check-ins"
             )

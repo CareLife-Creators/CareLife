@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './OrganizationSatelliteMap.css'
+import './OrganizationSatelliteMapLocation.css'
 
 const project = (longitude, latitude, zoom) => {
   const size = 256 * (2 ** zoom)
@@ -7,15 +8,16 @@ const project = (longitude, latitude, zoom) => {
   return { x: ((longitude + 180) / 360) * size, y: (0.5 - Math.log((1 + Math.sin(rad)) / (1 - Math.sin(rad))) / (4 * Math.PI)) * size }
 }
 
-export default function OrganizationSatelliteMap({ organizations = [], selectedId, onSelect, value, onPick }) {
-  const [zoom, setZoom] = useState(7)
+export default function OrganizationSatelliteMap({ organizations = [], selectedId, onSelect, value, onPick, centerLocation, startZoom = 7 }) {
+  const [zoom, setZoom] = useState(startZoom)
+  useEffect(() => { if (centerLocation) setZoom(startZoom) }, [centerLocation?.latitude, centerLocation?.longitude, startZoom])
   const width = 560
   const height = 390
   const scale = 0.8
-  const located = organizations.filter((org) => Number.isFinite(Number(org.latitude)) && Number.isFinite(Number(org.longitude)))
+  const located = organizations.filter((org) => org.latitude != null && org.longitude != null && Number.isFinite(Number(org.latitude)) && Number.isFinite(Number(org.longitude)) && Number(org.latitude) >= -90 && Number(org.latitude) <= 90 && Number(org.longitude) >= -180 && Number(org.longitude) <= 180)
   const selected = located.find((org) => org.organization_id === selectedId)
   const hasValue = value?.latitude != null && value?.longitude != null
-  const [lon, lat] = hasValue ? [Number(value.longitude), Number(value.latitude)] : selected ? [Number(selected.longitude), Number(selected.latitude)] : [90.35, 23.72]
+  const [lon, lat] = hasValue ? [Number(value.longitude), Number(value.latitude)] : centerLocation ? [Number(centerLocation.longitude), Number(centerLocation.latitude)] : selected ? [Number(selected.longitude), Number(selected.latitude)] : [90.35, 23.72]
   const center = project(lon, lat, zoom)
   const tiles = useMemo(() => {
     const result = []
@@ -28,7 +30,7 @@ export default function OrganizationSatelliteMap({ organizations = [], selectedI
   }, [center.x, center.y, zoom])
 
   function pickLocation(event) {
-    if (!onPick || event.target.closest('button')) return
+    if (!onPick || event.target.closest('button, a')) return
     const rect = event.currentTarget.getBoundingClientRect()
     const x = ((event.clientX - rect.left) / rect.width) * width
     const y = ((event.clientY - rect.top) / rect.height) * height
@@ -42,7 +44,7 @@ export default function OrganizationSatelliteMap({ organizations = [], selectedI
 
   return <div className={'org-satellite-map' + (onPick ? ' is-picker' : '')} role="group" aria-label={onPick ? 'Select exact organization location on satellite map' : 'Satellite map with submitted organization locations'} onClick={pickLocation}>
     <div className="org-satellite-tiles" aria-hidden="true">{tiles.map((tile) => <img key={tile.key} src={tile.url} alt="" style={{ left: tile.left, top: tile.top }} />)}</div>
-    <div className="org-satellite-pins">{located.map((org) => {
+    <div className="org-satellite-pins">{centerLocation && <span className="org-satellite-user-pin" aria-label="Your approximate location, shown only in this browser" title="Your approximate location" />}{located.map((org) => {
       const point = project(Number(org.longitude), Number(org.latitude), zoom)
       const left = (point.x - center.x) * scale + width / 2
       const top = (point.y - center.y) * scale + height / 2

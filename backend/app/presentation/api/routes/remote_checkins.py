@@ -51,7 +51,6 @@ def set_resident_consent(
     current_user: UserContext = Depends(
         require_role(
             Role.CARE_HOME_STAFF,
-            Role.CARELIFE_ADMIN,
         )
     ),
     service: RemoteCheckInService = Depends(
@@ -108,7 +107,6 @@ def list_remote_checkins(
         require_role(
             Role.FAMILY_REPRESENTATIVE,
             Role.CARE_HOME_STAFF,
-            Role.CARELIFE_ADMIN,
         )
     ),
     service: RemoteCheckInService = Depends(

@@ -38,23 +38,16 @@ class InKindDonationService:
         user: UserContext,
         organization_id: str,
     ) -> None:
-        if user.role not in _ORGANIZATION_STAFF_ROLES:
+        role = user.organization_role_for(organization_id)
+        if role not in _ORGANIZATION_STAFF_ROLES:
             raise PermissionError(
                 "Organization staff access is required"
-            )
-
-        if (
-            organization_id not in user.organization_ids
-            and user.organization_id != organization_id
-        ):
-            raise PermissionError(
-                "You do not have access to this organization"
             )
 
         if not self.repository.is_authorized_organization_staff(
             organization_id,
             user.user_id,
-            user.role,
+            role,
         ):
             raise PermissionError(
                 "You do not have permission to manage donations "
@@ -157,7 +150,7 @@ class InKindDonationService:
             pledge_id=pledge_id,
             new_status=request.status,
             user_id=user.user_id,
-            role=user.role,
+            role=user.organization_role_for(organization_id),
         )
 
         if updated is None:

@@ -5,6 +5,7 @@ import { memberLinks, roleLabel } from '../lib/roles'
 import { useSession } from '../lib/session'
 import { getMyNotifications, getMyProfile } from '../api/workspace'
 import { publicOrganizationName } from '../lib/publicDisplay'
+import useMyProfilePhoto from '../hooks/useMyProfilePhoto'
 import './SiteNav.css'
 
 const publicLinks = [
@@ -22,7 +23,8 @@ function SiteNav() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [displayName, setDisplayName] = useState('')
   const [current, setCurrent] = useState(window.location.hash || '#home')
-  const { signedIn, role, email } = useSession()
+  const { signedIn, role, email, organizationRoles } = useSession()
+  const profilePhotoUrl = useMyProfilePhoto()
 
   useEffect(() => {
     if (!signedIn) {
@@ -83,7 +85,7 @@ function SiteNav() {
   }
 
   // Signed-in menu depends on the user's role. The backend enforces access too.
-  const links = signedIn ? memberLinks(role) : publicLinks
+  const links = signedIn ? memberLinks(role, organizationRoles) : publicLinks
   const profileLabel = displayName || (email ? email.split('@')[0].replace(/[._-]+/g, ' ') : 'Your profile')
   const initials = profileLabel.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'C'
 
@@ -134,7 +136,7 @@ function SiteNav() {
               </a>
               <div className="site-nav-account">
                 <button type="button" className="site-nav-profile-trigger" aria-expanded={accountMenuOpen} aria-haspopup="menu" onClick={() => setAccountMenuOpen((value) => !value)}>
-                  <span className="site-nav-profile-avatar" aria-hidden="true">{initials}</span>
+                  <span className="site-nav-profile-avatar" aria-hidden="true">{profilePhotoUrl ? <img src={profilePhotoUrl} alt="" /> : initials}</span>
                   <span className="site-nav-profile-name">{profileLabel}</span>
                   <svg className="site-nav-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>
                 </button>

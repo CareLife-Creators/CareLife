@@ -1,8 +1,9 @@
 
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import (
     Boolean,
+    Date,
     DateTime,
     ForeignKey,
     Index,
@@ -71,6 +72,21 @@ class NotificationModel(Base):
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=False,
+    )
+
+    email_sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    document_type: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+    )
+
+    document_expires_at: Mapped[date | None] = mapped_column(
+        Date,
+        nullable=True,
     )
 
     __table_args__ = (

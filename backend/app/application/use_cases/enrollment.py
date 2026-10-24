@@ -46,9 +46,9 @@ class EnrollmentService:
         user: UserContext,
         organization_id: str,
     ) -> bool:
-        return (
-            organization_id in user.organization_ids
-            or user.organization_id == organization_id
+        return user.has_organization_role(
+            Role.DAYCARE_STAFF,
+            organization_id,
         )
 
     def create(
@@ -126,7 +126,7 @@ class EnrollmentService:
         user: UserContext,
     ) -> list[Enrollment]:
 
-        if user.role != Role.DAYCARE_STAFF:
+        if not user.has_role(Role.DAYCARE_STAFF):
             raise PermissionError(
                 "Daycare staff access required"
             )
@@ -198,7 +198,10 @@ class EnrollmentService:
 
             return enrollment
 
-        if user.role == Role.DAYCARE_STAFF:
+        if user.has_organization_role(
+            Role.DAYCARE_STAFF,
+            enrollment.daycare_organization_id,
+        ):
 
             if not self._organization_access(
                 user,
@@ -222,11 +225,6 @@ class EnrollmentService:
         message: str | None = None,
     ) -> Enrollment:
 
-        if user.role != Role.DAYCARE_STAFF:
-            raise PermissionError(
-                "Daycare staff access required"
-            )
-
         enrollment = (
             self.enrollment_repository.get_by_id(
                 enrollment_id
@@ -237,6 +235,12 @@ class EnrollmentService:
             raise ValueError(
                 "Enrollment record not found"
             )
+
+        if not user.has_organization_role(
+            Role.DAYCARE_STAFF,
+            enrollment.daycare_organization_id,
+        ):
+            raise PermissionError("Daycare staff access required")
 
         if not self._organization_access(
             user,

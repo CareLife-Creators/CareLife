@@ -56,14 +56,15 @@ export default function FamilyCheckInsPage() {
       <main className="cw-page">
         <header className="cw-hero">
           <span className="cw-kicker">FAMILY REPRESENTATIVE</span>
-          <h1>Stay connected with an authorized family member.</h1>
-          <p>Use the resident ID provided by the care home to view recorded wellbeing check-ins or submit your own. The backend checks whether the care home has granted active consent to your account.</p>
+          <h1>Share a wellbeing update with the care home.</h1>
+          <p>A remote check-in lets an approved family representative send a brief update from their own CareLife account, even when they are away from the care home. The care home must grant consent for this account and resident first.</p>
           <div className="cw-hero-meta"><span>{role ? role.replaceAll('_', ' ') : 'Family account'}</span><span>Resident access is consent-controlled</span></div>
         </header>
+        <aside className="cw-alert"><strong>What “remote” means:</strong> this is a written wellbeing update, not GPS tracking, live video, continuous monitoring, or a medical assessment. Use the resident ID the care home shared with you. An “Urgent” entry does not contact emergency services or guarantee an immediate response; contact the care home or local emergency services directly when urgent help is needed.</aside>
         {error && <div className="cw-alert error" role="alert">{error}</div>}
         {notice && <div className="cw-alert success" role="status">{notice}</div>}
         <section className="cw-panel">
-          <div className="cw-panel-heading"><div><p className="cw-kicker">AUTHORIZED RESIDENT</p><h2>Open check-in history</h2></div></div>
+          <div className="cw-panel-heading"><div><p className="cw-kicker">STEP 1 · CARE HOME AUTHORIZATION</p><h2>Open the resident’s updates</h2></div></div>
           <form className="cw-inline-form" onSubmit={loadCheckIns}>
             <label>Resident ID<input value={residentId} onChange={(event) => setResidentId(event.target.value)} required placeholder="Enter the resident ID shared by the care home" /></label>
             <button className="cw-button primary" disabled={loading}>{loading ? 'Loading…' : 'View check-ins'}</button>
@@ -78,11 +79,11 @@ export default function FamilyCheckInsPage() {
           </div>
         </section>
         <section className="cw-panel">
-          <div className="cw-panel-heading"><div><p className="cw-kicker">NEW FAMILY CHECK-IN</p><h2>Record a wellbeing update</h2></div></div>
+          <div className="cw-panel-heading"><div><p className="cw-kicker">STEP 2 · FAMILY UPDATE</p><h2>Send a wellbeing check-in</h2></div></div>
           <form className="cw-form" onSubmit={recordCheckIn}>
             <label>Resident ID<input value={residentId} onChange={(event) => setResidentId(event.target.value)} required /></label>
             <label>Wellbeing status<select value={form.wellbeing_status} onChange={(event) => setForm((current) => ({ ...current, wellbeing_status: event.target.value }))}><option value="well">Well</option><option value="needs_attention">Needs attention</option><option value="urgent">Urgent</option></select></label>
-            <label className="cw-full-field">Note for the care record<textarea rows={4} maxLength={2000} value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Share a brief, factual wellbeing update. Avoid adding information that is not needed for this check-in." /></label>
+            <label className="cw-full-field">Brief note for the care team<textarea rows={4} maxLength={2000} value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Share a short, factual update. Do not include sensitive details that are not needed." /></label>
             <div className="cw-form-actions"><button className="cw-button primary" disabled={busy}>{busy ? 'Recording…' : 'Submit check-in'}</button></div>
           </form>
         </section>

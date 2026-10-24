@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { getOrganizationVerification } from '../../api/organizationVerification'
-import { logout } from '../../api/auth'
+import SiteNav from '../../components/SiteNav'
+import { useSession } from '../../lib/session'
 import './VerificationStatusPage.css'
 
 function formatDate(value) {
@@ -27,8 +28,9 @@ function statusLabel(status) {
 }
 
 function VerificationStatusPage() {
+  const { organizationRoles = [] } = useSession()
   const [organizationId, setOrganizationId] = useState(
-    localStorage.getItem('carelife_organization_id') || ''
+    organizationRoles[0]?.organization_id || ''
   )
   const [organization, setOrganization] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -63,60 +65,32 @@ function VerificationStatusPage() {
     }
   }
 
+  useEffect(() => {
+    if (!organizationRoles.some((item) => item.organization_id === organizationId)) {
+      setOrganizationId(organizationRoles[0]?.organization_id || '')
+      return
+    }
+    if (organizationId.trim()) void loadVerification()
+  // Load status only for an organization in the signed-in user's approved memberships.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [organizationId, organizationRoles])
+
 
   const status = String(organization?.status || 'pending').toLowerCase()
   const label = statusLabel(status)
-  const email = localStorage.getItem('carelife_user') || 'Signed-in member'
 
   return (
-    <div className="app-layout">
-      <aside className="sidebar">
-        <a className="brand verification-brand" href="#home">
-          <span className="brand-icon">C</span>
-          <span className="verification-brand-copy">
-            <strong>CareLife</strong>
-            <small>Care management</small>
-          </span>
-        </a>
-
-        <nav className="navigation" aria-label="Organization navigation">
-          <a href="#home" className="nav-item"><span aria-hidden="true">⌂</span> Home</a>
-          <a href="#daycare-directory" className="nav-item"><span aria-hidden="true">⌕</span> Daycare directory</a>
-          <a href="#verification" className="nav-item active" aria-current="page"><span aria-hidden="true">✓</span> Verification status</a>
-          <a href="#organization-approval" className="nav-item"><span aria-hidden="true">◎</span> Admin approvals</a>
-        </nav>
-
-        <div className="sidebar-bottom">
-          <div className="help-box">
-            <strong>Need help?</strong>
-            <p>Use the organization ID provided by your CareLife administrator to check verification.</p>
-            <span className="verification-help-caption">Ask your CareLife administrator if you need help finding your organization ID.</span>
-          </div>
-        </div>
-      </aside>
-
+    <>
+      <SiteNav />
+      <div className="app-layout verification-shell">
       <main className="main-content">
-        <header className="topbar">
-          <div>
-            <p className="breadcrumb">Organization / Verification</p>
-            <h2>Verification status</h2>
-          </div>
-          <div className="profile">
-            <div className="profile-avatar" aria-hidden="true">{email.charAt(0).toUpperCase()}</div>
-            <div className="verification-profile-copy">
-              <strong>{email}</strong>
-              <span>Signed-in account</span>
-            </div>
-            <button type="button" onClick={() => { void logout() }}>Sign out</button>
-          </div>
-        </header>
-
         <section className="page-content verification-page-content">
           <div className="verification-intro">
             <div>
               <span className="section-label">ORGANIZATION WORKSPACE</span>
-              <h3>Know where your verification stands.</h3>
-              <p>Enter the organization ID you are authorized to view. CareLife will load the saved status from the service.</p>
+              <h3>Organization verification</h3>
+              <p>Check the review status for an organization you are authorized to manage.</p>
+              <a className="verification-workspace-link" href="#organization-workspace">Back to organization workspace</a>
             </div>
           </div>
 
@@ -127,23 +101,9 @@ function VerificationStatusPage() {
                 <h4>Organization ID</h4>
               </div>
             </div>
-            <form className="verification-lookup" onSubmit={loadVerification}>
-              <div className="verification-field">
-                <label htmlFor="verification-organization-id">Organization ID</label>
-                <input
-                  id="verification-organization-id"
-                  name="organizationId"
-                  value={organizationId}
-                  onChange={(event) => setOrganizationId(event.target.value)}
-                  placeholder="Enter your organization ID"
-                  autoComplete="off"
-                  required
-                />
-              </div>
-              <button type="submit" className="verification-submit" disabled={loading}>
-                {loading ? 'Loading status…' : 'View status'}
-              </button>
-            </form>
+            {organizationRoles.length > 1 && <label className="verification-field">Organization<select value={organizationId} onChange={(event) => setOrganizationId(event.target.value)}>{organizationRoles.map((item) => <option key={item.organization_id} value={item.organization_id}>{String(item.organization_role).replaceAll('_', ' ')} · {item.organization_id}</option>)}</select></label>}
+            {!organizationId && <p className="verification-error" role="status">No approved organization access is linked to this account yet. Submitted applications can be tracked from the organization application page.</p>}
+            {organizationId && <p className="verification-org-id">Organization reference: {organizationId}</p>}
             {error && <p className="verification-error" role="alert">{error}</p>}
           </section>
 
@@ -227,7 +187,8 @@ function VerificationStatusPage() {
           )}
         </section>
       </main>
-    </div>
+      </div>
+    </>
   )
 }
 
