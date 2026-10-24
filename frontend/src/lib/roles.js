@@ -59,11 +59,15 @@ export function canAccessRoute(route, role) {
   return true
 }
 
+export function canUseDonorFeatures(role, signedIn) {
+  return Boolean(signedIn) && String(role || '').toLowerCase() === ROLE.DONOR_SUPPORTER
+}
+
 const PRIVATE_ROUTES = new Set([
   '#dashboard', '#my-children', '#care-bookings', '#caregiver-workspace',
   '#account', '#notifications', '#messages', '#organization-workspace', '#admin-operations', '#admin-users',
   '#organization-approval', '#verification', '#staff-access', '#admin-role-requests', '#family-checkins',
-  '#daycare-directory', '#elderly-care-directory', '#caregivers', '#organization-profile', '#orphanage-support',
+  '#organization-profile',
 ])
 
 export function isProtectedRoute(route) {
