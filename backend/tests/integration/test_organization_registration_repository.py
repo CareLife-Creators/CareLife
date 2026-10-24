@@ -46,6 +46,8 @@ class OrganizationRegistrationRepositoryIntegrationTests(unittest.TestCase):
                 organization_type="daycare",
                 description="A test daycare profile",
                 location="Dhaka",
+                latitude=23.8103,
+                longitude=90.4125,
                 contact="+8801700000000",
                 license_number=f"LIC-{organization_id[:8]}",
                 license_expiry_date=date.today() + timedelta(days=30),
@@ -62,6 +64,8 @@ class OrganizationRegistrationRepositoryIntegrationTests(unittest.TestCase):
             self.assertIsNotNone(saved)
             self.assertEqual(saved.description, "A test daycare profile")
             self.assertEqual(saved.location, "Dhaka")
+            self.assertEqual(saved.latitude, 23.8103)
+            self.assertEqual(saved.longitude, 90.4125)
             self.assertEqual(saved.contact, "+8801700000000")
 
             with get_connection() as connection:

@@ -135,6 +135,7 @@ def make_daycare_staff(
         user_id=user_id,
         role=Role.DAYCARE_STAFF,
         organization_id=organization_id,
+        organization_ids=[organization_id],
     )
 
 
@@ -146,6 +147,7 @@ def make_orphanage_staff(
         user_id=user_id,
         role=Role.ORPHANAGE_STAFF,
         organization_id=organization_id,
+        organization_ids=[organization_id],
     )
 
 

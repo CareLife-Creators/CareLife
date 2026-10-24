@@ -27,7 +27,7 @@ class RemoteCheckInService:
         resident_id: str,
         request: ConsentUpdateRequest,
     ) -> ResidentConsent:
-        if not user.has_organization_role(
+        if user.role != Role.CARELIFE_ADMIN and not user.has_organization_role(
             Role.CARE_HOME_STAFF,
             organization_id,
         ):

@@ -26,9 +26,10 @@ class ChildService:
     def _organization_access(
         user: UserContext,
         organization_id: str,
+        role: Role = Role.ORPHANAGE_STAFF,
     ) -> bool:
         return user.has_organization_role(
-            Role.ORPHANAGE_STAFF,
+            role,
             organization_id,
         )
 
@@ -336,7 +337,11 @@ class ChildService:
                     "Child is not enrolled at a daycare"
                 )
 
-            if not self._organization_access(user, daycare_id):
+            if not self._organization_access(
+                user,
+                daycare_id,
+                Role.DAYCARE_STAFF,
+            ):
                 raise PermissionError(
                     "You do not have access to this child record"
                 )

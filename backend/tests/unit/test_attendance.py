@@ -55,6 +55,7 @@ class AttendanceServiceTests(unittest.TestCase):
             user_id="staff-1",
             role=Role.DAYCARE_STAFF,
             organization_id="daycare-1",
+            organization_ids=["daycare-1"],
         )
         self.parent = UserContext(
             user_id="parent-1",

@@ -862,7 +862,9 @@ class PostgresOrganizationRepository:
             message=row[9],
             description=row[10],
             location=row[11],
-            contact=row[12],
+            latitude=row[12],
+            longitude=row[13],
+            contact=row[14],
         )
 
     def expire_verified_organizations(self) -> int:
