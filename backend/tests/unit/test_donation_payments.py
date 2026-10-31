@@ -71,16 +71,52 @@ class DonationPaymentServiceTests(unittest.TestCase):
         self.repository.create_pending_payment.assert_called_once()
         self.repository.attach_gateway_payment.assert_called_once()
 
-    def test_non_donor_cannot_start_checkout(self):
-        with self.assertRaises(PermissionError):
-            self.service.start_bkash_payment(
-                self.parent,
-                "campaign-1",
-                DonationPaymentCreateRequest(amount=Decimal("100.00")),
-            )
+    def test_other_authenticated_role_can_start_checkout(self):
+        parent_payment = self.payment.model_copy(
+            update={"donor_user_id": self.parent.user_id}
+        )
+        self.repository.create_pending_payment.return_value = parent_payment
+        self.repository.attach_gateway_payment.return_value = parent_payment
+        self.gateway.create_payment.return_value = {
+            "paymentID": "bkash-payment-1",
+            "bkashURL": "https://checkout.example.test/pay",
+            "statusCode": "0000",
+            "transactionStatus": "Initiated",
+        }
 
-        self.repository.create_pending_payment.assert_not_called()
-        self.gateway.create_payment.assert_not_called()
+        payment, payment_url = self.service.start_bkash_payment(
+            self.parent,
+            "campaign-1",
+            DonationPaymentCreateRequest(amount=Decimal("100.00")),
+        )
+
+        self.assertEqual(payment.donor_user_id, self.parent.user_id)
+        self.assertEqual(payment_url, "https://checkout.example.test/pay")
+        self.repository.create_pending_payment.assert_called_once()
+        self.repository.attach_gateway_payment.assert_called_once()
+
+    def test_tokenized_v2_checkout_response_is_saved(self):
+        self.repository.create_pending_payment.return_value = self.payment
+        self.repository.attach_gateway_payment.return_value = self.payment
+        self.gateway.create_payment.return_value = {
+            "paymentId": "bkash-payment-1",
+            "bkashURL": "https://checkout.example.test/pay",
+            "transactionStatus": "Initiated",
+        }
+
+        payment, payment_url = self.service.start_bkash_payment(
+            self.donor,
+            "campaign-1",
+            DonationPaymentCreateRequest(amount=Decimal("100.00")),
+        )
+
+        self.assertEqual(payment.status, DonationPaymentStatus.PENDING)
+        self.assertEqual(payment_url, "https://checkout.example.test/pay")
+        self.repository.attach_gateway_payment.assert_called_once_with(
+            payment_id="payment-1",
+            bkash_payment_id="bkash-payment-1",
+            provider_status="Initiated",
+        )
 
     def test_checkout_gateway_failure_records_non_paid_state(self):
         self.repository.create_pending_payment.return_value = self.payment
@@ -131,6 +167,76 @@ class DonationPaymentServiceTests(unittest.TestCase):
             payment_id="payment-1",
             status=DonationPaymentStatus.PAID,
             bkash_transaction_id="BKASH-TRX-1",
+            provider_status="Completed",
+            failure_reason=None,
+        )
+
+    def test_tokenized_v2_response_fields_mark_payment_paid(self):
+        self.repository.get_payment_by_bkash_id.return_value = self.payment
+        self.gateway.execute_payment.return_value = {
+            "paymentId": "bkash-payment-1",
+            "merchantInvoiceNumber": "CLTEST123",
+            "amount": "100.00",
+            "currency": "BDT",
+            "transactionStatus": "Completed",
+            "trxId": "BKASH-TRX-V2",
+        }
+        paid = self.payment.model_copy(
+            update={
+                "status": DonationPaymentStatus.PAID,
+                "bkash_transaction_id": "BKASH-TRX-V2",
+            }
+        )
+        self.repository.update_payment_result.return_value = paid
+
+        result = self.service.process_callback(
+            "bkash-payment-1",
+            "success",
+        )
+
+        self.assertEqual(result.status, DonationPaymentStatus.PAID)
+        self.repository.update_payment_result.assert_called_once_with(
+            payment_id="payment-1",
+            status=DonationPaymentStatus.PAID,
+            bkash_transaction_id="BKASH-TRX-V2",
+            provider_status="Completed",
+            failure_reason=None,
+        )
+
+    def test_tokenized_v2_query_response_can_verify_payment(self):
+        self.repository.get_payment_by_bkash_id.return_value = self.payment
+        self.gateway.execute_payment.side_effect = PaymentGatewayError(
+            "Execute response was interrupted"
+        )
+        self.gateway.query_payment.return_value = {
+            "paymentId": "bkash-payment-1",
+            "merchantInvoice": "CLTEST123",
+            "amount": "100.00",
+            "currency": "BDT",
+            "transactionStatus": "Completed",
+            "trxId": "BKASH-QUERY-TRX",
+        }
+        paid = self.payment.model_copy(
+            update={
+                "status": DonationPaymentStatus.PAID,
+                "bkash_transaction_id": "BKASH-QUERY-TRX",
+            }
+        )
+        self.repository.update_payment_result.return_value = paid
+
+        result = self.service.process_callback(
+            "bkash-payment-1",
+            "success",
+        )
+
+        self.assertEqual(result.status, DonationPaymentStatus.PAID)
+        self.gateway.query_payment.assert_called_once_with(
+            "bkash-payment-1"
+        )
+        self.repository.update_payment_result.assert_called_once_with(
+            payment_id="payment-1",
+            status=DonationPaymentStatus.PAID,
+            bkash_transaction_id="BKASH-QUERY-TRX",
             provider_status="Completed",
             failure_reason=None,
         )

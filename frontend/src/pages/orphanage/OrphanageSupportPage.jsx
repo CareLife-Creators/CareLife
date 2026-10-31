@@ -4,10 +4,11 @@ import { useSession } from '../../lib/session'
 import { canUseDonorFeatures } from '../../lib/roles'
 import { publicActivityText, publicContentLabel, publicOrganizationDescription, publicOrganizationName } from '../../lib/publicDisplay'
 import { API_BASE_URL } from '../../api/client'
-import { createInKindPledge, getDonationCampaigns, getDonationNeeds, getPublicImpactUpdates, getPublicOrphanageProfile } from '../../api/discovery'
+import { createInKindPledge, getDonationCampaigns, getDonationNeeds, getPublicImpactUpdates } from '../../api/discovery'
 import { startBkashPayment, getMyDonationPayments, verifyDonationPayment, getMyInKindPledges } from '../../api/workspace'
 import '../DirectoryPages.css'
 import '../Workspace.css'
+import './OrphanageSupportPage.css'
 
 const money = (value, currency = 'BDT') => {
   try { return new Intl.NumberFormat('en-BD', { style: 'currency', currency, maximumFractionDigits: 2 }).format(Number(value) || 0) }
@@ -38,8 +39,6 @@ export default function OrphanageSupportPage() {
   const [pledgeForms, setPledgeForms] = useState({})
   const [busy, setBusy] = useState('')
   const [messages, setMessages] = useState({})
-  const [profile, setProfile] = useState(null)
-
   const isDonor = canUseDonorFeatures(role, signedIn)
 
   const load = useCallback(async () => {
@@ -50,19 +49,19 @@ export default function OrphanageSupportPage() {
       getDonationNeeds(),
       getPublicImpactUpdates(),
     ]
-    if (isDonor) requests.push(getMyDonationPayments())
+    if (signedIn) requests.push(getMyDonationPayments())
     const result = await Promise.allSettled(requests)
     setCampaigns(result[0].status === 'fulfilled' && Array.isArray(result[0].value) ? result[0].value : [])
     setNeeds(result[1].status === 'fulfilled' && Array.isArray(result[1].value) ? result[1].value : [])
     setUpdates(result[2].status === 'fulfilled' && Array.isArray(result[2].value) ? result[2].value : [])
-    if (isDonor) setPayments(result[3]?.status === 'fulfilled' && Array.isArray(result[3].value) ? result[3].value : [])
+    if (signedIn) setPayments(result[3]?.status === 'fulfilled' && Array.isArray(result[3].value) ? result[3].value : [])
     if (result.slice(0, 3).every((item) => item.status === 'rejected')) {
       setError('The campaign, need and impact endpoints all failed to load. Confirm the backend is running, then retry.')
-    } else if (isDonor && result[3]?.status === 'rejected') {
+    } else if (signedIn && result[3]?.status === 'rejected') {
       setMessages((current) => ({ ...current, payments: result[3].reason instanceof Error ? result[3].reason.message : 'Payment history could not be loaded.' }))
     }
     setLoading(false)
-  }, [isDonor])
+  }, [signedIn])
 
   useEffect(() => { void load() }, [load])
   useEffect(() => {
@@ -104,10 +103,6 @@ export default function OrphanageSupportPage() {
   async function payCampaign(event, campaign) {
     event.preventDefault()
     if (!signedIn) { window.location.hash = '#login'; return }
-    if (!isDonor) {
-      setMessages((current) => ({ ...current, [campaign.id]: 'The backend restricts bKash checkout to the Donor / Supporter role. Sign in with that account type to make this payment.' }))
-      return
-    }
     const amount = Number(amounts[campaign.id])
     if (!Number.isFinite(amount) || amount <= 0) {
       setMessages((current) => ({ ...current, [campaign.id]: 'Enter a donation amount greater than zero.' }))
@@ -141,16 +136,14 @@ export default function OrphanageSupportPage() {
     } finally { setBusy('') }
   }
 
-  async function showOrganization(organizationId) {
-    setMessages((current) => ({ ...current, profile: '' }))
-    try { setProfile(await getPublicOrphanageProfile(organizationId)) }
-    catch (err) { setMessages((current) => ({ ...current, profile: err instanceof Error ? err.message : 'Organization profile could not be loaded.' })) }
+  function showOrganization(organizationId) {
+    window.location.hash = `#organization-profile?type=orphanage&id=${encodeURIComponent(organizationId)}`
   }
 
   const activeCampaigns = campaigns.filter((item) => item.is_active !== false)
   const activeNeeds = needs.filter((item) => item.is_active !== false)
-  const publicUpdates = updates.filter((item) => !item.status || String(item.status).toLowerCase() === 'published')
-  const tabs = [['campaigns', 'Campaigns'], ['needs', 'In-kind needs'], ['impact', 'Impact updates'], ...(isDonor ? [['pledges', 'My item pledges'], ['payments', 'My payments']] : [])]
+  const publicUpdates = updates.filter((item) => !item.status || ['approved', 'published'].includes(String(item.status).toLowerCase()))
+  const tabs = [['campaigns', 'Campaigns'], ['needs', 'In-kind needs'], ['impact', 'Impact updates'], ...(isDonor ? [['pledges', 'My item pledges']] : []), ...(signedIn ? [['payments', 'My payments']] : [])]
 
   return (
     <>
@@ -191,7 +184,7 @@ export default function OrphanageSupportPage() {
                 <button className="directory-inline-action" type="button" onClick={() => void showOrganization(campaign.organization_id)}>View organization details</button>
                 <form className="pledge-form" onSubmit={(event) => void payCampaign(event, campaign)}>
                   <label>Donation amount ({campaign.currency || 'BDT'})<input type="number" min="0.01" step="0.01" value={amounts[campaign.id] || ''} onChange={(event) => setAmounts((current) => ({ ...current, [campaign.id]: event.target.value }))} required /></label>
-                  {isDonor ? <button type="submit" disabled={busy === 'pay:' + campaign.id}>{busy === 'pay:' + campaign.id ? 'Opening secure checkout…' : 'Continue with bKash'}</button> : <button type="button" onClick={() => { if (!signedIn) window.location.hash = '#login'; else setMessages((current) => ({ ...current, [campaign.id]: 'Only accounts with the Donor / Supporter role can start bKash checkout.' })) }}>{signedIn ? 'bKash checkout requires donor role' : 'Sign in to donate'}</button>}
+                  {signedIn ? <button type="submit" disabled={busy === 'pay:' + campaign.id}>{busy === 'pay:' + campaign.id ? 'Opening secure checkout…' : 'Continue with bKash'}</button> : <button type="button" onClick={() => { window.location.hash = '#login' }}>Sign in to donate</button>}
                   {messages[campaign.id] && <p role="status">{messages[campaign.id]}</p>}
                 </form>
               </article>
@@ -231,7 +224,7 @@ export default function OrphanageSupportPage() {
           </article>)}</div>
         </>}
 
-        {!loading && !error && tab === 'payments' && isDonor && <>
+        {!loading && !error && tab === 'payments' && signedIn && <>
           <div className="directory-section-title"><h2>Your bKash payment records</h2><span>{payments.length} records</span></div>
           {messages.payments && <div className="cw-alert" role="status">{messages.payments}</div>}
           {!payments.length && <div className="directory-state">No donation payment records were returned for this account.</div>}
@@ -262,8 +255,6 @@ export default function OrphanageSupportPage() {
           <p className="directory-note">The status shown here is the organization’s returned record: pledged, received, or allocated. Contact the organization if a status needs clarification.</p>
         </>}
 
-        {profile && <section className="organization-public-panel"><button type="button" onClick={() => setProfile(null)}>Close details ×</button><p className="directory-kicker">PUBLIC ORGANIZATION PROFILE</p><h2>{publicOrganizationName(profile.organization_name)}</h2><p>{publicOrganizationDescription(profile.description, 'orphanage')}</p><p>{[profile.location, profile.contact].filter(Boolean).join(' · ')}</p><p>{[profile.capacity != null ? 'Capacity ' + profile.capacity : '', profile.age_range, profile.opening_hours, profile.facilities, profile.fees].filter(Boolean).join(' · ')}</p><span>{String(profile.verification_status || '').replaceAll('_', ' ')}</span></section>}
-        {messages.profile && <div className="directory-state error" role="alert">{messages.profile}</div>}
         <aside className="directory-privacy"><strong>Public transparency, private records.</strong> The public board exposes campaign and impact information returned by the backend. Private child details do not belong in public fundraising records.</aside>
       </main>
     </>

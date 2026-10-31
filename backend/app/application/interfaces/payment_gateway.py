@@ -7,6 +7,9 @@ class PaymentGatewayError(RuntimeError):
 
 
 class BkashPaymentGateway(Protocol):
+    def validate_configuration(self) -> None:
+        ...
+
     def create_payment(
         self,
         amount: Decimal,

@@ -12,11 +12,8 @@ from app.application.schemas.donation_payment import (
 from app.application.use_cases.donation_payments import (
     DonationPaymentService,
 )
-from app.domain.entities.user_context import Role, UserContext
-from app.presentation.api.dependencies.authorization import (
-    get_current_user,
-    require_role,
-)
+from app.domain.entities.user_context import UserContext
+from app.presentation.api.dependencies.authorization import get_current_user
 from app.presentation.api.dependencies.donation_payment import (
     get_donation_payment_service,
 )
@@ -51,9 +48,7 @@ def _raise_http_error(exc: Exception) -> None:
 def start_bkash_payment(
     campaign_id: str,
     request: DonationPaymentCreateRequest,
-    current_user: UserContext = Depends(
-        require_role(Role.DONOR_SUPPORTER)
-    ),
+    current_user: UserContext = Depends(get_current_user),
     service: DonationPaymentService = Depends(
         get_donation_payment_service
     ),
@@ -122,9 +117,7 @@ def bkash_callback(
 )
 def verify_my_payment(
     payment_id: str,
-    current_user: UserContext = Depends(
-        require_role(Role.DONOR_SUPPORTER)
-    ),
+    current_user: UserContext = Depends(get_current_user),
     service: DonationPaymentService = Depends(
         get_donation_payment_service
     ),
@@ -150,9 +143,7 @@ def verify_my_payment(
     response_model=list[DonationPaymentResponse],
 )
 def list_my_payments(
-    current_user: UserContext = Depends(
-        require_role(Role.DONOR_SUPPORTER)
-    ),
+    current_user: UserContext = Depends(get_current_user),
     service: DonationPaymentService = Depends(
         get_donation_payment_service
     ),

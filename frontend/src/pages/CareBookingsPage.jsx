@@ -19,7 +19,8 @@ const statusTone = (value) => ['approved', 'accepted', 'completed'].includes(Str
 
 export default function CareBookingsPage() {
   const { role } = useSession()
-  const [tab, setTab] = useState('caregivers')
+  const familyRepresentative = role === 'family_representative'
+  const [tab, setTab] = useState(() => familyRepresentative ? 'home-booking' : 'caregivers')
   const [caregivers, setCaregivers] = useState([])
   const [careHomes, setCareHomes] = useState([])
   const [appointments, setAppointments] = useState([])
@@ -175,15 +176,16 @@ export default function CareBookingsPage() {
       <SiteNav />
       <main className={'cw-page ' + (familyView ? 'cw-family-bookings-page' : '')}>
         <header className={'cw-hero ' + (familyView ? 'cw-family-bookings-hero' : '')}>
-          <span className="cw-kicker">{familyView ? 'CARE FOR YOUR FAMILY' : 'ELDERLY CARE · APPOINTMENTS'}</span>
-          <h1>{familyView ? 'Find a care professional and manage requests.' : 'Arrange care around the person, not the paperwork.'}</h1>
-          <p>{familyView ? 'See available caregiver times and follow your appointment requests. Daycare applications and child updates are in My children.' : 'Request an independent caregiver, choose an available time, or submit an elder-care booking with a resident reference and a named provider.'}</p>
+          <span className="cw-kicker">{familyView ? 'CARE FOR YOUR FAMILY' : familyRepresentative ? 'FAMILY REPRESENTATIVE · ELDERLY CARE' : 'ELDERLY CARE · APPOINTMENTS'}</span>
+          <h1>{familyView ? 'Find a care professional and manage requests.' : familyRepresentative ? 'Arrange care for the person you represent.' : 'Arrange care around the person, not the paperwork.'}</h1>
+          <p>{familyView ? 'See available caregiver times and follow your appointment requests. Daycare applications and child updates are in My children.' : familyRepresentative ? 'Request a care-home service or caregiver visit and follow its status. The care home creates the private resident record and shares its ID with you after confirming your authorization.' : 'Request an independent caregiver, choose an available time, or submit an elder-care booking with a resident reference and a named provider.'}</p>
           {familyView && <div className="cw-carebooking-shortcuts"><a href="#daycare-directory">Find a daycare <span aria-hidden="true">→</span></a><a href="#my-children">My child’s care <span aria-hidden="true">→</span></a></div>}
+          {familyRepresentative && <div className="cw-carebooking-shortcuts"><a href="#elderly-care-directory">Find a care home <span aria-hidden="true">→</span></a><a href="#family-checkins">Family check-ins <span aria-hidden="true">→</span></a></div>}
           <div className="cw-hero-meta"><span>{caregivers.length} caregiver profiles</span><span>{careHomes.length} care homes listed</span><span>{appointments.length + bookings.length} booking records</span></div>
         </header>
         <nav className="cw-tabs" aria-label="Care booking sections">
           <button type="button" className={tab === 'caregivers' ? 'active' : ''} aria-pressed={tab === 'caregivers'} onClick={() => setTab('caregivers')}>{familyView ? 'Find a caregiver' : 'Caregiver availability'}</button>
-          {!familyView && <button type="button" className={tab === 'home-booking' ? 'active' : ''} aria-pressed={tab === 'home-booking'} onClick={() => setTab('home-booking')}>Care-home booking</button>}
+          {!familyView && <button type="button" className={tab === 'home-booking' ? 'active' : ''} aria-pressed={tab === 'home-booking'} onClick={() => setTab('home-booking')}>{familyRepresentative ? 'Book care for a resident' : 'Care-home booking'}</button>}
           <button type="button" className={tab === 'my-bookings' ? 'active' : ''} aria-pressed={tab === 'my-bookings'} onClick={() => setTab('my-bookings')}>My bookings</button>
         </nav>
         {error && <div className="cw-alert error" role="alert">{error}</div>}
@@ -202,9 +204,9 @@ export default function CareBookingsPage() {
           </section>}
           {tab === 'home-booking' && <section className="cw-panel">
             <div className="cw-panel-heading"><div><p className="cw-kicker">CARE-HOME BOOKING</p><h2>Request a scheduled service</h2></div></div>
-            <p className="cw-help">The booking API requires a resident ID supplied by the care home or family authorization. Select a provider from the live directory below.</p>
+            <p className="cw-help">Choose a listed care home or caregiver and submit a service request. To protect resident privacy, family representatives cannot create resident records here. Ask the care home to register the person, verify your authorization, and share the resident ID before booking. You can find a care home in the <a href="#elderly-care-directory">elderly-care directory</a>.</p>
             <form className="cw-form" onSubmit={submitHomeBooking}>
-              <label>Resident ID<input value={residentId} onChange={(event) => setResidentId(event.target.value)} required placeholder="Resident ID from the care home" /></label>
+              <label>Resident ID supplied by the care home<input value={residentId} onChange={(event) => setResidentId(event.target.value)} required placeholder="Enter the ID shared with your authorized account" /></label>
               <label>Care provider<select value={selectedProvider} onChange={(event) => setSelectedProvider(event.target.value)} required><option value="">Choose a provider</option><optgroup label="Care homes">{careHomes.map((home) => <option key={home.organization_id} value={'care_home:' + home.organization_id}>{home.organization_name}{home.location ? ' — ' + home.location : ''}</option>)}</optgroup><optgroup label="Caregivers">{caregivers.map((caregiver) => <option key={caregiver.caregiver_id} value={'caregiver:' + caregiver.caregiver_id}>{caregiver.full_name || caregiver.caregiver_id} · {caregiver.service_type}</option>)}</optgroup></select></label>
               <label>Service type<input value={serviceType} onChange={(event) => setServiceType(event.target.value)} minLength={2} maxLength={100} required /></label>
               <label>Start time<input type="datetime-local" value={startsAt} onChange={(event) => setStartsAt(event.target.value)} required /></label>

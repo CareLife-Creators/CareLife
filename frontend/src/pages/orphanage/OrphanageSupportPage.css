@@ -1,0 +1,87 @@
+.orphanage .impact-list {
+  gap: 18px;
+}
+
+.orphanage .impact-card {
+  overflow: hidden;
+  padding: clamp(20px, 3vw, 30px);
+  border-color: #eadbd2;
+  border-radius: 22px;
+  box-shadow: 0 14px 36px rgba(81, 50, 35, 0.055);
+}
+
+.orphanage .impact-card > small {
+  display: inline-flex;
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: #885b47;
+  background: #fbf0e9;
+  font-size: 0.72rem;
+}
+
+.orphanage .impact-card h3 {
+  margin: 14px 0 8px;
+  font-size: clamp(1.25rem, 2.5vw, 1.65rem);
+  letter-spacing: -0.035em;
+}
+
+.orphanage .impact-card > p {
+  max-width: 78ch;
+  font-size: 0.94rem;
+  line-height: 1.8;
+}
+
+.orphanage .impact-card .cw-impact-media {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 19px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.orphanage .impact-card .cw-impact-media a {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #eadbd2;
+  border-radius: 16px;
+  background: #f4eee9;
+}
+
+.orphanage .impact-card .cw-impact-media img,
+.orphanage .impact-card .cw-impact-media video {
+  width: 100%;
+  height: clamp(180px, 26vw, 290px);
+  max-height: none;
+  object-fit: cover;
+  background: #f4eee9;
+  transition: transform 220ms ease;
+}
+
+.orphanage .impact-card .cw-impact-media a:hover img {
+  transform: scale(1.025);
+}
+
+.orphanage .impact-card .cw-impact-media a:focus-visible {
+  outline: 3px solid #a35d45;
+  outline-offset: 3px;
+}
+
+@media (max-width: 620px) {
+  .orphanage .impact-card .cw-impact-media {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .orphanage .impact-card .cw-impact-media img,
+  .orphanage .impact-card .cw-impact-media video {
+    height: 240px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orphanage .impact-card .cw-impact-media img {
+    transition: none;
+  }
+}
