@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import SiteNav from '../../components/SiteNav'
-import { getPublicOrganizationProfile } from '../../api/discovery'
+import { getPublicOrganizationProfile, getPublicOrphanageProfile } from '../../api/discovery'
 import { publicOrganizationDescription, publicOrganizationName, publicOrganizationValue } from '../../lib/publicDisplay'
 import '../DirectoryPages.css'
 import './PublicOrganizationProfilePage.css'
@@ -12,30 +12,43 @@ function readProfileRef() {
 }
 
 export default function PublicOrganizationProfilePage() {
-  const [reference] = useState(readProfileRef)
-  const [profile, setProfile] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [reference, setReference] = useState(readProfileRef)
+  const [loadedProfile, setLoadedProfile] = useState(null)
+
+  useEffect(() => {
+    const onHashChange = () => setReference(readProfileRef())
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [])
+
+  const referenceKey = `${reference.type}:${reference.id}`
 
   useEffect(() => {
     let cancelled = false
-    getPublicOrganizationProfile(reference.id).then((data) => { if (!cancelled) setProfile(data) })
-      .catch((err) => { if (!cancelled) setError(err instanceof Error ? err.message : 'This public listing could not be loaded.') })
-      .finally(() => { if (!cancelled) setLoading(false) })
+    const getProfile = reference.type === 'orphanage' ? getPublicOrphanageProfile : getPublicOrganizationProfile
+    getProfile(reference.id)
+      .then((profile) => { if (!cancelled) setLoadedProfile({ key: referenceKey, profile, error: '' }) })
+      .catch((err) => { if (!cancelled) setLoadedProfile({ key: referenceKey, profile: null, error: err instanceof Error ? err.message : 'This public listing could not be loaded.' }) })
     return () => { cancelled = true }
-  }, [reference])
+  }, [reference.type, reference.id, referenceKey])
+
+  const loading = loadedProfile?.key !== referenceKey
+  const profile = loading ? null : loadedProfile?.profile
+  const error = loading ? '' : loadedProfile?.error || ''
 
   const title = publicOrganizationName(profile?.organization_name) || 'Care organization'
-  const typeLabel = profile?.organization_type === 'elderly_care' ? 'Elderly care home' : 'Daycare center'
+  const typeLabel = profile?.organization_type === 'elderly_care' ? 'Elderly care home' : profile?.organization_type === 'orphanage' ? 'Children’s home' : 'Daycare center'
+  const directoryRoute = reference.type === 'orphanage' ? '#orphanage-support' : reference.type === 'daycare' ? '#daycare-directory' : '#elderly-care-directory'
+  const directoryLabel = reference.type === 'orphanage' ? 'support board' : reference.type === 'daycare' ? 'daycare centers' : 'care homes'
   const location = profile?.location || ''
   const mapUrl = profile?.latitude != null && profile?.longitude != null
     ? `https://www.google.com/maps/search/?api=1&query=${profile.latitude},${profile.longitude}`
     : location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}` : ''
 
   return <><SiteNav/><main className="directory-page organization-profile-page">
-    <div className="directory-breadcrumb"><a href={reference.type === 'daycare' ? '#daycare-directory' : '#elderly-care-directory'}>← Back to {reference.type === 'daycare' ? 'daycare centers' : 'care homes'}</a></div>
+    <div className="directory-breadcrumb"><a href={directoryRoute}>← Back to {directoryLabel}</a></div>
     {loading && <div className="directory-state" role="status">Loading public organization details…</div>}
-    {!loading && error && <div className="directory-state error" role="alert"><strong>Listing unavailable</strong><p>{error}</p><a className="organization-profile-back" href={reference.type === 'daycare' ? '#daycare-directory' : '#elderly-care-directory'}>Return to directory</a></div>}
+    {!loading && error && <div className="directory-state error" role="alert"><strong>Listing unavailable</strong><p>{error}</p><a className="organization-profile-back" href={directoryRoute}>Return to directory</a></div>}
     {!loading && profile && <>
       <header className="organization-profile-hero">
         <div className="organization-profile-art" aria-label="Organization photo not provided"><span>{title.charAt(0).toUpperCase()}</span><small>PHOTOS NOT PROVIDED</small></div>

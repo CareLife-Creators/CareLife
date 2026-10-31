@@ -15,7 +15,7 @@ from app.domain.entities.donation_payment import (
     DonationPayment,
     DonationPaymentStatus,
 )
-from app.domain.entities.user_context import Role, UserContext
+from app.domain.entities.user_context import UserContext
 
 
 class DonationPaymentService:
@@ -29,21 +29,13 @@ class DonationPaymentService:
         self.gateway = gateway
         self.callback_url = callback_url
 
-    @staticmethod
-    def _require_donor(user: UserContext) -> None:
-        if user.role != Role.DONOR_SUPPORTER:
-            raise PermissionError(
-                "Donor-supporter access is required."
-            )
-
     def start_bkash_payment(
         self,
         user: UserContext,
         campaign_id: str,
         request: DonationPaymentCreateRequest,
     ) -> tuple[DonationPayment, str]:
-        self._require_donor(user)
-
+        self.gateway.validate_configuration()
         invoice_number = f"CL{uuid4().hex[:24].upper()}"
 
         payment = self.repository.create_pending_payment(
@@ -62,7 +54,11 @@ class DonationPaymentService:
                 payer_reference=payment.merchant_invoice_number,
             )
 
-            bkash_payment_id = result.get("paymentID")
+            # bKash Tokenized V2 names this field paymentId. Keep the legacy
+            # alias while existing sandbox checkouts age out.
+            bkash_payment_id = (
+                result.get("paymentId") or result.get("paymentID")
+            )
             payment_url = result.get("bkashURL")
 
             if (
@@ -115,11 +111,19 @@ class DonationPaymentService:
                 returned_amount = None
 
             matches_payment = (
-                str(result.get("paymentID") or "")
+                str(
+                    result.get("paymentId")
+                    or result.get("paymentID")
+                    or ""
+                )
                 == str(payment.bkash_payment_id or "")
             )
             matches_invoice = (
-                str(result.get("merchantInvoiceNumber") or "")
+                str(
+                    result.get("merchantInvoiceNumber")
+                    or result.get("merchantInvoice")
+                    or ""
+                )
                 == payment.merchant_invoice_number
             )
             matches_amount = returned_amount == payment.amount
@@ -127,7 +131,9 @@ class DonationPaymentService:
                 str(result.get("currency") or "").upper()
                 == payment.currency
             )
-            transaction_id = str(result.get("trxID") or "").strip()
+            transaction_id = str(
+                result.get("trxId") or result.get("trxID") or ""
+            ).strip()
 
             # Only the gateway's server response can finalize a payment.
             if not all(
@@ -255,8 +261,6 @@ class DonationPaymentService:
         user: UserContext,
         payment_id: str,
     ) -> DonationPayment:
-        self._require_donor(user)
-
         payment = self.repository.get_payment_for_donor(
             payment_id,
             user.user_id,
@@ -283,8 +287,6 @@ class DonationPaymentService:
         self,
         user: UserContext,
     ) -> list[DonationPayment]:
-        self._require_donor(user)
-
         return self.repository.list_payments_for_donor(
             user.user_id
         )
@@ -294,8 +296,6 @@ class DonationPaymentService:
         user: UserContext,
         payment_id: str,
     ) -> DonationPayment:
-        self._require_donor(user)
-
         payment = self.repository.get_payment_for_donor(
             payment_id,
             user.user_id,

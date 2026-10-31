@@ -134,6 +134,13 @@ export default function AdminOperationsPage() {
     }
   }
 
+  function selectTab(nextTab) {
+    setTab(nextTab)
+    setError('')
+    const nextHash = '#admin-operations?tab=' + nextTab
+    if (window.location.hash !== nextHash) window.location.hash = nextHash
+  }
+
   return (
     <>
       <AdminNav />
@@ -141,13 +148,13 @@ export default function AdminOperationsPage() {
         <header className="cw-hero admin">
           <span className="cw-kicker">CARELIFE ADMINISTRATION</span>
           <h1>Review access. Keep a clear record.</h1>
-          <p>Review submitted caregiver profiles and inspect the audit trail of actions performed in the platform.</p>
+          <p>Verify caregiver profiles, check orphanage updates for child privacy before publication, and review the record of administrative actions.</p>
           <div className="cw-hero-meta"><span>{caregivers.length} caregiver reviews waiting</span><span>{logs.length} audit events · {pendingUpdates.length} impact updates awaiting review</span></div>
         </header>
         <nav className="cw-tabs" aria-label="Admin sections">
-          <button type="button" className={tab === 'caregivers' ? 'active' : ''} aria-pressed={tab === 'caregivers'} onClick={() => { setTab('caregivers'); setError('') }}>Caregiver verification</button>
-          <button type="button" className={tab === 'impact' ? 'active' : ''} aria-pressed={tab === 'impact'} onClick={() => { setTab('impact'); setError('') }}>Impact moderation</button>
-          <button type="button" className={tab === 'audit' ? 'active' : ''} aria-pressed={tab === 'audit'} onClick={() => { setTab('audit'); setError('') }}>Audit log</button>
+          <button type="button" className={tab === 'caregivers' ? 'active' : ''} aria-pressed={tab === 'caregivers'} onClick={() => selectTab('caregivers')}>Caregiver verification</button>
+          <button type="button" className={tab === 'impact' ? 'active' : ''} aria-pressed={tab === 'impact'} onClick={() => selectTab('impact')}>Impact moderation</button>
+          <button type="button" className={tab === 'audit' ? 'active' : ''} aria-pressed={tab === 'audit'} onClick={() => selectTab('audit')}>Audit log</button>
           <button type="button" className="cw-tabs-action" onClick={() => void load()} disabled={loading}>{loading ? 'Refreshing…' : 'Refresh data'}</button>
         </nav>
         {error && <div className="cw-alert error" role="alert">{error}</div>}
@@ -168,7 +175,7 @@ export default function AdminOperationsPage() {
         </section> : tab === 'impact' ? <section className="cw-panel">
           <div className="cw-panel-heading"><div><p className="cw-kicker">PENDING REVIEW</p><h2>Orphanage impact updates</h2></div><span className="cw-status">{pendingUpdates.length} awaiting review</span></div>
           <p className="cw-help">Check the update content and any attached media for personal information that could identify a child. Approval publishes the update; rejection keeps it out of the public board.</p>
-          {!pendingUpdates.length ? <div className="cw-empty"><strong>No impact updates are waiting for review.</strong><p>New updates from orphanage staff will appear here after they are submitted.</p></div> :
+          {!pendingUpdates.length ? <div className="cw-empty"><strong>Nothing to review yet.</strong><p>This queue is for orphanage updates submitted by approved organization staff. Review each post and its attachments for details that could identify a child; approve safe posts to publish them or reject posts that expose private information.</p><p>Once an organization is approved, its staff can submit updates from <strong>Organization workspace → Campaigns &amp; impact</strong>. Submitted updates will appear here for review.</p><a className="cw-button" href="#organization-approval">Review organization applications</a></div> :
             <div className="cw-record-list">{pendingUpdates.map((item) => <article className="cw-record stacked" key={item.id}>
               <div className="cw-record-main"><div className="cw-record-title-row"><h3>{item.title}</h3><span className="cw-pill warning">{String(item.status || 'pending_review').replaceAll('_', ' ')}</span></div>
                 <p>{item.content}</p><small>{item.organization_name} · Created {dateTime(item.created_at)} · Update ID: {item.id}</small>

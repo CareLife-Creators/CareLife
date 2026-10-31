@@ -1,4 +1,6 @@
 from decimal import Decimal
+from threading import Lock
+from time import monotonic
 from typing import Any
 
 import httpx
@@ -15,6 +17,9 @@ class BkashGatewayClient:
     def __init__(self, settings):
         self.settings = settings
         self.base_url = settings.bkash_api_base_url.rstrip("/")
+        self._token_lock = Lock()
+        self._access_token: str | None = None
+        self._token_expires_at = 0.0
 
     @staticmethod
     def _secret_value(value: SecretStr | None) -> str | None:
@@ -36,6 +41,10 @@ class BkashGatewayClient:
             )
 
         return username, password, app_key, app_secret
+
+    def validate_configuration(self) -> None:
+        """Fail before creating a payment row when credentials are missing."""
+        self._require_configuration()
 
     def _request_json(
         self,
@@ -80,25 +89,42 @@ class BkashGatewayClient:
             self._require_configuration()
         )
 
-        result = self._request_json(
-            "POST",
-            "/tokenized/checkout/token/grant",
-            headers={
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-                "username": username,
-                "password": password,
-            },
-            payload={
-                "app_key": app_key,
-                "app_secret": app_secret,
-            },
-        )
+        with self._token_lock:
+            if (
+                self._access_token
+                and monotonic() < self._token_expires_at
+            ):
+                return self._access_token, app_key
 
-        token = result.get("id_token")
-        if not isinstance(token, str) or not token:
-            raise PaymentGatewayError(
-                "The bKash gateway did not issue an access token."
+            result = self._request_json(
+                "POST",
+                "/auth/grant-token",
+                headers={
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                    "username": username,
+                    "password": password,
+                },
+                payload={
+                    "app_key": app_key,
+                    "app_secret": app_secret,
+                },
+            )
+
+            token = result.get("id_token")
+            if not isinstance(token, str) or not token:
+                raise PaymentGatewayError(
+                    "The bKash gateway did not issue an access token."
+                )
+
+            try:
+                expires_in = int(result.get("expires_in", 3600))
+            except (TypeError, ValueError):
+                expires_in = 3600
+            self._access_token = token
+            self._token_expires_at = monotonic() + max(
+                60,
+                expires_in - 60,
             )
 
         return token, app_key
@@ -123,7 +149,7 @@ class BkashGatewayClient:
     ) -> dict[str, Any]:
         return self._request_json(
             "POST",
-            "/tokenized/checkout/create",
+            "/payment/create",
             headers=self._authorized_headers(),
             payload={
                 "mode": "0011",
@@ -142,10 +168,10 @@ class BkashGatewayClient:
     ) -> dict[str, Any]:
         return self._request_json(
             "POST",
-            "/tokenized/checkout/execute",
+            "/payment/execute",
             headers=self._authorized_headers(),
             payload={
-                "paymentID": bkash_payment_id,
+                "paymentId": bkash_payment_id,
             },
         )
 
@@ -154,10 +180,10 @@ class BkashGatewayClient:
         bkash_payment_id: str,
     ) -> dict[str, Any]:
         return self._request_json(
-            "GET",
-            "/tokenized/checkout/payment/status",
+            "POST",
+            "/query/payment",
             headers=self._authorized_headers(),
-            params={
-                "paymentID": bkash_payment_id,
+            payload={
+                "paymentId": bkash_payment_id,
             },
         )

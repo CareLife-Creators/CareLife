@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from app.application.use_cases.donation_payments import (
     DonationPaymentService,
 )
@@ -8,11 +10,16 @@ from app.infrastructure.repositories.donation_payment import (
 )
 
 
+@lru_cache(maxsize=1)
+def _get_bkash_gateway() -> BkashGatewayClient:
+    return BkashGatewayClient(get_settings())
+
+
 def get_donation_payment_service() -> DonationPaymentService:
     settings = get_settings()
 
     return DonationPaymentService(
         repository=PostgresDonationPaymentRepository(),
-        gateway=BkashGatewayClient(settings),
+        gateway=_get_bkash_gateway(),
         callback_url=settings.bkash_callback_url,
     )

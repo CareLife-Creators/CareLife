@@ -47,7 +47,7 @@ class Settings(BaseSettings):
 
     # bKash Checkout configuration. Credentials belong in backend/.env.
     bkash_api_base_url: str = (
-        "https://tokenized.sandbox.bka.sh/v1.2.0-beta"
+        "https://tokenized.sandbox.bka.sh/v2/tokenized-checkout"
     )
     bkash_username: str | None = None
     bkash_password: SecretStr | None = None

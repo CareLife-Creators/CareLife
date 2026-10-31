@@ -47,14 +47,10 @@ function toolsFor(role, organizationRoles = []) {
   }
   if (isStaff(role)) {
     return {
-      title: 'Your organization',
-      intro: 'Maintain your organization profile and open the tools for your staff role.',
+      title: 'Organization access',
+      intro: 'Organization workspaces open after an administrator approves your organization application and membership.',
       links: [
-        { href: '#organization-workspace', icon: '⌂', title: 'Organization workspace', text: 'Edit public details and open role-specific organization tools.' },
-        { href: '#verification', icon: '✓', title: 'Organization verification', text: 'Check the status of your organization submission.' },
-        ...(role === 'daycare_staff' ? [{ href: '#organization-workspace', icon: '✳', title: 'Enrollment review', text: 'Review family applications for your daycare.' }] : []),
-        ...(role === 'orphanage_staff' ? [{ href: '#orphanage-support', icon: '♡', title: 'Support board', text: 'See the published campaigns and impact updates.' }] : []),
-        ...(role === 'care_home_staff' ? [{ href: '#care-bookings', icon: '◷', title: 'Care bookings', text: 'Review service requests and booking statuses.' }] : []),
+        { href: '#for-organizations', icon: '◇', title: 'Organization access', text: 'Review the registration steps and submit organization details for administrator review.' },
       ],
     }
   }
